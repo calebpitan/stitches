@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import Draggable from 'vuedraggable'
 
+import DragHandle from '@/assets/icons/draggable.svg'
 import { type TodoListItem } from '@/interfaces/todo'
 
 import TodoPresentation from './TodoPresentation.vue'
-import { ref, watch } from 'vue'
 
 type DraggableItem = { element: TodoListItem; index: number }
 
@@ -104,7 +105,9 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
           class="s-handle"
           @mouseenter.stop="handling = true"
           @mouseleave.stop="handling = false"
-        />
+        >
+          <DragHandle style="opacity: 0.1; stroke: currentColor; fill: currentColor" />
+        </div>
         <TodoPresentation
           :todo="element"
           @review="onReview"
@@ -156,6 +159,8 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
   height: 100%;
   left: 0rem;
   position: absolute;
+  display: inline-flex;
+  align-items: center;
 }
 
 .list-enter-from,
