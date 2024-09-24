@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { type StyleValue, computed, onMounted, reactive, ref, watch } from 'vue'
+
 import type { TodoListItem } from '@/interfaces/todo'
-import { computed, onMounted, reactive, ref, watch } from 'vue'
 
 type Field = 'title' | 'desc'
 type Point = { x: number; y: number }
 interface TodoPresentationProps {
-  todo: TodoListItem
+  task: TodoListItem
   onToggle?: (id: string, completed: boolean) => void
   onReview?: (id: string, patch: Partial<Pick<TodoListItem, 'title' | 'summary'>>) => void
   onDelete?: (id: string) => void
@@ -14,15 +15,39 @@ interface TodoPresentationProps {
 const props = defineProps<TodoPresentationProps>()
 
 const point = reactive<Point>({ x: Number.NEGATIVE_INFINITY, y: Number.NEGATIVE_INFINITY })
-const completed = ref(props.todo.completed ?? false)
+const completed = ref(props.task.completed ?? false)
 const titleRef = ref<HTMLElement | null>(null)
 const descRef = ref<HTMLElement | null>(null)
-const titleRefHasText = ref(!!props.todo.title)
-const descRefHasText = ref(!!props.todo.summary)
+const titleRefHasText = ref(!!props.task.title)
+const descRefHasText = ref(!!props.task.summary)
 
 const editable = ref<Field | undefined>(undefined)
 const titleIsEditable = computed(() => editable.value === 'title')
 const descIsEditable = computed(() => editable.value === 'desc')
+
+const titleStyle = computed((): StyleValue => {
+  const editable = titleIsEditable.value
+  return {
+    display: editable ? undefined : '-webkit-box',
+    overflow: editable ? 'auto' : 'hidden',
+    userSelect: editable ? 'text' : 'none',
+    lineClamp: editable ? undefined : 1,
+    '-webkit-line-clamp': editable ? undefined : 1,
+    '-webkit-box-orient': editable ? undefined : 'vertical'
+  }
+})
+
+const descStyle = computed((): StyleValue => {
+  const editable = descIsEditable.value
+  return {
+    display: editable ? undefined : '-webkit-box',
+    overflow: editable ? 'auto' : 'hidden',
+    userSelect: editable ? 'text' : 'none',
+    lineClamp: editable ? undefined : 3,
+    '-webkit-line-clamp': editable ? undefined : 3,
+    '-webkit-box-orient': editable ? undefined : 'vertical'
+  }
+})
 
 const createFocusHandler = (field: Field) => {
   const handler = (_event: FocusEvent) => {
@@ -129,7 +154,9 @@ function setCaretToPoint(element: HTMLElement | null, point: Point) {
   selection?.addRange(range)
 }
 
-watch(completed, (latest) => props.onToggle?.(props.todo.id, latest))
+watch(completed, (latest) => props.onToggle?.(props.task.id, latest))
+watch(props, (latest) => (titleRefHasText.value = !!latest.task.title))
+watch(props, (latest) => (descRefHasText.value = !!latest.task.summary))
 
 watch(editable, (latest) => {
   // ***************************************************************
@@ -170,7 +197,7 @@ watch(editable, (latest) => {
       // ***************************************************************
       setTimeout(() => {
         editable.value === undefined &&
-          props.onReview?.(props.todo.id, {
+          props.onReview?.(props.task.id, {
             title: titleRef.value!.textContent!,
             summary: descRef.value!.textContent!
           })
@@ -182,7 +209,7 @@ watch(editable, (latest) => {
 
 onMounted(() => {
   // Whenever a todo presentation is mounted with an empty title, focus it.
-  if (!props.todo.title) {
+  if (!props.task.title) {
     editable.value = 'title'
     titleRef.value?.focus()
   }
@@ -192,7 +219,7 @@ onMounted(() => {
 <template>
   <div class="s-todo-presentation" v-focustrap>
     <div class="s-todo-controls">
-      <Checkbox v-model="completed" :name="todo.title" :aria-label="todo.title" binary />
+      <Checkbox v-model="completed" :name="task.title" :aria-label="task.title" binary />
     </div>
 
     <div class="s-todo-contents">
@@ -201,12 +228,7 @@ onMounted(() => {
         :class="{ 's-todo-title': true, 's-title-editable': !titleRefHasText }"
         :contenteditable="titleIsEditable"
         :role="titleIsEditable ? 'textarea' : 'generic'"
-        :style="{
-          overflow: titleIsEditable ? 'auto' : 'hidden',
-          userSelect: titleIsEditable ? 'auto' : 'none',
-          lineClamp: titleIsEditable ? undefined : 1,
-          '-webkit-line-clamp': titleIsEditable ? undefined : 1
-        }"
+        :style="titleStyle"
         tabindex="0"
         data-placeholder="Title"
         @blur="handleEditableBlur"
@@ -216,7 +238,7 @@ onMounted(() => {
         @paste.prevent="handlePaste"
         @dblclick.stop=""
       >
-        {{ todo.title }}
+        {{ task.title }}
       </div>
 
       <div
@@ -224,12 +246,7 @@ onMounted(() => {
         :class="{ 's-todo-desc': true, 's-desc-editable': !descRefHasText }"
         :contenteditable="descIsEditable"
         :role="descIsEditable ? 'textarea' : 'generic'"
-        :style="{
-          overflow: descIsEditable ? 'auto' : 'hidden',
-          userSelect: descIsEditable ? 'auto' : 'none',
-          lineClamp: descIsEditable ? undefined : 3,
-          '-webkit-line-clamp': descIsEditable ? undefined : 3
-        }"
+        :style="descStyle"
         tabindex="0"
         data-placeholder="summary..."
         @blur="handleEditableBlur"
@@ -239,7 +256,7 @@ onMounted(() => {
         @paste.prevent="handlePaste"
         @dblclick.stop=""
       >
-        {{ todo.summary }}
+        {{ task.summary }}
       </div>
     </div>
 
@@ -251,7 +268,7 @@ onMounted(() => {
         size="small"
         :text="true"
         :rounded="true"
-        @click="onDelete?.(todo.id)"
+        @click="onDelete?.(task.id)"
       />
     </div>
   </div>
@@ -265,7 +282,11 @@ onMounted(() => {
   flex: 1 1 100%;
   padding: 1rem 0.375rem;
   border-radius: 0.375rem;
-  /* background-color: var(--s-surface-middle); */
+
+  &:hover .s-todo-actions {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 .s-todo-controls,
@@ -295,14 +316,12 @@ onMounted(() => {
 .s-todo-desc {
   position: relative;
   width: fit-content;
+  min-width: 100px;
   outline: none;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-}
 
-.s-todo-title[contenteditable='true']:focus,
-.s-todo-desc[contenteditable='true']:focus {
-  outline: none;
+  &[contenteditable='true']:focus {
+    outline: none;
+  }
 }
 
 .s-todo-actions {
@@ -313,19 +332,15 @@ onMounted(() => {
   transition: opacity 0.4s ease-in;
 }
 
-.s-todo-presentation:hover .s-todo-actions {
-  /* .s-todo-presentation:focus-within .s-todo-actions { */
-  opacity: 1;
-  visibility: visible;
-}
-
-.s-title-editable::before,
-.s-desc-editable::before {
-  content: attr(data-placeholder);
-  display: block;
-  font-size: inherit;
-  font-weight: inherit;
-  font-style: oblique;
-  color: var(--s-script-subtle);
+.s-title-editable,
+.s-desc-editable {
+  &::before {
+    content: attr(data-placeholder);
+    display: block;
+    font-size: inherit;
+    font-weight: inherit;
+    font-style: oblique;
+    color: var(--s-script-subtle);
+  }
 }
 </style>
