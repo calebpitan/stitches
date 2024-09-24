@@ -11,7 +11,9 @@ import TodoManagement from '@/components/TodoManagement.vue'
         <TodoControl />
       </SplitterPanel>
 
-      <SplitterPanel :size="55" :min-size="40"> <TodoManagement /> </SplitterPanel>
+      <SplitterPanel :size="55" :min-size="40" style="overflow: auto">
+        <TodoManagement />
+      </SplitterPanel>
     </Splitter>
   </main>
 </template>

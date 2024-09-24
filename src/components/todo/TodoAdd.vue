@@ -13,5 +13,13 @@ function addEmptyTodo() {
 </script>
 
 <template>
-  <Button type="button" id="new-todo-button" icon="pi pi-plus" aria-label="Add" @click="addEmptyTodo" rounded text />
+  <Button
+    type="button"
+    id="new-todo-button"
+    icon="pi pi-plus"
+    aria-label="Add"
+    @click="addEmptyTodo"
+    rounded
+    text
+  />
 </template>
