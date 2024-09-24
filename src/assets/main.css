@@ -7,6 +7,11 @@ input[type='search']::-webkit-search-results-decoration {
   -webkit-appearance: none;
 }
 
+[contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 #app {
   max-width: 1920px;
   width: 100%;
@@ -35,4 +40,99 @@ a,
     flex-direction: column;
     place-items: center;
   }
+}
+
+.p-floatlabel label.s-label {
+  font-size: 0.875rem;
+}
+
+.p-datepicker-input.s-datepicker-input {
+  --p-inputtext-padding-y: 0.25rem;
+  line-height: 1.6;
+}
+
+.p-select.s-select,
+.p-multiselect.s-select,
+.p-datepicker-input.s-datepicker-input {
+  background: var(--s-surface-ground);
+  box-shadow: none;
+  font-size: 0.875rem;
+  width: 150px;
+}
+
+.p-select.s-select:not(:hover, :focus),
+.p-multiselect.s-select:not(:hover, :focus),
+.p-datepicker-input.s-datepicker-input:not(:hover, :focus) {
+  border-color: transparent;
+}
+
+.p-select-label.s-select-label,
+.p-multiselect.s-select .p-multiselect-label {
+  --p-select-padding-y: 0.25rem;
+  --p-multiselect-padding-y: 0.25rem;
+  line-height: 1.6;
+}
+
+.p-select-overlay.s-select-overlay,
+.p-multiselect-overlay.s-select-overlay {
+  background: rgba(var(--s-surface-through-rgb) / var(--s-surface-through-alpha));
+  backdrop-filter: blur(15px);
+  filter: saturate(180%);
+}
+
+.p-select-overlay.s-select-overlay .p-select-option-group:has(> span[aria-hidden]),
+.p-multiselect-overlay.s-select-overlay .p-multiselect-option-group:has(> span[aria-hidden]) {
+  display: none;
+}
+
+.p-select-overlay.s-select-overlay .p-select-option,
+.p-multiselect-overlay.s-select-overlay .p-multiselect-header,
+.p-multiselect-overlay.s-select-overlay .p-multiselect-option {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.p-multiselect-overlay.s-select-overlay .p-multiselect-header {
+  padding: 0.25rem 0.75rem;
+}
+
+.p-select-overlay.s-select-overlay .p-select-option {
+  --p-select-option-selected-focus-background: var(--p-primary-color);
+  --p-select-option-selected-focus-color: var(--p-primary-contrast-color);
+  --p-select-option-focus-background: var(--p-primary-color);
+  --p-select-option-focus-color: var(--p-primary-contrast-color);
+}
+
+.p-multiselect-overlay.s-select-overlay .p-multiselect-option {
+  --p-multiselect-option-selected-focus-background: var(--p-primary-color);
+  --p-multiselect-option-selected-focus-color: var(--p-primary-contrast-color);
+  --p-multiselect-option-focus-background: var(--p-primary-color);
+  --p-multiselect-option-focus-color: var(--p-primary-contrast-color);
+}
+
+.p-multiselect-overlay.s-select-overlay .p-multiselect-header .p-checkbox,
+.p-multiselect-overlay.s-select-overlay .p-multiselect-option .p-checkbox {
+  --p-checkbox-width: 1em;
+  --p-checkbox-height: 1em;
+}
+.p-multiselect-overlay.s-select-overlay
+  .p-multiselect-header
+  .p-checkbox.p-checkbox-checked
+  .p-checkbox-icon,
+.p-multiselect-overlay.s-select-overlay
+  .p-multiselect-option
+  .p-checkbox.p-checkbox-checked
+  .p-checkbox-icon {
+  color: inherit;
+}
+
+.p-multiselect-overlay.s-select-overlay .p-multiselect-header .p-checkbox-box,
+.p-multiselect-overlay.s-select-overlay .p-multiselect-option .p-checkbox-box {
+  --p-checkbox-checked-hover-background: transparent;
+  --p-checkbox-checked-border-color: transparent;
+  --p-checkbox-checked-background: transparent;
+  /* --p-checkbox-border-color: transparent; */
+  --p-checkbox-background: transparent;
+  --p-checkbox-shadow: none;
 }

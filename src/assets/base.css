@@ -1,12 +1,17 @@
 /* semantic color variables for this project */
 :root {
+  color-scheme: light dark;
   --s-surface-ground: var(--p-surface-0);
   --s-surface-middle: var(--p-surface-50);
   --s-surface-lower: var(--p-surface-100);
+  --s-surface-through-rgb: 248 250 252;
+  --s-surface-through-alpha: 0.4;
 
   --s-script-primary: rgba(0, 0, 0, 1);
   --s-script-secondary: rgba(0, 0, 0, 0.65);
   --s-script-subtle: rgba(0, 0, 0, 0.35);
+
+  --s-primary-color-rgb: 52 211 153;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -14,6 +19,8 @@
     --s-surface-ground: var(--p-surface-900);
     --s-surface-middle: var(--p-surface-950);
     --s-surface-lower: #000000;
+    --s-surface-through-rgb: 95 95 95;
+    --s-surface-through-alpha: 0.2;
 
     --s-script-primary: rgba(255, 255, 255, 1);
     --s-script-secondary: rgba(255, 255, 255, 0.75);
@@ -32,6 +39,7 @@
 html,
 body {
   height: 100%;
+  /* font-size: 0.9375rem; */
 }
 
 body {
@@ -54,7 +62,6 @@ body {
     'Droid Sans',
     'Helvetica Neue',
     sans-serif;
-  font-size: 15px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
