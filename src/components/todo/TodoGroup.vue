@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { MeterItem } from 'primevue/metergroup'
-// import { watch } from 'vue';
 
 type TodoGroup = MeterItem & {}
 
@@ -85,34 +84,19 @@ function filterTodosByGroup(group: string) {
   flex: 1 0 auto;
   cursor: pointer;
   transition: background-color 0.2s ease-in;
-  background-color: rgba(248, 250, 252, 1);
+  background-color: light-dark(rgba(248, 250, 252, 1), rgba(255, 255, 255, 0.1));
   border-width: 0px;
   border-style: solid;
   border-color: var(--p-slate-200);
   box-shadow: none;
-}
 
-.s-todo-groups-card:not([aria-disabled='true']):hover {
-  background-color: rgba(198, 200, 202, 0.3);
-}
-
-.s-todo-groups-card[aria-disabled='true'] {
-  opacity: 0.4;
-  cursor: unset;
-}
-
-@media (prefers-color-scheme: dark) {
-  .s-todo-groups-card {
-    border-width: 0px;
+  &[aria-disabled='true'] {
+    opacity: 0.4;
+    cursor: unset;
   }
 
-  .s-todo-groups-card,
-  .s-todo-groups-card:active {
-    background-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .s-todo-groups-card:not([aria-disabled='true']):hover {
-    background-color: rgba(255, 255, 255, 0.2);
+  &:not([aria-disabled='true']):hover {
+    background-color: light-dark(rgba(198, 200, 202, 0.3), rgba(255, 255, 255, 0.2));
   }
 }
 

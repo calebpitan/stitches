@@ -39,7 +39,7 @@ const addTag = (value: string) => {
   const suggested = suggestions.value.find((s) => s.label === tagLabel)
 
   if (suggested) {
-    tags.value.push(suggested.id)
+    tags.value.push(suggested.label)
   } else if (tagLabel) {
     props.onCreateTag(tagLabel)
     tags.value.push(tagLabel)
@@ -130,9 +130,9 @@ watch(tags, (latest) => {
     </div>
 
     <Popover
+      v-if="suggestions.length"
       ref="popover"
       class="s-tagsinput-popover"
-      v-if="suggestions.length"
       :append-to="inputRef?.parentElement"
     >
       <span class="s-popover-label">Suggested Tags</span>
@@ -218,17 +218,11 @@ watch(tags, (latest) => {
 
 <style>
 .p-popover.s-tagsinput-popover {
-  background: rgba(248, 250, 252, 0.4);
+  background: rgba(var(--s-surface-through-rgb) / var(--s-surface-through-alpha));
   backdrop-filter: blur(10px);
   filter: saturate(180%);
   min-width: 250px;
   padding: 0;
-}
-
-@media (prefers-color-scheme: dark) {
-  .p-popover.s-tagsinput-popover {
-    background: rgba(105, 105, 105, 0.1);
-  }
 }
 
 .p-popover.s-tagsinput-popover > .p-popover-content {
