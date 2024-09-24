@@ -1,19 +1,19 @@
-import 'normalize.css';
-import 'primeicons/primeicons.css'
-import './assets/main.css'
-
 import { createApp } from 'vue'
-import { createPinia } from 'pinia'
 
 import Aura from '@primevue/themes/aura'
+import CronCorePlugin from '@vue-js-cron/core'
+
+import 'normalize.css'
+import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import 'primeicons/primeicons.css'
 import PrimeVue from 'primevue/config'
 import FocusTrap from 'primevue/focustrap'
-
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+import Ripple from 'primevue/ripple'
 
 import App from './App.vue'
+import './assets/main.css'
 import router from './router'
-import Ripple from 'primevue/ripple'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -28,5 +28,6 @@ app.use(PrimeVue, {
     preset: Aura
   }
 })
+app.use(CronCorePlugin)
 
 app.directive('focustrap', FocusTrap).directive('ripple', Ripple).mount('#app')
