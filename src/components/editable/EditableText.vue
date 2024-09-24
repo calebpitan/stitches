@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { type StyleValue, computed, reactive, ref, watch } from 'vue'
 
 type Point = { x: number; y: number }
 type EditableTextEvent<T extends Event> = {
   [P in keyof T]: T[P] extends EventTarget | null ? HTMLDivElement : T[P]
 }
 interface EditableTextProps {
-  initialActive?: boolean
+  autoFocus?: boolean
   text: string
   placeholder?: string
   lines?: number
+  multiline?: boolean
   focusControlEl?: HTMLElement
   onFocus?: (event: EditableTextEvent<FocusEvent>) => void
   onBlur?: (event: EditableTextEvent<FocusEvent>) => void
@@ -19,20 +20,52 @@ interface EditableTextProps {
 }
 
 const props = withDefaults(defineProps<EditableTextProps>(), {
-  initialActive: false,
-  lines: 1,
-  placeholder: 'Enter text...'
+  autoFocus: false,
+  placeholder: 'Enter text...',
+  multiline: false
 })
 
 const editableText = ref<HTMLDivElement | null>(null)
-const editable = ref<boolean>(props.initialActive)
+const editable = ref<boolean>(props.autoFocus)
 const hasText = ref(!!props.text)
 const point = reactive<Point>({ x: Number.NEGATIVE_INFINITY, y: Number.NEGATIVE_INFINITY })
 
+const style = computed((): StyleValue => {
+  const isEditable = editable.value === true
+  return {
+    display: isEditable ? undefined : '-webkit-box',
+    overflow: isEditable ? 'auto' : 'hidden',
+    'user-select': isEditable ? 'text' : 'none',
+    'white-space': props.multiline ? 'pre-wrap' : undefined,
+    'line-clamp': isEditable ? undefined : props.lines,
+    '-webkit-line-clamp': isEditable ? undefined : props.lines,
+    '-webkit-box-orient': isEditable ? undefined : 'vertical'
+  }
+})
+
+const handleEnterKey = (event: KeyboardEvent) => {
+  if (event.key !== 'Enter') return
+  const target = event.target as HTMLDivElement | null
+  event.preventDefault()
+
+  if (props.multiline === true) {
+    document.execCommand('insertLineBreak')
+    return
+  }
+
+  target?.blur()
+}
+
 const handleEditableBlur = (event: FocusEvent) => {
+  const target = event.target as HTMLElement | null
   const relatedTarget = event.relatedTarget as HTMLElement | null
 
-  if (relatedTarget === null) return
+  // ***************************************************************
+  // If the editable document was blurred but still remains the
+  // active element, then it's most likely the browser window or the
+  // client area lost focus, not necessarily the editable document
+  // ***************************************************************
+  if (relatedTarget === null && document.activeElement === target) return
   if (relatedTarget === props.focusControlEl) return editableText.value?.focus()
 
   editable.value = false
@@ -77,8 +110,13 @@ function handleInput(event: Event) {
 }
 
 function handlePaste(event: ClipboardEvent) {
-  // Ensure rich text cannot be pasted into the editable document.
-  const text = event.clipboardData?.getData('text') ?? ''
+  // ***************************************************************
+  // 1. Ensure rich text cannot be pasted into the editable document
+  // 2. Ensure newline characters are replaced with space if
+  //    `props.multiline` is `false`
+  // ***************************************************************
+  let text = event.clipboardData?.getData('text') ?? ''
+  if (props.multiline === false) text = text.replace(/\n|\r|\r\n/, ' ')
   document.execCommand('insertText', false, text)
 }
 
@@ -92,7 +130,25 @@ function setCaretToPoint(element: HTMLElement | null, point: Point) {
 
   const range = document.createRange()
   const selection = window.getSelection()
-  const position = document.caretRangeFromPoint(point.x, point.y)
+
+  const caretPositionFromPoint: unknown =
+    'caretPositionFromPoint' in document
+      ? document.caretPositionFromPoint
+      : document.caretRangeFromPoint
+
+  const isCallable = (f: any): f is (x: number, y: number) => Range | null =>
+    typeof f === 'function'
+
+  // ***************************************************************
+  // Calling the function, `caretPositionFromPoint`, directly would
+  // fail becuase assigning it to a variable outside of the document
+  // context changes the function's internal context and must be
+  // bound back using either `bind`, `call` or `apply`.
+  // ***************************************************************
+  const position = isCallable(caretPositionFromPoint)
+    ? caretPositionFromPoint.call(document, point.x, point.y)
+    : null
+
   const isSafePoint = Object.values(point).some((p) => Number.isFinite(p))
 
   // ***************************************************************
@@ -152,6 +208,7 @@ watch(editable, (isEditable) => {
     // filling out the to-do fields.
     // ***************************************************************
     setTimeout(() => {
+      editableText.value!.textContent = editableText.value!.textContent!.trim()
       props.onModify?.(editableText.value!.textContent!.trim())
     }, 200)
   }
@@ -165,20 +222,17 @@ watch(editable, (isEditable) => {
     :contenteditable="editable"
     :role="editable ? 'textarea' : 'generic'"
     :data-placeholder="placeholder"
-    :style="{
-      overflow: editable ? 'auto' : 'hidden',
-      userSelect: editable ? 'auto' : 'none',
-      lineClamp: editable ? undefined : lines,
-      '-webkit-line-clamp': editable ? undefined : lines
-    }"
+    :style="style"
     tabindex="0"
     @blur="handleEditableBlur"
     @click="handleClick"
     @focus="handleFocus"
     @input="handleInput"
     @paste.prevent="handlePaste"
+    @keydown.enter="handleEnterKey"
     @dblclick.stop=""
   >
+    <!-- v-on="multiline ? {} : { keydown: handleEnterKey }" -->
     {{ text }}
   </div>
 </template>
@@ -187,13 +241,12 @@ watch(editable, (isEditable) => {
 .s-editable-text {
   position: relative;
   width: fit-content;
+  min-width: 100px;
   outline: none;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-}
 
-.s-editable-text[contenteditable='true']:focus {
-  outline: none;
+  &[contenteditable='true']:focus {
+    outline: none;
+  }
 }
 
 .s-editable-empty::before {
