@@ -77,50 +77,66 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
 </script>
 
 <template>
-  <Draggable
-    tag="transition-group"
-    item-key="id"
-    ref="draggableRef"
-    class="s-todo-list"
-    ghost-class="s-draggable-ghost"
-    :component-data="{ tag: 'ul', name: 'list' }"
-    :animation="250"
-    :list="items"
-    :disabled="!handling"
-    @start="dragging = true"
-    @end="dragging = false"
-    @keydown.capture.enter="handleEnter"
-    @keydown.capture.arrow-up="handleArrowUp"
-    @keydown.capture.arrow-down="handleArrowDown"
-    @keydown.capture.prevent.escape="handleEscape"
-  >
-    <template #item="{ element, index }: DraggableItem">
-      <li
-        class="s-todo-item"
-        :tabindex="index === activeIndex ? 0 : -1"
-        @click="activeIndex = index"
-        @dblclick.prevent="onSelectItem(element.id)"
-      >
-        <div
-          class="s-handle"
-          @mouseenter.stop="handling = true"
-          @mouseleave.stop="handling = false"
+  <div class="s-tasklist-container">
+    <Draggable
+      tag="transition-group"
+      item-key="id"
+      ref="draggableRef"
+      class="s-tasklist"
+      ghost-class="s-draggable-ghost"
+      :component-data="{ tag: 'ul', name: 'list' }"
+      :animation="250"
+      :list="items"
+      :disabled="!handling"
+      @start="dragging = true"
+      @end="dragging = false"
+      @keydown.capture.enter="handleEnter"
+      @keydown.capture.arrow-up="handleArrowUp"
+      @keydown.capture.arrow-down="handleArrowDown"
+      @keydown.capture.prevent.escape="handleEscape"
+    >
+      <template #item="{ element, index }: DraggableItem">
+        <li
+          class="s-taskitem"
+          :tabindex="index === activeIndex ? 0 : -1"
+          @click="activeIndex = index"
+          @dblclick.prevent="onSelectItem(element.id)"
         >
-          <DragHandle style="opacity: 0.1; stroke: currentColor; fill: currentColor" />
-        </div>
-        <TodoPresentation
-          :todo="element"
-          @review="onReview"
-          @toggle="onToggle"
-          @delete="onDelete"
-        />
-      </li>
-    </template>
-  </Draggable>
+          <div
+            class="s-handle"
+            @mouseenter.stop="handling = true"
+            @mouseleave.stop="handling = false"
+          >
+            <DragHandle style="opacity: 0.1; stroke: currentColor; fill: currentColor" />
+          </div>
+          <TodoPresentation
+            :task="element"
+            @review="onReview"
+            @toggle="onToggle"
+            @delete="onDelete"
+          />
+        </li>
+      </template>
+    </Draggable>
+
+    <div v-if="items.length === 0" class="s-tasklist-empty">
+      <slot name="empty" />
+    </div>
+  </div>
 </template>
 
 <style lang="css" scoped>
-.s-todo-list {
+.s-tasklist-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.s-tasklist-empty {
+  height: 100%;
+}
+
+.s-tasklist {
   list-style-type: none;
   display: block;
   padding: 0;
@@ -132,26 +148,26 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
   background-color: var(--s-surface-lower);
 }
 
-.s-todo-item {
+.s-taskitem {
   z-index: 1;
   display: flex;
   position: relative;
   padding: 0 0 0 1.625rem;
   margin-inline: -2rem;
   background-color: var(--s-surface-middle);
-}
 
-.s-todo-item:focus {
-  outline: none;
-  background-color: var(--s-surface-ground);
-}
+  &[draggable='true'] {
+    background-color: var(--s-surface-ground);
+  }
 
-.s-todo-item[draggable='true'] {
-  background-color: var(--s-surface-ground);
-}
+  &:focus {
+    outline: none;
+    background-color: var(--s-surface-ground);
+  }
 
-.s-todo-item:not(:last-of-type) {
-  border-bottom: 1px solid var(--p-content-border-color);
+  &:not(:last-of-type) {
+    border-bottom: 1px solid var(--p-content-border-color);
+  }
 }
 
 .s-handle {
