@@ -1,7 +1,9 @@
-import type { TodoListItem, BaseTodoListItem } from '@/interfaces/todo'
-import { ulid } from '@/utils'
-import { defineStore } from 'pinia'
 import { ref } from 'vue'
+
+import { defineStore } from 'pinia'
+
+import type { BaseTodoListItem, TodoListItem } from '@/interfaces/todo'
+import { ulid } from '@/utils'
 
 export const useTodoStore = defineStore(
   'todo',
@@ -11,7 +13,7 @@ export const useTodoStore = defineStore(
 
     function addItem(item: BaseTodoListItem) {
       // Skip if there's currently an empty todo
-      if (!todos.value.at(0)?.title) return
+      if (todos.value.at(0)?.title.trim() === '') return
       todos.value.unshift({
         id: ulid(),
         ...item,
