@@ -9,6 +9,7 @@ import type { MeterItem } from 'primevue/metergroup'
 import type { TodoListItem } from '@/interfaces/todo'
 import { useTodoStore } from '@/stores/todo'
 
+import EmptyTasks from './empty/EmptyTasks.vue'
 import TodoGroup from './todo/TodoGroup.vue'
 import TodoHeader from './todo/TodoHeader.vue'
 import TodoList from './todo/TodoList.vue'
@@ -17,9 +18,12 @@ import TodoToolbar from './todo/TodoToolbar.vue'
 type Filters = 'Completed' | 'Pending' | 'Recent' | 'Due' | 'Scheduled' | 'Today'
 
 const todoStore = useTodoStore()
+
 const storedTodos = computed(() => todoStore.todos)
-const todos = ref(todoStore.todos)
+
+const tasks = ref(todoStore.todos)
 const filter = ref<Filters | null>(null)
+const activeSearchTerm = ref<string | null>(null)
 const fuse = new Fuse(todoStore.todos, { keys: ['title', 'description'], threshold: 0.5 })
 
 watch(todoStore.todos, (latestTodos) => {
@@ -104,9 +108,11 @@ const reviewTodo = todoStore.updateItem
 const selectTodo = todoStore.selectItem
 
 function searchTodos(term: string | null) {
-  if (!term) return void (todos.value = todoStore.todos)
+  activeSearchTerm.value = term
+  if (!term) return void (tasks.value = todoStore.todos)
+
   const results = fuse.search(term)
-  todos.value = results.map((res) => res.item)
+  tasks.value = results.map((res) => res.item)
 }
 
 function filterTodos(label: Filters | null) {
@@ -114,9 +120,9 @@ function filterTodos(label: Filters | null) {
 }
 
 watch(filter, () => {
-  if (!filter.value) return (todos.value = todoStore.todos)
+  if (!filter.value) return (tasks.value = todoStore.todos)
   const label = filter.value.toLowerCase() as Lowercase<Filters>
-  todos.value = grouped.value[label]
+  tasks.value = grouped.value[label]
 })
 </script>
 
@@ -128,18 +134,26 @@ watch(filter, () => {
         <TodoToolbar
           @search-todos="searchTodos"
           @add-todo="addTodo"
-          :searchable="todos.length > 0"
+          :searchable="tasks.length > 0"
         />
       </TodoHeader>
       <TodoList
-        :items="todos"
+        :items="tasks"
         @add-todo="addTodo"
         @search-todos="searchTodos"
         @toggle="toggleTodo"
         @delete="removeTodo"
         @review="reviewTodo"
         @select-item="selectTodo"
-      />
+      >
+        <template #empty>
+          <EmptyTasks style="margin-block-start: 10rem;">
+            <template v-if="activeSearchTerm" #message>
+              <span>No tasks matching "{{ activeSearchTerm }}"</span>
+            </template>
+          </EmptyTasks>
+        </template>
+      </TodoList>
     </div>
 
     <TodoGroup
@@ -166,6 +180,8 @@ watch(filter, () => {
   order: 1;
   flex: 1 1 auto;
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .s-todo-header-customize {
