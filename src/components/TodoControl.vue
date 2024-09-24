@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { useTodoStore } from '@/stores/todo'
-import TodoList from './todo/TodoList.vue'
 import { computed, ref, watch } from 'vue'
-import Fuse from 'fuse.js'
+
 import { $dt } from '@primevue/themes'
+
+import Fuse from 'fuse.js'
 import type { MeterItem } from 'primevue/metergroup'
-import TodoGroup from './todo/TodoGroup.vue'
+
 import type { TodoListItem } from '@/interfaces/todo'
+import { useTodoStore } from '@/stores/todo'
+
+import TodoGroup from './todo/TodoGroup.vue'
 import TodoHeader from './todo/TodoHeader.vue'
+import TodoList from './todo/TodoList.vue'
 import TodoToolbar from './todo/TodoToolbar.vue'
 
 type Filters = 'Completed' | 'Pending' | 'Recent' | 'Due' | 'Scheduled' | 'Today'
@@ -56,19 +60,19 @@ const groups = computed<MeterItem[]>(() => {
   return [
     {
       label: 'Completed',
-      value: percent(done / total),
+      value: done && percent(done / total),
       color: $dt('green.500').value,
       icon: 'pi pi-check-circle'
     },
     {
       label: 'Pending',
-      value: percent(pending / total),
+      value: pending && percent(pending / total),
       color: $dt('amber.500').value,
       icon: 'pi pi-circle'
     },
     {
       label: 'Recent',
-      value: percent(recent / total),
+      value: recent && percent(recent / total),
       color: $dt('blue.500').value,
       icon: 'pi pi-history'
     },
