@@ -10,6 +10,7 @@ import 'primeicons/primeicons.css'
 import PrimeVue from 'primevue/config'
 import FocusTrap from 'primevue/focustrap'
 import Ripple from 'primevue/ripple'
+import 'reflect-metadata'
 
 import App from './App.vue'
 import './assets/main.css'
