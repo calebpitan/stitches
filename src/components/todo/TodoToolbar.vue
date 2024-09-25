@@ -11,9 +11,10 @@ defineProps<TaskToolbarProps>()
 
 <template>
   <div class="s-toolbar">
-    <TodoSearch class="s-toolbar-search" :onSearch="onSearch" :searchable="searchable" />
+    <TodoSearch class="s-toolbar-search" :searchable="searchable" @search="onSearch" />
+
     <div class="s-tools">
-      <TodoAdd :onAdd="onAdd" />
+      <TodoAdd @add="onAdd" />
     </div>
   </div>
 </template>
