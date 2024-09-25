@@ -19,14 +19,14 @@ type Filters = 'Completed' | 'Pending' | 'Recent' | 'Due' | 'Scheduled' | 'Today
 
 const taskStore = useTaskStore()
 
-const storedTasks = computed(() => taskStore.todos)
+const storedTasks = computed(() => taskStore.tasks)
 
-const tasks = ref(taskStore.todos)
+const tasks = ref(taskStore.tasks)
 const filter = ref<Filters | null>(null)
 const activeSearchTerm = ref<string | null>(null)
-const fuse = new Fuse(taskStore.todos, { keys: ['title', 'description'], threshold: 0.5 })
+const fuse = new Fuse(taskStore.tasks, { keys: ['title', 'description'], threshold: 0.5 })
 
-watch(taskStore.todos, (latest) => {
+watch(taskStore.tasks, (latest) => {
   fuse.setCollection(latest)
 })
 
@@ -109,7 +109,7 @@ const selectTask = taskStore.selectItem
 
 function searchTasks(term: string | null) {
   activeSearchTerm.value = term
-  if (!term) return void (tasks.value = taskStore.todos)
+  if (!term) return void (tasks.value = taskStore.tasks)
 
   const results = fuse.search(term)
   tasks.value = results.map((res) => res.item)
@@ -120,7 +120,7 @@ function filterTasks(label: Filters | null) {
 }
 
 watch(filter, () => {
-  if (!filter.value) return (tasks.value = taskStore.todos)
+  if (!filter.value) return (tasks.value = taskStore.tasks)
   const label = filter.value.toLowerCase() as Lowercase<Filters>
   tasks.value = grouped.value[label]
 })

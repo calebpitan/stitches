@@ -1,88 +1,81 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { TodoListItem, TodoTag } from '@/interfaces/todo'
+import type { TaskListItem, TaskTag } from '@/interfaces/task'
 
 import EditableText from '../editable/EditableText.vue'
 import TagsInput, { type TagsInputProps } from '../editable/TagsInput.vue'
 
 interface ManagementPresentationProps extends Pick<TagsInputProps, 'onCreateTag'> {
-  todo: TodoListItem
-  tags: TodoTag[]
-  onReview?: (id: string, patch: Partial<TodoListItem>) => void
+  task: TaskListItem
+  tags: TaskTag[]
+  onReview?: (id: string, patch: Partial<TaskListItem>) => void
 }
 
 const props = withDefaults(defineProps<ManagementPresentationProps>(), {})
 const suggestions = computed(() => props.tags)
 const todoTags = computed(() => {
-  return props.tags.filter((t) => props.todo.tagIds?.includes(t.id))
+  return props.tags.filter((t) => props.task.tagIds?.includes(t.id))
 })
 
 function handleTitleModification(title: string) {
-  if (!title) return props.onReview?.(props.todo.id, { title: props.todo.title + ' ' })
-  props.onReview?.(props.todo.id, { title })
+  if (!title) return props.onReview?.(props.task.id, { title: props.task.title + ' ' })
+  props.onReview?.(props.task.id, { title })
 }
 
 function handleSummaryModification(summary: string) {
-  props.onReview?.(props.todo.id, { summary })
+  props.onReview?.(props.task.id, { summary })
 }
 
-function handleTitleEnterKey(event: KeyboardEvent) {
-  const target = event.currentTarget as HTMLElement
-  const title = target.textContent
-  if (!title) return
-  handleTitleModification(title)
-  target.blur()
-}
-
-function handleTagsChange(tags: TodoTag[]) {
+function handleTagsChange(tags: TaskTag[]) {
   const uniqueTagId = new Set(tags.map((t) => t.id))
-  props.onReview?.(props.todo.id, { tagIds: Array.from(uniqueTagId) })
+  props.onReview?.(props.task.id, { tagIds: Array.from(uniqueTagId) })
 }
 </script>
 
 <template>
-  <Card class="s-management">
-    <template #title>
-      <EditableText
-        class="s-management-title"
-        :lines="2"
-        :text="todo.title"
-        placeholder="Title"
-        @modify="handleTitleModification"
-        @keydown.enter.prevent="handleTitleEnterKey"
-      />
-    </template>
+  <div>
+    <Card class="s-management">
+      <template #title>
+        <EditableText
+          class="s-management-title"
+          placeholder="Title"
+          :key="task.title"
+          :text="task.title"
+          :multiline="false"
+          @modify="handleTitleModification"
+        />
+      </template>
 
-    <template #subtitle>
-      <TagsInput
-        :initial-tags="todoTags"
-        :suggestions="suggestions"
-        @change="handleTagsChange"
-        @create-tag="onCreateTag"
-      />
-    </template>
+      <template #subtitle>
+        <TagsInput
+          :initial-tags="todoTags"
+          :suggestions="suggestions"
+          @change="handleTagsChange"
+          @create-tag="onCreateTag"
+        />
+      </template>
 
-    <template #content>
-      <EditableText
-        class="s-management-summary"
-        :text="todo.summary"
-        :lines="3"
-        placeholder="summary..."
-        @modify="handleSummaryModification"
-      />
-    </template>
-    <template #footer>
-      <div class="s-management-extras"></div>
-    </template>
-  </Card>
+      <template #content>
+        <EditableText
+          class="s-management-summary"
+          placeholder="summary..."
+          :key="task.summary"
+          :text="task.summary"
+          :multiline="true"
+          @modify="handleSummaryModification"
+        />
+      </template>
+      <template #footer>
+        <div class="s-management-extras"></div>
+      </template>
+    </Card>
+  </div>
 </template>
 
 <style scoped>
 .s-management {
-  background-color: var(--s-surface-ground);
   padding: 1rem;
-  border: 0;
   box-shadow: none;
   --p-card-title-font-weight: 600;
 }

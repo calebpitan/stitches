@@ -1,45 +1,70 @@
 <script setup lang="ts">
-import { useTodoStore } from '@/stores/todo'
 import { computed } from 'vue'
-import ManagementPresentation from './management/ManagementPresentation.vue'
+
+import { useTaskScheduleStore } from '@/stores/schedule'
 import { useTodoTagStore } from '@/stores/tag'
+import { useTaskStore } from '@/stores/task'
+
+import ManagementPresentation from './management/ManagementPresentation.vue'
 import ManagementSchedule from './management/ManagementSchedule.vue'
 
-const todoTagStore = useTodoTagStore()
-const todoStore = useTodoStore()
-const selectedTodo = computed(() => {
-  const selected = todoStore.todos.find((t) => t.id === todoStore.selected)
+const taskTagStore = useTodoTagStore()
+const taskStore = useTaskStore()
+const taskScheduleStore = useTaskScheduleStore()
+
+const selectedTask = computed(() => {
+  const selected = taskStore.tasks.find((t) => t.id === taskStore.selected)
   return selected ?? null
 })
 
-const reviewTodo = todoStore.updateItem
-const cretateTodoTag = todoTagStore.createTag
+const taskSchedule = computed(() => {
+  return taskScheduleStore.schedules.find((s) => s.taskId === selectedTask.value?.id)
+})
+
+const reviewTask = taskStore.updateItem
+const createTaskTag = taskTagStore.createTag
 </script>
 
 <template>
-  <div class="s-todo-management-container">
-    <div class="s-todo-management">
-      <div v-if="selectedTodo">
+  <div class="s-task-management-container">
+    <div class="s-task-management">
+      <div v-if="selectedTask" style="display: flex; flex-direction: column">
         <ManagementPresentation
-          :key="selectedTodo.id"
-          :todo="selectedTodo"
-          :tags="todoTagStore.tags"
-          @review="reviewTodo"
-          @create-tag="cretateTodoTag"
+          class="s-task-management-presentation"
+          :key="selectedTask.id"
+          :task="selectedTask"
+          :tags="taskTagStore.tags"
+          @review="reviewTask"
+          @create-tag="createTaskTag"
         />
 
-        <ManagementSchedule />
+        <ManagementSchedule
+          class="s-task-management-schedule"
+          :key="selectedTask.id"
+          :task-id="selectedTask.id"
+          :schedule="taskSchedule"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.s-todo-management-container {
+.s-task-management-container {
   color: inherit;
 }
 
-.s-todo-management {
+.s-task-management {
   padding: 2rem;
+  --s-presentation-thread-height: 100px;
+}
+
+.s-task-management-presentation {
+  position: static;
+}
+
+.s-task-management-schedule {
+  position: relative;
+  align-self: flex-start;
 }
 </style>
