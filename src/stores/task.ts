@@ -8,20 +8,20 @@ import { TaskSerializer } from '@/serializers/task'
 import { createDeserializer, ulid } from '@/utils'
 
 interface Serializables {
-  todos: TaskListItem[]
+  tasks: TaskListItem[]
   selected: string | null
 }
 
 export const useTaskStore = defineStore(
-  'todo',
+  's-task',
   () => {
-    const todos = ref<TaskListItem[]>([])
+    const tasks = ref<TaskListItem[]>([])
     const selected = ref<string | null>(null)
 
     function addItem(item: BaseTaskListItem) {
       // Skip if there's currently an empty todo
-      if (todos.value.at(0)?.title.trim() === '') return
-      todos.value.unshift({
+      if (tasks.value.at(0)?.title.trim() === '') return
+      tasks.value.unshift({
         id: ulid(),
         ...item,
         completed: item.completed ?? false,
@@ -32,23 +32,23 @@ export const useTaskStore = defineStore(
     }
 
     function updateItem(id: string, patch: Partial<TaskListItem>) {
-      const index = todos.value.findIndex((todo) => todo.id === id)
-      const newItem = { ...todos.value.at(index)!, ...patch }
-      if (!newItem.title) return todos.value.splice(index, 1)
+      const index = tasks.value.findIndex((todo) => todo.id === id)
+      const newItem = { ...tasks.value.at(index)!, ...patch }
+      if (!newItem.title) return tasks.value.splice(index, 1)
 
-      return todos.value.splice(index, 1, newItem)
+      return tasks.value.splice(index, 1, newItem)
     }
 
     function removeItem(id: string) {
-      const index = todos.value.findIndex((todo) => todo.id === id)
-      todos.value.splice(index, 1)
+      const index = tasks.value.findIndex((todo) => todo.id === id)
+      tasks.value.splice(index, 1)
     }
 
     function toggleItem(id: string) {
-      const index = todos.value.findIndex((todo) => todo.id === id)
-      const item = todos.value.at(index)!
+      const index = tasks.value.findIndex((todo) => todo.id === id)
+      const item = tasks.value.at(index)!
       const timestamp = new Date()
-      todos.value.splice(index, 1, {
+      tasks.value.splice(index, 1, {
         ...item,
         completed: !item.completed,
         completedAt: item.completed ? null : timestamp
@@ -59,18 +59,18 @@ export const useTaskStore = defineStore(
       selected.value = id
     }
 
-    return { todos, selected, addItem, removeItem, updateItem, toggleItem, selectItem }
+    return { tasks, selected, addItem, removeItem, updateItem, toggleItem, selectItem }
   },
   {
     persist: {
       serializer: {
         serialize: JSON.stringify,
         deserialize: createDeserializer<Serializables>((data) => {
-          const serialized = plainToInstance(TaskSerializer, data.todos, {
+          const serialized = plainToInstance(TaskSerializer, data.tasks, {
             enableImplicitConversion: true
           })
 
-          return { todos: serialized, selected: data.selected }
+          return { tasks: serialized, selected: data.selected }
         })
       }
     }

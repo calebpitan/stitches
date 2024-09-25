@@ -6,7 +6,7 @@ import type { TaskTag } from '@/interfaces/task'
 import { ulid } from '@/utils'
 
 export const useTodoTagStore = defineStore(
-  'todo-tag',
+  's-task-tag',
   () => {
     const tags = ref<TaskTag[]>([])
 
