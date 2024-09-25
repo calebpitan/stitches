@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { type StyleValue, computed, onMounted, reactive, ref, watch } from 'vue'
 
-import type { TodoListItem } from '@/interfaces/todo'
+import type { TaskListItem } from '@/interfaces/todo'
 
 type Field = 'title' | 'desc'
 type Point = { x: number; y: number }
 interface TodoPresentationProps {
-  task: TodoListItem
+  task: TaskListItem
   onToggle?: (id: string, completed: boolean) => void
-  onReview?: (id: string, patch: Partial<Pick<TodoListItem, 'title' | 'summary'>>) => void
+  onReview?: (id: string, patch: Partial<Pick<TaskListItem, 'title' | 'summary'>>) => void
   onDelete?: (id: string) => void
 }
 
@@ -70,11 +70,11 @@ const handleDescFocus = createFocusHandler('desc')
 const handleTitleFocus = createFocusHandler('title')
 
 const handleEditableBlur = (event: FocusEvent) => {
-  const addTodoButtonId = 'new-todo-button'
+  const addTaskButtonId = 'new-task-button'
   const relatedTarget = event.relatedTarget as HTMLElement | null
 
   if (relatedTarget === null) return
-  if (relatedTarget.getAttribute('id') === addTodoButtonId) return titleRef.value?.focus()
+  if (relatedTarget.getAttribute('id') === addTaskButtonId) return titleRef.value?.focus()
 
   editable.value = undefined
   titleRef.value?.scrollTo({ top: 0 })

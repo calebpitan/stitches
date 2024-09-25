@@ -3,21 +3,21 @@ import { ref, watch } from 'vue'
 import Draggable from 'vuedraggable'
 
 import DragHandle from '@/assets/icons/draggable.svg'
-import { type TodoListItem } from '@/interfaces/todo'
+import { type TaskListItem } from '@/interfaces/todo'
 
 import TodoPresentation from './TodoPresentation.vue'
 
-type DraggableItem = { element: TodoListItem; index: number }
+type DraggableItem = { element: TaskListItem; index: number }
 
-interface TodoListProps {
-  items: TodoListItem[]
+interface TaskListProps {
+  items: TaskListItem[]
   onToggle: (id: string) => void
   onDelete: (id: string) => void
   onReview: (id: string, review: Record<string, any>) => void
-  onSelectItem: (id: string) => void
+  onSelect: (id: string) => void
 }
 
-const props = defineProps<TodoListProps>()
+const props = defineProps<TaskListProps>()
 
 const draggableRef = ref<InstanceType<typeof Draggable> | null>()
 const dragging = ref(false)
@@ -55,7 +55,7 @@ function handleEscape(_event: KeyboardEvent) {
 }
 
 function handleEnter(_event: KeyboardEvent) {
-  props.onSelectItem(props.items[activeIndex.value].id)
+  props.onSelect(props.items[activeIndex.value].id)
 }
 
 // function handleDoubleClick(event: PointerEvent) {
@@ -100,7 +100,7 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
           class="s-taskitem"
           :tabindex="index === activeIndex ? 0 : -1"
           @click="activeIndex = index"
-          @dblclick.prevent="onSelectItem(element.id)"
+          @dblclick.prevent="onSelect(element.id)"
         >
           <div
             class="s-handle"

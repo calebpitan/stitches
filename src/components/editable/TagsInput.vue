@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import type { TodoTag } from '@/interfaces/todo'
+import { computed, nextTick, ref, watch } from 'vue'
+
 import Popover from 'primevue/popover'
-import { ref, computed, watch, nextTick } from 'vue'
+
+import type { TaskTag } from '@/interfaces/todo'
 
 export interface TagsInputProps {
-  initialTags?: TodoTag[]
-  suggestions?: TodoTag[]
-  onCreateTag: (label: string) => TodoTag
-  onChange: (tags: TodoTag[]) => void
+  initialTags?: TaskTag[]
+  suggestions?: TaskTag[]
+  onCreateTag: (label: string) => TaskTag
+  onChange: (tags: TaskTag[]) => void
 }
 
 const props = withDefaults(defineProps<TagsInputProps>(), {
@@ -22,7 +24,7 @@ const label = ref('')
 const tags = ref<Array<string>>(props.initialTags.map((t) => t.label))
 const highlightedTagIndex = ref<number | null>(null)
 
-const suggestions = computed<Array<TodoTag>>(() => {
+const suggestions = computed<Array<TaskTag>>(() => {
   return props.suggestions.filter((s) => !tags.value.includes(s.label))
 })
 

@@ -6,7 +6,7 @@ import { $dt } from '@primevue/themes'
 import Fuse from 'fuse.js'
 import type { MeterItem } from 'primevue/metergroup'
 
-import type { TodoListItem } from '@/interfaces/todo'
+import type { TaskListItem } from '@/interfaces/todo'
 import { useTodoStore } from '@/stores/todo'
 
 import EmptyTasks from './empty/EmptyTasks.vue'
@@ -17,29 +17,29 @@ import TodoToolbar from './todo/TodoToolbar.vue'
 
 type Filters = 'Completed' | 'Pending' | 'Recent' | 'Due' | 'Scheduled' | 'Today'
 
-const todoStore = useTodoStore()
+const taskStore = useTodoStore()
 
-const storedTodos = computed(() => todoStore.todos)
+const storedTasks = computed(() => taskStore.todos)
 
-const tasks = ref(todoStore.todos)
+const tasks = ref(taskStore.todos)
 const filter = ref<Filters | null>(null)
 const activeSearchTerm = ref<string | null>(null)
-const fuse = new Fuse(todoStore.todos, { keys: ['title', 'description'], threshold: 0.5 })
+const fuse = new Fuse(taskStore.todos, { keys: ['title', 'description'], threshold: 0.5 })
 
-watch(todoStore.todos, (latestTodos) => {
-  fuse.setCollection(latestTodos)
+watch(taskStore.todos, (latest) => {
+  fuse.setCollection(latest)
 })
 
 const maxAddedAt = computed(() => {
-  return storedTodos.value
+  return storedTasks.value
     .map((t) => t.addedAt.setHours(0, 0, 0, 0).valueOf())
     .reduce((prev, next) => Math.max(prev.valueOf(), next.valueOf()))
 })
 
-const grouped = computed<{ [P in Lowercase<Filters>]: TodoListItem[] }>(() => {
-  const completed = storedTodos.value.filter((t) => t.completed)
-  const pending = storedTodos.value.filter((t) => !t.completed)
-  const recent = storedTodos.value.filter((t) => {
+const grouped = computed<{ [P in Lowercase<Filters>]: TaskListItem[] }>(() => {
+  const completed = storedTasks.value.filter((t) => t.completed)
+  const pending = storedTasks.value.filter((t) => !t.completed)
+  const recent = storedTasks.value.filter((t) => {
     return t.addedAt.setHours(0, 0, 0, 0).valueOf() === maxAddedAt.value
   })
 
@@ -58,7 +58,7 @@ const groups = computed<MeterItem[]>(() => {
   const done = group.completed.length
   const pending = group.pending.length
   const recent = group.recent.length
-  const total = storedTodos.value.length
+  const total = storedTasks.value.length
   const percent = (ratio: number) => ratio * 100
 
   return [
@@ -101,53 +101,49 @@ const groups = computed<MeterItem[]>(() => {
   ]
 })
 
-const addTodo = todoStore.addItem
-const toggleTodo = todoStore.toggleItem
-const removeTodo = todoStore.removeItem
-const reviewTodo = todoStore.updateItem
-const selectTodo = todoStore.selectItem
+const addTask = taskStore.addItem
+const toggleTask = taskStore.toggleItem
+const removeTask = taskStore.removeItem
+const reviewTask = taskStore.updateItem
+const selectTask = taskStore.selectItem
 
-function searchTodos(term: string | null) {
+function searchTasks(term: string | null) {
   activeSearchTerm.value = term
-  if (!term) return void (tasks.value = todoStore.todos)
+  if (!term) return void (tasks.value = taskStore.todos)
 
   const results = fuse.search(term)
   tasks.value = results.map((res) => res.item)
 }
 
-function filterTodos(label: Filters | null) {
+function filterTasks(label: Filters | null) {
   filter.value = label
 }
 
 watch(filter, () => {
-  if (!filter.value) return (tasks.value = todoStore.todos)
+  if (!filter.value) return (tasks.value = taskStore.todos)
   const label = filter.value.toLowerCase() as Lowercase<Filters>
   tasks.value = grouped.value[label]
 })
 </script>
 
 <template>
-  <div class="s-todo-control">
-    <div class="s-todo-control-bar">
-      <TodoHeader class="s-todo-header-customize">
+  <div class="s-task-control">
+    <div class="s-task-control-bar">
+      <TodoHeader class="s-task-header-customize">
         <h1 class="s-title">{{ filter ?? 'Organizer' }}</h1>
-        <TodoToolbar
-          @search-todos="searchTodos"
-          @add-todo="addTodo"
-          :searchable="tasks.length > 0"
-        />
+
+        <TodoToolbar @search="searchTasks" @add="addTask" :searchable="tasks.length > 0" />
       </TodoHeader>
+
       <TodoList
         :items="tasks"
-        @add-todo="addTodo"
-        @search-todos="searchTodos"
-        @toggle="toggleTodo"
-        @delete="removeTodo"
-        @review="reviewTodo"
-        @select-item="selectTodo"
+        @toggle="toggleTask"
+        @delete="removeTask"
+        @review="reviewTask"
+        @select="selectTask"
       >
         <template #empty>
-          <EmptyTasks style="margin-block-start: 10rem;">
+          <EmptyTasks style="margin-block-start: 10rem">
             <template v-if="activeSearchTerm" #message>
               <span>No tasks matching "{{ activeSearchTerm }}"</span>
             </template>
@@ -157,23 +153,23 @@ watch(filter, () => {
     </div>
 
     <TodoGroup
-      class="s-todo-control-group"
+      class="s-task-control-group"
       :groups="groups"
-      :total="storedTodos.length"
+      :total="storedTasks.length"
       :filter="filter"
-      @filter="filterTodos"
+      @filter="filterTasks"
     />
   </div>
 </template>
 
 <style scoped>
-.s-todo-control {
+.s-task-control {
   display: flex;
   flex-direction: row;
   height: 100%;
 }
 
-.s-todo-control-bar {
+.s-task-control-bar {
   width: 100%;
   padding: 2rem;
   overflow-y: auto;
@@ -184,7 +180,7 @@ watch(filter, () => {
   flex-direction: column;
 }
 
-.s-todo-header-customize {
+.s-task-header-customize {
   margin-inline: -2rem;
   padding: 0rem 2rem 1rem;
   position: relative;
@@ -194,7 +190,7 @@ watch(filter, () => {
   background-color: var(--s-surface-middle);
 }
 
-.s-todo-control-group {
+.s-task-control-group {
   max-width: 370px;
   height: 100%;
   padding: 2rem;

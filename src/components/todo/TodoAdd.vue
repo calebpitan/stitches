@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import type { BaseTodoListItem } from '@/interfaces/todo'
+import type { BaseTaskListItem } from '@/interfaces/todo'
 
-export interface TodoAddProps {
-  onAddTodo: (item: BaseTodoListItem) => void
+export interface TaskAddProps {
+  onAdd: (item: BaseTaskListItem) => void
 }
 
-const props = defineProps<TodoAddProps>()
+const props = defineProps<TaskAddProps>()
 
-function addEmptyTodo() {
-  props.onAddTodo({ title: '', summary: '' })
+function addEmptyTask() {
+  props.onAdd({ title: '', summary: '' })
 }
 </script>
 
 <template>
   <Button
     type="button"
-    id="new-todo-button"
+    id="new-task-button"
     icon="pi pi-plus"
     aria-label="Add"
-    @click="addEmptyTodo"
+    @click="addEmptyTask"
     rounded
     text
   />

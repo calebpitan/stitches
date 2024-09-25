@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import TodoSearch, { type TodoSearchProps } from './TodoSearch.vue'
-import TodoAdd, { type TodoAddProps } from './TodoAdd.vue'
+import TodoAdd, { type TaskAddProps } from './TodoAdd.vue'
+import TodoSearch, { type TaskSearchProps } from './TodoSearch.vue'
 
-interface TodoToolbarProps extends TodoSearchProps, TodoAddProps {
+interface TaskToolbarProps extends TaskSearchProps, TaskAddProps {
   searchable?: boolean
 }
 
-defineProps<TodoToolbarProps>()
+defineProps<TaskToolbarProps>()
 </script>
 
 <template>
   <div class="s-toolbar">
-    <TodoSearch class="s-toolbar-search" :onSearchTodos="onSearchTodos" :searchable="searchable" />
+    <TodoSearch class="s-toolbar-search" :onSearch="onSearch" :searchable="searchable" />
     <div class="s-tools">
-      <TodoAdd :onAddTodo="onAddTodo" />
+      <TodoAdd :onAdd="onAdd" />
     </div>
   </div>
 </template>

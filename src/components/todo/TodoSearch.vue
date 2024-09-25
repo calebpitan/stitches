@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
-export interface TodoSearchProps {
+export interface TaskSearchProps {
   searchable?: boolean
-  onSearchTodos: (term: string | null) => void
+  onSearch: (term: string | null) => void
 }
 
 const term = ref('')
-const props = defineProps<TodoSearchProps>()
+const props = defineProps<TaskSearchProps>()
 
 watch(term, (value) => {
-  props.onSearchTodos(value.trim() ?? null)
+  props.onSearch(value.trim() ?? null)
 })
 
 const resetSearchTerm = () => (term.value = '')
