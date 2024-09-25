@@ -6,8 +6,8 @@ import { $dt } from '@primevue/themes'
 import Fuse from 'fuse.js'
 import type { MeterItem } from 'primevue/metergroup'
 
-import type { TaskListItem } from '@/interfaces/todo'
-import { useTodoStore } from '@/stores/todo'
+import type { TaskListItem } from '@/interfaces/task'
+import { useTaskStore } from '@/stores/task'
 
 import EmptyTasks from './empty/EmptyTasks.vue'
 import TodoGroup from './todo/TodoGroup.vue'
@@ -17,7 +17,7 @@ import TodoToolbar from './todo/TodoToolbar.vue'
 
 type Filters = 'Completed' | 'Pending' | 'Recent' | 'Due' | 'Scheduled' | 'Today'
 
-const taskStore = useTodoStore()
+const taskStore = useTaskStore()
 
 const storedTasks = computed(() => taskStore.todos)
 

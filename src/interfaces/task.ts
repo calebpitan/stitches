@@ -1,17 +1,17 @@
-export interface BaseTodoListItem {
+export interface BaseTaskListItem {
   title: string
   summary: string
   completed?: boolean
 }
 
-export interface TodoListItem extends BaseTodoListItem {
+export interface TaskListItem extends BaseTaskListItem {
   id: string
   addedAt: Date
   tagIds: string[]
   completedAt: Date | null
 }
 
-export interface TodoTag {
+export interface TaskTag {
   id: string
   label: string
 }

@@ -1,17 +1,24 @@
 import { ref } from 'vue'
 
+import { plainToInstance } from 'class-transformer'
 import { defineStore } from 'pinia'
 
-import type { BaseTodoListItem, TodoListItem } from '@/interfaces/todo'
-import { ulid } from '@/utils'
+import type { BaseTaskListItem, TaskListItem } from '@/interfaces/task'
+import { TaskSerializer } from '@/serializers/task'
+import { createDeserializer, ulid } from '@/utils'
 
-export const useTodoStore = defineStore(
+interface Serializables {
+  todos: TaskListItem[]
+  selected: string | null
+}
+
+export const useTaskStore = defineStore(
   'todo',
   () => {
-    const todos = ref<TodoListItem[]>([])
+    const todos = ref<TaskListItem[]>([])
     const selected = ref<string | null>(null)
 
-    function addItem(item: BaseTodoListItem) {
+    function addItem(item: BaseTaskListItem) {
       // Skip if there's currently an empty todo
       if (todos.value.at(0)?.title.trim() === '') return
       todos.value.unshift({
@@ -24,7 +31,7 @@ export const useTodoStore = defineStore(
       })
     }
 
-    function updateItem(id: string, patch: Partial<TodoListItem>) {
+    function updateItem(id: string, patch: Partial<TaskListItem>) {
       const index = todos.value.findIndex((todo) => todo.id === id)
       const newItem = { ...todos.value.at(index)!, ...patch }
       if (!newItem.title) return todos.value.splice(index, 1)
@@ -56,32 +63,15 @@ export const useTodoStore = defineStore(
   },
   {
     persist: {
-      // serializer: {
-      //   serialize: JSON.stringify,
-      //   deserialize: (...args: Parameters<typeof JSON.parse>) => {
-      //     const data = JSON.parse(...args) as { todos: Array<TodoListItem> }
-      //     data.todos = data.todos.map((d) => ({
-      //       ...d,
-      //       // @ts-ignore
-      //       summary: d.description,
-      //       description: undefined
-      //     }))
-      //     return data
-      //   }
-      // }
       serializer: {
         serialize: JSON.stringify,
-        deserialize: (...args: Parameters<typeof JSON.parse>) => {
-          const data = JSON.parse(args[0], (key, value) => {
-            const reviver = args[1]
-            const transform =
-              ['completedAt', 'addedAt'].includes(key) && value ? new Date(value) : value
-            return reviver ? reviver(key, transform) : transform
+        deserialize: createDeserializer<Serializables>((data) => {
+          const serialized = plainToInstance(TaskSerializer, data.todos, {
+            enableImplicitConversion: true
           })
-          data.tagIds = undefined
-          data.todos.map((t: any) => ({ ...t, tagIds: [] }))
-          return data
-        }
+
+          return { todos: serialized, selected: data.selected }
+        })
       }
     }
   }

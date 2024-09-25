@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import Draggable from 'vuedraggable'
 
 import DragHandle from '@/assets/icons/draggable.svg'
-import { type TaskListItem } from '@/interfaces/todo'
+import { type TaskListItem } from '@/interfaces/task'
 
 import TodoPresentation from './TodoPresentation.vue'
 

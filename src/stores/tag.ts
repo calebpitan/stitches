@@ -1,12 +1,14 @@
-import type { TodoTag } from '@/interfaces/todo'
-import { defineStore } from 'pinia'
-import { ulid } from '@/utils'
 import { ref } from 'vue'
+
+import { defineStore } from 'pinia'
+
+import type { TaskTag } from '@/interfaces/task'
+import { ulid } from '@/utils'
 
 export const useTodoTagStore = defineStore(
   'todo-tag',
   () => {
-    const tags = ref<TodoTag[]>([])
+    const tags = ref<TaskTag[]>([])
 
     function getTagIndex(labelOrId: string) {
       const tagIndex = tags.value.findIndex((t) => {
@@ -16,24 +18,24 @@ export const useTodoTagStore = defineStore(
       return tagIndex
     }
 
-    function getTag(labelOrId: string): TodoTag | null {
+    function getTag(labelOrId: string): TaskTag | null {
       const index = getTagIndex(labelOrId)
       const tag = tags.value.at(index)
 
       return tag ?? null
     }
 
-    function createTag(label: string): TodoTag {
+    function createTag(label: string): TaskTag {
       const existing = tags.value.find((t) => t.label === label.trim())
       if (existing) return existing
 
-      const tag: TodoTag = { id: ulid(), label: label.trim() }
+      const tag: TaskTag = { id: ulid(), label: label.trim() }
       tags.value.push(tag)
 
       return tag
     }
 
-    function deleteTag(labelOrId: string): TodoTag | null {
+    function deleteTag(labelOrId: string): TaskTag | null {
       const index = getTagIndex(labelOrId)
       return tags.value.splice(index, 1).at(0) ?? null
     }

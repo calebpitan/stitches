@@ -3,7 +3,7 @@ import { computed, nextTick, ref, watch } from 'vue'
 
 import Popover from 'primevue/popover'
 
-import type { TaskTag } from '@/interfaces/todo'
+import type { TaskTag } from '@/interfaces/task'
 
 export interface TagsInputProps {
   initialTags?: TaskTag[]
