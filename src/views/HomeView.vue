@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import TodoControl from '@/components/TodoControl.vue'
 import TodoManagement from '@/components/TodoManagement.vue'
-// import TheWelcome from '../components/TheWelcome.vue'
 </script>
 
 <template>

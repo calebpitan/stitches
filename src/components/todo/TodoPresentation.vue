@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type StyleValue, computed, onMounted, reactive, ref, watch } from 'vue'
 
-import type { TaskListItem } from '@/interfaces/todo'
+import type { TaskListItem } from '@/interfaces/task'
 
 type Field = 'title' | 'desc'
 type Point = { x: number; y: number }

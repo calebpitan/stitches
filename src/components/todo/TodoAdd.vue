@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BaseTaskListItem } from '@/interfaces/todo'
+import type { BaseTaskListItem } from '@/interfaces/task'
 
 export interface TaskAddProps {
   onAdd: (item: BaseTaskListItem) => void

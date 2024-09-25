@@ -39,7 +39,6 @@ declare module 'vue' {
     TagsInput: typeof import('./src/components/editable/TagsInput.vue')['default']
     TodoAdd: typeof import('./src/components/todo/TodoAdd.vue')['default']
     TodoControl: typeof import('./src/components/TodoControl.vue')['default']
-    TodoForm: typeof import('./src/components/todo/TodoForm.vue')['default']
     TodoGroup: typeof import('./src/components/todo/TodoGroup.vue')['default']
     TodoHeader: typeof import('./src/components/todo/TodoHeader.vue')['default']
     TodoList: typeof import('./src/components/todo/TodoList.vue')['default']
