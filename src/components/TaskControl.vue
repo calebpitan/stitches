@@ -10,10 +10,10 @@ import type { TaskListItem } from '@/interfaces/task'
 import { useTaskStore } from '@/stores/task'
 
 import EmptyTasks from './empty/EmptyTasks.vue'
-import TodoGroup from './todo/TodoGroup.vue'
-import TodoHeader from './todo/TodoHeader.vue'
-import TodoList from './todo/TodoList.vue'
-import TodoToolbar from './todo/TodoToolbar.vue'
+import TaskGroup from './task/TaskGroup.vue'
+import TaskHeader from './task/TaskHeader.vue'
+import TaskList from './task/TaskList.vue'
+import TaskToolbar from './task/TaskToolbar.vue'
 
 type Filters = 'Completed' | 'Pending' | 'Recent' | 'Due' | 'Scheduled' | 'Today'
 
@@ -129,13 +129,13 @@ watch(filter, () => {
 <template>
   <div class="s-task-control">
     <div class="s-task-control-bar">
-      <TodoHeader class="s-task-header-customize">
+      <TaskHeader class="s-task-header-customize">
         <h1 class="s-title">{{ filter ?? 'Organizer' }}</h1>
 
-        <TodoToolbar @search="searchTasks" @add="addTask" :searchable="tasks.length > 0" />
-      </TodoHeader>
+        <TaskToolbar @search="searchTasks" @add="addTask" :searchable="tasks.length > 0" />
+      </TaskHeader>
 
-      <TodoList
+      <TaskList
         :items="tasks"
         @toggle="toggleTask"
         @delete="removeTask"
@@ -149,10 +149,10 @@ watch(filter, () => {
             </template>
           </EmptyTasks>
         </template>
-      </TodoList>
+      </TaskList>
     </div>
 
-    <TodoGroup
+    <TaskGroup
       class="s-task-control-group"
       :groups="groups"
       :total="storedTasks.length"

@@ -5,7 +5,7 @@ import Draggable from 'vuedraggable'
 import DragHandle from '@/assets/icons/draggable.svg'
 import { type TaskListItem } from '@/interfaces/task'
 
-import TodoPresentation from './TodoPresentation.vue'
+import TodoPresentation from './TaskPresentation.vue'
 
 type DraggableItem = { element: TaskListItem; index: number }
 

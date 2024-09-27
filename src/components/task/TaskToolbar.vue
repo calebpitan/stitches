@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import TodoAdd, { type TaskAddProps } from './TodoAdd.vue'
-import TodoSearch, { type TaskSearchProps } from './TodoSearch.vue'
+import TodoAdd, { type TaskAddProps } from './TaskAdd.vue'
+import TodoSearch, { type TaskSearchProps } from './TaskSearch.vue'
 
 interface TaskToolbarProps extends TaskSearchProps, TaskAddProps {
   searchable?: boolean
