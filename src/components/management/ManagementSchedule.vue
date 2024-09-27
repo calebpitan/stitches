@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, watchEffect } from 'vue'
 
 import { $dt } from '@primevue/themes'
 import { SVG } from '@svgdotjs/svg.js'
@@ -14,7 +14,7 @@ import VStack from '../stack/VStack.vue'
 
 interface ManagementScheduleProps {
   taskId: string
-  schedule?: TaskSchedule
+  schedule: TaskSchedule | null
   onSchedule?: (schedule: BaseTaskSchedule | TaskSchedule) => void
 }
 
@@ -67,14 +67,25 @@ onMounted(() => {
   watch(isDark, (_, __, onCleanup) => onCleanup(drawThread(threadline.value!)), { immediate: true })
 })
 
-watch([datetime, frequency], ([timestamp, freq]) => {
-  props.onSchedule?.({
-    id: props.schedule?.id,
-    taskId: props.taskId,
-    frequency: freq,
-    timestamp: timestamp
-  })
+watchEffect(() => {
+  if (frequency.value.type !== 'custom') {
+    // @ts-expect-error
+    frequency.value = { ...frequency.value, crons: [] }
+  }
 })
+
+watch(
+  [datetime, frequency],
+  ([timestamp, freq]) => {
+    props.onSchedule?.({
+      id: props.schedule?.id,
+      taskId: props.taskId,
+      frequency: freq,
+      timestamp: timestamp
+    })
+  },
+  { deep: true }
+)
 </script>
 
 <template>
@@ -105,7 +116,7 @@ watch([datetime, frequency], ([timestamp, freq]) => {
         />
 
         <VStack :spacing="4">
-          <HStack :spacing="4">
+          <HStack :spacing="4" style="margin-top: 1rem">
             <FloatLabel>
               <Select
                 id="s-schedule-repeat"
@@ -146,6 +157,8 @@ watch([datetime, frequency], ([timestamp, freq]) => {
             v-if="frequency.type === 'custom'"
             :locale="locale"
             :timestamp="datetime"
+            :crons="frequency.crons"
+            @change="frequency.crons = $event"
           />
         </VStack>
       </HStack>
@@ -189,17 +202,18 @@ watch([datetime, frequency], ([timestamp, freq]) => {
   --s-threadline-color-rgb: var(--s-primary-color-rgb);
   --s-threadline-color: rgba(var(--s-threadline-color-rgb) / var(--s-threadline-color-alpha));
 }
-/* 
+
 .s-management-scheduler {
-} */
+  justify-content: flex-end;
+}
 
 .s-management-scheduler-stack {
   position: relative;
-  /* padding: 1rem; */
+  padding: 1rem;
 }
 
-.s-management-scheduler-stack::before {
-  /* content: ''; */
+.s-management-scheduler-stack::after {
+  content: '';
   top: 0;
   left: 0;
   width: 100%;
@@ -209,7 +223,7 @@ watch([datetime, frequency], ([timestamp, freq]) => {
   border-radius: 1rem;
   pointer-events: none;
   border: 1px solid rgba(var(--s-primary-color-rgb) / 0.3);
-  background-color: rgba(var(--s-primary-color-rgb) / 0.1);
+  background-color: rgba(var(--s-primary-color-rgb) / 0.05);
 }
 
 .s-schedule-heading {

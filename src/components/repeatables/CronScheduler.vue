@@ -14,6 +14,7 @@ import HStack from '../stack/HStack.vue'
 export interface CronSchedulerProps {
   timestamp: Date | null
   locale: string
+  crons: CronSchedule[]
   onChange?(schedules: CronSchedule[]): void
 }
 
@@ -32,9 +33,9 @@ const config = computed(() => {
   } as const
 })
 
-const schedules = ref<CronSchedule[]>([
-  { expression: config.value.day.join(' '), frequency: 'day' }
-])
+const defaultCrons: CronSchedule[] = [{ expression: config.value.day.join(' '), frequency: 'day' }]
+const schedules = ref<CronSchedule[]>(props.crons.length > 0 ? props.crons : defaultCrons)
+
 const impressions = computed(() => schedules.value.map((s) => cronstrue.toString(s.expression)))
 
 const maxSchedules = 3
@@ -192,7 +193,7 @@ watch(schedules, (s) => props.onChange?.(s), { deep: true })
     border-radius: 0.6875rem;
     pointer-events: none;
     border: 1px solid rgba(var(--s-primary-color-rgb) / 0.3);
-    background-color: rgba(var(--s-primary-color-rgb) / 0.05);
+    background-color: rgba(var(--s-primary-color-rgb) / 0.025);
   }
 
   &:not(:last-of-type) .s-cron-scheduler-add {

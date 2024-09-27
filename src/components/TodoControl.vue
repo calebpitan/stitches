@@ -101,11 +101,11 @@ const groups = computed<MeterItem[]>(() => {
   ]
 })
 
-const addTask = taskStore.addItem
-const toggleTask = taskStore.toggleItem
-const removeTask = taskStore.removeItem
-const reviewTask = taskStore.updateItem
-const selectTask = taskStore.selectItem
+const addTask = taskStore.addTask
+const toggleTask = taskStore.toggleTask
+const removeTask = taskStore.removeTask
+const reviewTask = taskStore.updateTask
+const selectTask = taskStore.selectTask
 
 function searchTasks(term: string | null) {
   activeSearchTerm.value = term

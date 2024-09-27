@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import type { BaseTaskSchedule } from '@/interfaces/schedule'
 import { useTaskScheduleStore } from '@/stores/schedule'
 import { useTodoTagStore } from '@/stores/tag'
 import { useTaskStore } from '@/stores/task'
@@ -12,16 +13,19 @@ const taskTagStore = useTodoTagStore()
 const taskStore = useTaskStore()
 const taskScheduleStore = useTaskScheduleStore()
 
-const selectedTask = computed(() => {
-  const selected = taskStore.tasks.find((t) => t.id === taskStore.selected)
-  return selected ?? null
-})
+const selectedTask = computed(() => taskStore.findSelected())
 
 const taskSchedule = computed(() => {
-  return taskScheduleStore.schedules.find((s) => s.taskId === selectedTask.value?.id)
+  if (!selectedTask.value) return null
+  return taskScheduleStore.findSchedule(selectedTask.value.id)
 })
 
-const reviewTask = taskStore.updateItem
+function createSchedule(schedule: BaseTaskSchedule) {
+  if (!selectedTask.value) return
+  taskScheduleStore.upsertSchedule(selectedTask.value.id, schedule)
+}
+
+const reviewTask = taskStore.updateTask
 const createTaskTag = taskTagStore.createTag
 </script>
 
@@ -43,6 +47,7 @@ const createTaskTag = taskTagStore.createTag
           :key="selectedTask.id"
           :task-id="selectedTask.id"
           :schedule="taskSchedule"
+          @schedule="createSchedule"
         />
       </div>
     </div>
