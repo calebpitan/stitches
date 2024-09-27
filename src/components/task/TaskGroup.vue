@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import type { MeterItem } from 'primevue/metergroup'
 
-type TodoGroup = MeterItem & {}
+type TaskGroup = MeterItem & {}
 
-interface TodoGroupProps<F> {
+interface TaskGroupProps<F> {
   total: number
-  groups: TodoGroup[]
+  groups: TaskGroup[]
   filter: F | null
   onFilter?: (label: F | null) => void
 }
 
-const props = defineProps<TodoGroupProps<any>>()
+const props = defineProps<TaskGroupProps<any>>()
 
 const getValue = (percent: number) => Math.ceil((percent / 100) * props.total)
 
-function filterTodosByGroup(group: string) {
+function filterTasksByGroup(group: string) {
   if (props.filter === group) {
     return props.onFilter?.(null)
   }
@@ -28,27 +28,27 @@ function filterTodosByGroup(group: string) {
 <template>
   <MeterGroup :value="groups" :max="200" label-position="start">
     <template #label="{ value }">
-      <div class="s-todo-groups">
+      <div class="s-task-groups">
         <template v-for="val of value" :key="val.label">
           <Card
             v-ripple="getValue(val.value) !== 0"
             :aria-disabled="getValue(val.value) === 0"
             :class="{
-              's-todo-groups-card': true,
-              's-todo-groups-active': filter === val.label
+              's-task-groups-card': true,
+              's-task-groups-active': filter === val.label
             }"
             role="button"
             tabindex="0"
-            @click="getValue(val.value) !== 0 && filterTodosByGroup(val.label)"
+            @click="getValue(val.value) !== 0 && filterTasksByGroup(val.label)"
           >
             <template #content>
-              <div class="s-todo-groups-content">
-                <div class="s-todo-groups-summary">
-                  <span class="s-todo-groups-label">{{ val.label }}</span>
-                  <span class="s-todo-groups-value">{{ getValue(val.value) }}</span>
+              <div class="s-task-groups-content">
+                <div class="s-task-groups-summary">
+                  <span class="s-task-groups-label">{{ val.label }}</span>
+                  <span class="s-task-groups-value">{{ getValue(val.value) }}</span>
                 </div>
                 <span
-                  class="s-todo-groups-icon"
+                  class="s-task-groups-icon"
                   :style="{ backgroundColor: `${val.color}`, color: '#ffffff' }"
                 >
                   <i :class="val.icon" />
@@ -63,24 +63,24 @@ function filterTodosByGroup(group: string) {
 </template>
 
 <style scoped>
-.s-todo-groups,
-.s-todo-groups-content,
-.s-todo-groups-summary {
+.s-task-groups,
+.s-task-groups-content,
+.s-task-groups-summary {
   display: flex;
   user-select: none;
 }
 
-.s-todo-groups {
+.s-task-groups {
   gap: 1rem;
   flex-wrap: wrap;
 }
 
-.s-todo-groups-content {
+.s-task-groups-content {
   gap: 1rem;
   min-width: 100px;
 }
 
-.s-todo-groups-card {
+.s-task-groups-card {
   flex: 1 0 auto;
   cursor: pointer;
   transition: background-color 0.2s ease-in;
@@ -100,26 +100,26 @@ function filterTodosByGroup(group: string) {
   }
 }
 
-.s-todo-groups-active {
+.s-task-groups-active {
   outline: 1.5px solid var(--p-blue-500);
 }
 
-.s-todo-groups-summary {
+.s-task-groups-summary {
   flex-direction: column;
   flex: 1 1 auto;
 }
 
-.s-todo-groups-label {
+.s-task-groups-label {
   color: var(--s-script-secondary);
   font-size: 0.75rem;
   font-weight: 500;
 }
 
-.s-todo-groups-value {
+.s-task-groups-value {
   font-weight: 700;
 }
 
-.s-todo-groups-icon {
+.s-task-groups-icon {
   width: 1.5rem;
   height: 1.5rem;
   border-radius: 50%;
@@ -128,7 +128,7 @@ function filterTodosByGroup(group: string) {
   justify-content: center;
 }
 
-.s-todo-groups-icon i {
+.s-task-groups-icon i {
   font-size: 0.875rem;
 }
 </style>

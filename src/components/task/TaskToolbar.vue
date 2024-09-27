@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import TodoAdd, { type TaskAddProps } from './TaskAdd.vue'
-import TodoSearch, { type TaskSearchProps } from './TaskSearch.vue'
+import TaskAdd, { type TaskAddProps } from './TaskAdd.vue'
+import TaskSearch, { type TaskSearchProps } from './TaskSearch.vue'
 
 interface TaskToolbarProps extends TaskSearchProps, TaskAddProps {
   searchable?: boolean
@@ -11,10 +11,10 @@ defineProps<TaskToolbarProps>()
 
 <template>
   <div class="s-toolbar">
-    <TodoSearch class="s-toolbar-search" :searchable="searchable" @search="onSearch" />
+    <TaskSearch class="s-toolbar-search" :searchable="searchable" @search="onSearch" />
 
     <div class="s-tools">
-      <TodoAdd @add="onAdd" />
+      <TaskAdd @add="onAdd" />
     </div>
   </div>
 </template>

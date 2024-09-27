@@ -41,7 +41,7 @@ export const useTaskStore = defineStore(
     }
 
     function addTask(item: BaseTaskListItem) {
-      // Skip if there's currently an empty todo
+      // Skip if there's currently an empty task
       if (tasks.value.at(0)?.title.trim() === '') return
       tasks.value.unshift({
         id: ulid(),

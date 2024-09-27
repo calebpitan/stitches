@@ -3,13 +3,13 @@ import { computed } from 'vue'
 
 import type { BaseTaskSchedule } from '@/interfaces/schedule'
 import { useTaskScheduleStore } from '@/stores/schedule'
-import { useTodoTagStore } from '@/stores/tag'
+import { useTaskTagStore } from '@/stores/tag'
 import { useTaskStore } from '@/stores/task'
 
 import ManagementPresentation from './management/ManagementPresentation.vue'
 import ManagementSchedule from './management/ManagementSchedule.vue'
 
-const taskTagStore = useTodoTagStore()
+const taskTagStore = useTaskTagStore()
 const taskStore = useTaskStore()
 const taskScheduleStore = useTaskScheduleStore()
 

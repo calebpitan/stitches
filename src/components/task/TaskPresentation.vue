@@ -5,14 +5,14 @@ import type { TaskListItem } from '@/interfaces/task'
 
 type Field = 'title' | 'desc'
 type Point = { x: number; y: number }
-interface TodoPresentationProps {
+interface TaskPresentationProps {
   task: TaskListItem
   onToggle?: (id: string, completed: boolean) => void
   onReview?: (id: string, patch: Partial<Pick<TaskListItem, 'title' | 'summary'>>) => void
   onDelete?: (id: string) => void
 }
 
-const props = defineProps<TodoPresentationProps>()
+const props = defineProps<TaskPresentationProps>()
 
 const point = reactive<Point>({ x: Number.NEGATIVE_INFINITY, y: Number.NEGATIVE_INFINITY })
 const completed = ref(props.task.completed ?? false)
@@ -190,7 +190,7 @@ watch(editable, (latest) => {
       // 150ms, after the actual event, to be registered, so we have to
       // delay this for more than 150ms.
       //
-      // Why we do this is because if we accidentally saved a todo
+      // Why we do this is because if we accidentally saved a task
       // without a title, it would get removed, and we don't want to
       // accidentally remove newly added to-dos in between a user
       // filling out the to-do fields.
@@ -208,7 +208,7 @@ watch(editable, (latest) => {
 })
 
 onMounted(() => {
-  // Whenever a todo presentation is mounted with an empty title, focus it.
+  // Whenever a task presentation is mounted with an empty title, focus it.
   if (!props.task.title) {
     editable.value = 'title'
     titleRef.value?.focus()
@@ -217,15 +217,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="s-todo-presentation" v-focustrap>
-    <div class="s-todo-controls">
+  <div class="s-task-presentation" v-focustrap>
+    <div class="s-task-controls">
       <Checkbox v-model="completed" :name="task.title" :aria-label="task.title" binary />
     </div>
 
-    <div class="s-todo-contents">
+    <div class="s-task-contents">
       <div
         ref="titleRef"
-        :class="{ 's-todo-title': true, 's-title-editable': !titleRefHasText }"
+        :class="{ 's-task-title': true, 's-title-editable': !titleRefHasText }"
         :contenteditable="titleIsEditable"
         :role="titleIsEditable ? 'textarea' : 'generic'"
         :style="titleStyle"
@@ -243,7 +243,7 @@ onMounted(() => {
 
       <div
         ref="descRef"
-        :class="{ 's-todo-desc': true, 's-desc-editable': !descRefHasText }"
+        :class="{ 's-task-desc': true, 's-desc-editable': !descRefHasText }"
         :contenteditable="descIsEditable"
         :role="descIsEditable ? 'textarea' : 'generic'"
         :style="descStyle"
@@ -260,7 +260,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div class="s-todo-actions">
+    <div class="s-task-actions">
       <Button
         aria-label="Delete"
         icon="pi pi-trash"
@@ -275,7 +275,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.s-todo-presentation {
+.s-task-presentation {
   display: flex;
   align-items: center;
   width: 100%;
@@ -283,37 +283,37 @@ onMounted(() => {
   padding: 1rem 0.375rem;
   border-radius: 0.375rem;
 
-  &:hover .s-todo-actions {
+  &:hover .s-task-actions {
     opacity: 1;
     visibility: visible;
   }
 }
 
-.s-todo-controls,
-.s-todo-contents {
+.s-task-controls,
+.s-task-contents {
   display: flex;
   flex-direction: column;
 }
 
-.s-todo-contents {
+.s-task-contents {
   margin-inline-start: 1rem;
   width: 100%;
 }
 
-.s-todo-title {
+.s-task-title {
   font-weight: 600;
   max-height: calc(1.6em * 1);
 }
 
-.s-todo-desc {
+.s-task-desc {
   font-size: 0.875rem;
   font-weight: 400;
   color: var(--s-script-secondary);
   max-height: calc(1.6em * 3);
 }
 
-.s-todo-title,
-.s-todo-desc {
+.s-task-title,
+.s-task-desc {
   position: relative;
   width: fit-content;
   min-width: 100px;
@@ -324,7 +324,7 @@ onMounted(() => {
   }
 }
 
-.s-todo-actions {
+.s-task-actions {
   display: flex;
   flex-direction: column;
   opacity: 0.3;

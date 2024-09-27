@@ -5,7 +5,7 @@ import { defineStore } from 'pinia'
 import type { TaskTag } from '@/interfaces/task'
 import { ulid } from '@/utils'
 
-export const useTodoTagStore = defineStore(
+export const useTaskTagStore = defineStore(
   's-task-tag',
   () => {
     const tags = ref<TaskTag[]>([])

@@ -14,7 +14,7 @@ interface ManagementPresentationProps extends Pick<TagsInputProps, 'onCreateTag'
 
 const props = withDefaults(defineProps<ManagementPresentationProps>(), {})
 const suggestions = computed(() => props.tags)
-const todoTags = computed(() => {
+const taskTags = computed(() => {
   return props.tags.filter((t) => props.task.tagIds?.includes(t.id))
 })
 
@@ -49,7 +49,7 @@ function handleTagsChange(tags: TaskTag[]) {
 
       <template #subtitle>
         <TagsInput
-          :initial-tags="todoTags"
+          :initial-tags="taskTags"
           :suggestions="suggestions"
           @change="handleTagsChange"
           @create-tag="onCreateTag"

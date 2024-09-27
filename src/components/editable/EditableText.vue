@@ -202,7 +202,7 @@ watch(editable, (isEditable) => {
     // 150ms, after the actual event, to be registered, so we have to
     // delay this for more than 150ms.
     //
-    // Why we do this is because if we accidentally saved a todo
+    // Why we do this is because if we accidentally saved a task
     // without a title, it would get removed, and we don't want to
     // accidentally remove newly added to-dos in between a user
     // filling out the to-do fields.

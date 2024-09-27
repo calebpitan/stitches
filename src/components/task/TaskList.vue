@@ -5,7 +5,7 @@ import Draggable from 'vuedraggable'
 import DragHandle from '@/assets/icons/draggable.svg'
 import { type TaskListItem } from '@/interfaces/task'
 
-import TodoPresentation from './TaskPresentation.vue'
+import TaskPresentation from './TaskPresentation.vue'
 
 type DraggableItem = { element: TaskListItem; index: number }
 
@@ -109,7 +109,7 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
           >
             <DragHandle style="opacity: 0.1; stroke: currentColor; fill: currentColor" />
           </div>
-          <TodoPresentation
+          <TaskPresentation
             :task="element"
             @review="onReview"
             @toggle="onToggle"
