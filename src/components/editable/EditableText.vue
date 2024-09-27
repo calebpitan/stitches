@@ -232,7 +232,6 @@ watch(editable, (isEditable) => {
     @keydown.enter="handleEnterKey"
     @dblclick.stop=""
   >
-    <!-- v-on="multiline ? {} : { keydown: handleEnterKey }" -->
     {{ text }}
   </div>
 </template>
