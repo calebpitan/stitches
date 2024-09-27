@@ -18,7 +18,29 @@ export const useTaskStore = defineStore(
     const tasks = ref<TaskListItem[]>([])
     const selected = ref<string | null>(null)
 
-    function addItem(item: BaseTaskListItem) {
+    function guard(id: string, task: TaskListItem | null): never | TaskListItem {
+      if (!task) throw new Error(`Task with ID "${id}" does not exist`)
+      return task
+    }
+
+    function findTaskIndex(id: string) {
+      return tasks.value.findIndex((t) => t.id === id)
+    }
+
+    function findTask(id: string): TaskListItem | null {
+      const index = findTaskIndex(id)
+      const task: TaskListItem | undefined = tasks.value[index]
+
+      return task ?? null
+    }
+
+    function findSelected() {
+      if (!selected.value) return null
+
+      return findTask(selected.value)
+    }
+
+    function addTask(item: BaseTaskListItem) {
       // Skip if there's currently an empty todo
       if (tasks.value.at(0)?.title.trim() === '') return
       tasks.value.unshift({
@@ -31,22 +53,24 @@ export const useTaskStore = defineStore(
       })
     }
 
-    function updateItem(id: string, patch: Partial<TaskListItem>) {
-      const index = tasks.value.findIndex((todo) => todo.id === id)
-      const newItem = { ...tasks.value.at(index)!, ...patch }
+    function updateTask(id: string, patch: Partial<TaskListItem>) {
+      const index = findTaskIndex(id)
+      const task = guard(id, findTask(id))
+      const newItem = { ...task, ...patch }
+
       if (!newItem.title) return tasks.value.splice(index, 1)
 
       return tasks.value.splice(index, 1, newItem)
     }
 
-    function removeItem(id: string) {
-      const index = tasks.value.findIndex((todo) => todo.id === id)
+    function removeTask(id: string) {
+      const index = findTaskIndex(id)
       tasks.value.splice(index, 1)
     }
 
-    function toggleItem(id: string) {
-      const index = tasks.value.findIndex((todo) => todo.id === id)
-      const item = tasks.value.at(index)!
+    function toggleTask(id: string) {
+      const index = findTaskIndex(id)
+      const item = guard(id, findTask(id))
       const timestamp = new Date()
       tasks.value.splice(index, 1, {
         ...item,
@@ -55,11 +79,21 @@ export const useTaskStore = defineStore(
       })
     }
 
-    function selectItem(id: string | null) {
+    function selectTask(id: string | null) {
       selected.value = id
     }
 
-    return { tasks, selected, addItem, removeItem, updateItem, toggleItem, selectItem }
+    return {
+      tasks,
+      selected,
+      addTask,
+      findTask,
+      findSelected,
+      removeTask,
+      updateTask,
+      toggleTask,
+      selectTask
+    }
   },
   {
     persist: {
