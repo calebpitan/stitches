@@ -2,6 +2,10 @@ import { monotonicFactory } from 'ulidx'
 
 export const ulid = monotonicFactory()
 
+export function evaluate<R>(fn: () => R): R {
+  return fn()
+}
+
 export function timeToParts(timestamp: Date) {
   const minute = timestamp.getMinutes()
   const hour = timestamp.getHours()
