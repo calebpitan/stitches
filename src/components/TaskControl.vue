@@ -7,7 +7,9 @@ import Fuse from 'fuse.js'
 import type { MeterItem } from 'primevue/metergroup'
 
 import type { TaskListItem } from '@/interfaces/task'
+import { useTaskScheduleStore } from '@/stores/schedule'
 import { useTaskStore } from '@/stores/task'
+import { evaluate } from '@/utils'
 
 import EmptyTasks from './empty/EmptyTasks.vue'
 import TaskGroup from './task/TaskGroup.vue'
@@ -18,8 +20,10 @@ import TaskToolbar from './task/TaskToolbar.vue'
 type Filters = 'Completed' | 'Pending' | 'Recent' | 'Due' | 'Scheduled' | 'Today'
 
 const taskStore = useTaskStore()
+const taskScheduleStore = useTaskScheduleStore()
 
 const storedTasks = computed(() => taskStore.tasks)
+const scheduledTasks = computed(() => taskScheduleStore.schedules)
 
 const tasks = ref(taskStore.tasks)
 const filter = ref<Filters | null>(null)
@@ -43,12 +47,17 @@ const grouped = computed<{ [P in Lowercase<Filters>]: TaskListItem[] }>(() => {
     return t.addedAt.setHours(0, 0, 0, 0).valueOf() === maxAddedAt.value
   })
 
+  const scheduled = evaluate(() => {
+    const map = new Map(scheduledTasks.value.map((s) => [s.taskId, s.id]))
+    return storedTasks.value.filter((t) => map.has(t.id))
+  })
+
   return {
     completed,
     pending,
     recent,
     due: [],
-    scheduled: [],
+    scheduled,
     today: []
   }
 })
@@ -58,6 +67,7 @@ const groups = computed<MeterItem[]>(() => {
   const done = group.completed.length
   const pending = group.pending.length
   const recent = group.recent.length
+  const scheduled = group.scheduled.length
   const total = storedTasks.value.length
   const percent = (ratio: number) => ratio * 100
 
@@ -88,7 +98,7 @@ const groups = computed<MeterItem[]>(() => {
     },
     {
       label: 'Scheduled',
-      value: 0,
+      value: scheduled && percent(scheduled / total),
       color: $dt('red.600').value,
       icon: 'pi pi-clock'
     },
