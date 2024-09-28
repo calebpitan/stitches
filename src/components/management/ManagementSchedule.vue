@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 
-import { $dt } from '@primevue/themes'
 import { SVG } from '@svgdotjs/svg.js'
-import { usePreferredDark } from '@vueuse/core'
 
+import { usePrimaryColor } from '@/composables/usePrimaryColor'
 import type { BaseTaskSchedule, Frequency, TaskSchedule } from '@/interfaces/schedule'
 import { frequencies } from '@/utils/scheduling'
 
@@ -16,6 +15,35 @@ interface ManagementScheduleProps {
   taskId: string
   schedule: TaskSchedule | null
   onSchedule?: (schedule: BaseTaskSchedule | TaskSchedule) => void
+}
+
+interface ThreadNode {
+  type: 'line' | 'circle'
+  stroke: string
+  strokeWidth: number
+  fill?: string
+}
+
+interface CircleNode extends ThreadNode {
+  type: 'circle'
+  d: number
+  x1: number
+  y1: number
+}
+
+interface LineNode extends ThreadNode {
+  type: 'line'
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+}
+
+interface ThreadConfig {
+  width: number
+  height: number
+  viewbox(): [number, number, number, number]
+  elements(): Array<CircleNode | LineNode>
 }
 
 const props = withDefaults(defineProps<ManagementScheduleProps>(), {})
@@ -30,41 +58,113 @@ const frequency = ref<Frequency>({
   crons: props.schedule?.frequency.type === 'custom' ? props.schedule.frequency.crons : []
 })
 
-const isDark = usePreferredDark({ window: window })
+const primaryColor = usePrimaryColor()
 
-function drawThread(container: HTMLElement) {
-  const fontSize = parseInt(getComputedStyle(document.documentElement).fontSize)
+const thread = computed<ThreadConfig>(() => {
+  return {
+    width: 32,
+    height: 48,
+    viewbox() {
+      return [0, 0, this.width, this.height] as const
+    },
+    elements() {
+      const color = primaryColor.value
+      const [l1x1, l1y1] = [0, 0] as const
+      const [l1x2, l1y2] = [0, 16] as const
+      const cd = 16
+      const [cx1, cy1] = [-1 * (cd / 2), l1y2]
+      const [l2x1, l2y1] = [0, l1y2 + cd] as const
+      const [l2x2, l2y2] = [0, l1y2 * 2 + cd] as const
+
+      return [
+        {
+          type: 'line',
+          x1: l1x1,
+          y1: l1y1,
+          x2: l1x2,
+          y2: l1y2,
+          stroke: 'currentColor',
+          strokeWidth: 2
+        },
+        {
+          type: 'line',
+          x1: -16 + cx1,
+          y1: cd / 2 + l1y2,
+          x2: cx1,
+          y2: cd / 2 + l1y2,
+          stroke: 'currentColor',
+          strokeWidth: 2
+        },
+        {
+          type: 'circle',
+          x1: cx1,
+          y1: cy1,
+          d: cd,
+          fill: 'none',
+          stroke: color,
+          strokeWidth: 2
+        },
+        {
+          type: 'line',
+          x1: l2x1,
+          y1: l2y1,
+          x2: l2x2,
+          y2: l2y2,
+          stroke: 'currentColor',
+          strokeWidth: 2
+        }
+      ]
+    }
+  }
+})
+
+function drawThread(container: HTMLElement, config: ThreadConfig) {
   const draw = SVG()
   const group = draw.group()
-  const [width, height] = [300, 100]
 
-  draw.addTo(container).size(width, height).viewbox(0, 0, width, height)
+  const elements = config.elements()
 
-  // Create threadline (timeline)
-  const line1 = draw.line(0, 0, 0, 50).stroke({ width: 2, color: 'currentColor' })
+  const drawCircle = (element: CircleNode) => {
+    return draw
+      .circle(element.d)
+      .move(element.x1, element.y1)
+      .fill({ color: element.fill })
+      .stroke({ width: element.strokeWidth, color: element.stroke })
+  }
 
-  // Create node points (events on timeline)
-  const nodeColor = $dt('primary.color').value[isDark.value ? 'dark' : 'light'].value
-  const node1 = draw
-    .circle(15)
-    .fill('none')
-    .stroke({ width: 2, color: nodeColor })
-    .move(-15 / 2, 50)
+  const drawLine = (element: LineNode) => {
+    return draw
+      .line(element.x1, element.y1, element.x2, element.y2)
+      .stroke({ width: element.strokeWidth, color: element.stroke })
+  }
 
-  const line2 = draw.line(0, 50 + 15, 0, 50 + 15 + 50).stroke({ width: 2, color: 'currentColor' })
+  draw
+    .addTo(container)
+    .size(config.width, config.height)
+    .viewbox(...config.viewbox())
 
-  group
-    .add(line1)
-    .add(node1)
-    .add(line2)
-    .transform({ translateX: width - 2.25 * fontSize })
+  elements.forEach((element) => {
+    switch (element.type) {
+      case 'circle':
+        group.add(drawCircle(element))
+        break
+      case 'line':
+        group.add(drawLine(element))
+        break
+      // no default
+    }
+  })
+
+  group.transform({ translateX: config.width * 0.75 - 1 })
 
   return (): void => void draw.remove()
 }
 
 onMounted(() => {
   locale.value = navigator.language
-  watch(isDark, (_, __, onCleanup) => onCleanup(drawThread(threadline.value!)), { immediate: true })
+  watch(thread, (t, __, onCleanup) => onCleanup(drawThread(threadline.value!, t)), {
+    immediate: true
+  })
 })
 
 watchEffect(() => {
@@ -77,6 +177,7 @@ watchEffect(() => {
 watch(
   [datetime, frequency],
   ([timestamp, freq]) => {
+    if (!timestamp) return
     props.onSchedule?.({
       id: props.schedule?.id,
       taskId: props.taskId,
@@ -93,14 +194,27 @@ watch(
     <div class="s-schedule-header">
       <div ref="threadline" class="s-threadline" />
 
-      <HStack v-if="datetime !== null" class="s-schedule-headline" :spacing="1">
+      <HStack
+        v-if="datetime !== null"
+        class="s-schedule-headline"
+        style="align-items: center"
+        :spacing="1"
+      >
         <span class="s-schedule-headline-text">
           {{ datetime.toLocaleDateString(locale, { dateStyle: 'long' }) }}
         </span>
-        |
+        <span class="s-schedule-headline-text">|</span>
         <span class="s-schedule-headline-text">
           {{ datetime.toLocaleTimeString(locale, { timeStyle: 'short' }) }}
         </span>
+
+        <Button
+          severity="danger"
+          style="margin-inline-start: auto; font-size: 0.875rem; line-height: 1; border: 0"
+          :text="true"
+          :dt="{ padding: { x: '0.0625rem', y: '0.0625rem' } }"
+          >Clear</Button
+        >
       </HStack>
     </div>
 
@@ -173,7 +287,7 @@ watch(
 
 .s-schedule-headline {
   position: absolute;
-  top: calc(57.5px - 0.5rem);
+  top: calc(24px - 0.5rem);
   line-height: 1;
   margin-inline-start: 1rem;
 }
@@ -186,8 +300,9 @@ watch(
 }
 
 .s-threadline {
-  width: 300px;
+  width: 32px;
   position: relative;
+  right: 2.25rem;
   margin-inline-start: auto;
   margin-block: 0.5rem;
   color: var(--s-threadline-color);
