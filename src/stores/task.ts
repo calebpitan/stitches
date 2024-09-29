@@ -56,15 +56,18 @@ export const useTaskStore = defineStore(
     function updateTask(id: string, patch: Partial<TaskListItem>) {
       const index = findTaskIndex(id)
       const task = guard(id, findTask(id))
-      const newItem = { ...task, ...patch }
+      const newItem: TaskListItem = { ...task, ...patch }
 
-      if (!newItem.title) return tasks.value.splice(index, 1)
+      if (!newItem.title) return tasks.value.splice(index, 1).at(0)!
 
-      return tasks.value.splice(index, 1, newItem)
+      tasks.value.splice(index, 1, newItem)
+
+      return newItem
     }
 
     function removeTask(id: string) {
       const index = findTaskIndex(id)
+      if (index === -1) return
       tasks.value.splice(index, 1)
     }
 

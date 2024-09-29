@@ -60,7 +60,20 @@ export const useTaskScheduleStore = defineStore(
       return updateSchedule(schedule.id, patch)
     }
 
-    return { schedules, createSchedule, findSchedule, updateSchedule, upsertSchedule }
+    function deleteSchedule(id: string): TaskSchedule | null {
+      const index = findScheduleIndex(id)
+      if (index === -1) return null
+      return schedules.value.splice(index, 1).at(0)!
+    }
+
+    return {
+      schedules,
+      createSchedule,
+      findSchedule,
+      updateSchedule,
+      upsertSchedule,
+      deleteSchedule
+    }
   },
   {
     persist: {

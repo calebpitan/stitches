@@ -37,7 +37,8 @@ export const useTaskTagStore = defineStore(
 
     function deleteTag(labelOrId: string): TaskTag | null {
       const index = getTagIndex(labelOrId)
-      return tags.value.splice(index, 1).at(0) ?? null
+      if (index === -1) return null
+      return tags.value.splice(index, 1).at(0)!
     }
 
     return { tags, getTag, createTag, deleteTag }
