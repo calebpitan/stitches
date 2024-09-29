@@ -51,5 +51,6 @@ declare module 'vue' {
   export interface ComponentCustomProperties {
     FocusTrap: typeof import('primevue/focustrap')['default']
     Ripple: typeof import('primevue/ripple')['default']
+    Tooltip: typeof import('primevue/tooltip')['default']
   }
 }

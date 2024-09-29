@@ -10,6 +10,7 @@ import 'primeicons/primeicons.css'
 import PrimeVue from 'primevue/config'
 import FocusTrap from 'primevue/focustrap'
 import Ripple from 'primevue/ripple'
+import Tooltip from 'primevue/tooltip'
 import 'reflect-metadata'
 
 import App from './App.vue'
@@ -31,4 +32,8 @@ app.use(PrimeVue, {
 })
 app.use(CronCorePlugin)
 
-app.directive('focustrap', FocusTrap).directive('ripple', Ripple).mount('#app')
+app
+  .directive('focustrap', FocusTrap)
+  .directive('ripple', Ripple)
+  .directive('tooltip', Tooltip)
+  .mount('#app')

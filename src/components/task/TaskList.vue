@@ -111,6 +111,7 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
           </div>
           <TaskPresentation
             :task="element"
+            :focusable="index === activeIndex"
             @review="onReview"
             @toggle="onToggle"
             @delete="onDelete"

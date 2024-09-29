@@ -33,12 +33,12 @@ function filterTasksByGroup(group: string) {
           <Card
             v-ripple="getValue(val.value) !== 0"
             :aria-disabled="getValue(val.value) === 0"
+            :tabindex="getValue(val.value) === 0 ? -1 : 0"
             :class="{
               's-task-groups-card': true,
               's-task-groups-active': filter === val.label
             }"
             role="button"
-            tabindex="0"
             @click="getValue(val.value) !== 0 && filterTasksByGroup(val.label)"
           >
             <template #content>

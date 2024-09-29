@@ -121,7 +121,7 @@ watch(schedules, (s) => props.onChange?.(s), { deep: true })
           v-if="index < maxSchedules - 1"
           class="s-cron-scheduler-add"
           type="button"
-          aria-label="Add"
+          :aria-label="index === schedules.length - 1 ? 'Add' : 'Remove'"
           :icon="index === schedules.length - 1 ? 'pi pi-plus' : 'pi pi-minus'"
           :rounded="true"
           @click="
@@ -239,6 +239,7 @@ watch(schedules, (s) => props.onChange?.(s), { deep: true })
   color: var(--s-script-secondary);
 }
 
+/* TRANSITIONS */
 .schedule-enter-from,
 .schedule-leave-to {
   transform: translateY(-100%);
@@ -274,40 +275,3 @@ ul#cron-scheduler-minute_list.p-multiselect-list {
   grid-template-columns: repeat(5, 1fr);
 }
 </style>
-
-<!-- /* STALE STYLES: TODO: Remove */ -->
-<!-- .s-daily-repeatable-inputgroup {
-  --p-inputtext-padding-y: 0.25em;
-  --p-inputtext-padding-x: 0.5em;
-  --p-inputtext-background: var(--s-surface-ground);
-  --p-inputgroup-addon-background: var(--s-surface-ground);
-
-  font-size: 0.875rem;
-  width: 150px;
-}
-
-.s-daily-repeatable-inputgroup-addon {
-  padding: var(--p-inputtext-padding-y) var(--p-inputtext-padding-x);
-}
-.s-daily-repeatable-inputgroup:not(:has(input:focus, input:hover)) {
-  --p-inputtext-border-color: transparent;
-  --p-inputgroup-addon-border-color: transparent;
-} -->
-
-<!-- <InputGroup class="s-daily-repeatable-inputgroup">
-  <InputGroupAddon class="s-daily-repeatable-inputgroup-addon">
-    <span>Every</span>
-  </InputGroupAddon>
-
-  <InputNumber
-    class="s-daily-repeatable-input"
-    v-model="days"
-    :min="1"
-    :max="31"
-    :allow-empty="false"
-  />
-
-  <InputGroupAddon class="s-daily-repeatable-inputgroup-addon">
-    <span>{{ days > 1 ? 'days' : 'day' }}</span>
-  </InputGroupAddon>
-</InputGroup> -->

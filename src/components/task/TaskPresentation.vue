@@ -7,6 +7,7 @@ type Field = 'title' | 'desc'
 type Point = { x: number; y: number }
 interface TaskPresentationProps {
   task: TaskListItem
+  focusable: boolean
   onToggle?: (id: string, completed: boolean) => void
   onReview?: (id: string, patch: Partial<Pick<TaskListItem, 'title' | 'summary'>>) => void
   onDelete?: (id: string) => void
@@ -22,8 +23,8 @@ const titleRefHasText = ref(!!props.task.title)
 const descRefHasText = ref(!!props.task.summary)
 
 const editable = ref<Field | undefined>(undefined)
-const titleIsEditable = computed(() => editable.value === 'title')
-const descIsEditable = computed(() => editable.value === 'desc')
+const titleIsEditable = computed(() => editable.value === 'title' && props.focusable)
+const descIsEditable = computed(() => editable.value === 'desc' && props.focusable)
 
 const titleStyle = computed((): StyleValue => {
   const editable = titleIsEditable.value
@@ -217,9 +218,15 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="s-task-presentation" v-focustrap>
+  <div class="s-task-presentation" v-focustrap="{ disabled: !focusable }">
     <div class="s-task-controls">
-      <Checkbox v-model="completed" :name="task.title" :aria-label="task.title" binary />
+      <Checkbox
+        v-model="completed"
+        :name="task.title"
+        :aria-label="task.title"
+        :tabindex="focusable ? undefined : -1"
+        :binary="true"
+      />
     </div>
 
     <div class="s-task-contents">
@@ -229,7 +236,7 @@ onMounted(() => {
         :contenteditable="titleIsEditable"
         :role="titleIsEditable ? 'textarea' : 'generic'"
         :style="titleStyle"
-        tabindex="0"
+        :tabindex="focusable ? 0 : -1"
         data-placeholder="Title"
         @blur="handleEditableBlur"
         @click="handleClick"
@@ -247,7 +254,7 @@ onMounted(() => {
         :contenteditable="descIsEditable"
         :role="descIsEditable ? 'textarea' : 'generic'"
         :style="descStyle"
-        tabindex="0"
+        :tabindex="focusable ? 0 : -1"
         data-placeholder="summary..."
         @blur="handleEditableBlur"
         @click="handleClick"
