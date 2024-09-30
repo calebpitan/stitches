@@ -52,7 +52,7 @@ const props = withDefaults(defineProps<ManagementScheduleProps>(), {})
 const threadline = ref<HTMLDivElement | null>(null)
 
 const locale = ref('en-GB')
-const schedulerIsCollapsed = ref(true)
+const isExpanded = ref(false)
 
 // The selected date time as timestamp for period the task is due
 const datetime = ref<Date | null>(props.schedule?.timestamp ?? null)
@@ -77,9 +77,9 @@ const primaryColor = usePrimaryColor()
 // Tooltip properties for the scheduler expand-collapse toggle
 // button.
 // ***************************************************************
-const schedulerToggleTooltip = computed(() => {
+const tooltip = computed(() => {
   return {
-    value: schedulerIsCollapsed.value === true ? 'Open scheduler' : 'Close scheduler',
+    value: isExpanded.value === false ? 'Open scheduler' : 'Close scheduler',
     pt: { root: 's-tooltip', arrow: 's-tooltip-arrow', text: 's-tooltip-text' }
   }
 })
@@ -223,13 +223,13 @@ watch(
     <div class="s-schedule-header">
       <div ref="threadline" class="s-threadline">
         <Button
-          v-tooltip="schedulerToggleTooltip"
-          class="s-scheduler-toggle"
+          v-tooltip="tooltip"
           type="button"
-          :aria-label="schedulerIsCollapsed ? 'Expand' : 'Collapse'"
-          :icon="schedulerIsCollapsed ? 'pi pi-plus' : 'pi pi-minus'"
+          icon="pi pi-plus"
+          :class="['s-scheduler-toggle', { expanded: isExpanded }]"
+          :aria-label="isExpanded ? 'Collapse' : 'Expand'"
           :rounded="true"
-          @click="schedulerIsCollapsed = !schedulerIsCollapsed"
+          @click="isExpanded = !isExpanded"
         />
       </div>
 
@@ -257,10 +257,10 @@ watch(
       </HStack>
     </div>
 
-    <div :class="['s-management-scheduler', { expanded: !schedulerIsCollapsed }]">
+    <div :class="['s-management-scheduler', { expanded: isExpanded }]">
       <Transition name="scheduler-inner">
         <HStack
-          v-if="schedulerIsCollapsed === false"
+          v-if="isExpanded === true"
           class="s-management-scheduler-stack"
           :spacing="4"
         >
@@ -371,13 +371,18 @@ watch(
   --s-threadline-apparent-width: calc(var(--s-threadline-width) + var(--s-threadline-outset));
   --s-threadline-stroke-width: 2px;
 
-  position: absolute !important;
   padding: 0;
+  position: absolute !important;
+  transition: transform 0.5s ease;
   top: calc((var(--s-threadline-height) - var(--p-button-icon-only-width)) / 2);
   right: calc(
     (var(--s-threadline-stroke-width) / 2) +
       ((var(--s-threadline-apparent-width) - var(--p-button-icon-only-width)) / 2)
   );
+
+  &.expanded {
+    transform: rotate(45deg);
+  }
 }
 
 .s-management-schedule {
