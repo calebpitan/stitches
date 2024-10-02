@@ -2,9 +2,9 @@
 import { ref, watch } from 'vue'
 import Draggable from 'vuedraggable'
 
-import DragHandle from '@/assets/icons/draggable.svg'
 import { type TaskListItem } from '@/interfaces/task'
 
+import DragHandle from '../icons/DragHandle.vue'
 import TaskPresentation from './TaskPresentation.vue'
 
 type DraggableItem = { element: TaskListItem; index: number }
@@ -107,7 +107,7 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
             @mouseenter.stop="handling = true"
             @mouseleave.stop="handling = false"
           >
-            <DragHandle style="opacity: 0.1; stroke: currentColor; fill: currentColor" />
+            <DragHandle style="opacity: 0.1" />
           </div>
           <TaskPresentation
             :task="element"

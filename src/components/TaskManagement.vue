@@ -6,8 +6,8 @@ import { useTaskScheduleStore } from '@/stores/schedule'
 import { useTaskTagStore } from '@/stores/tag'
 import { useTaskStore } from '@/stores/task'
 
-import ManagementPresentation from './management/ManagementPresentation.vue'
-import ManagementSchedule from './management/ManagementSchedule.vue'
+import MgmtPresentation from './management/MgmtPresentation.vue'
+import MgmtScheduler from './management/MgmtScheduler.vue'
 
 const taskTagStore = useTaskTagStore()
 const taskStore = useTaskStore()
@@ -25,16 +25,21 @@ function createSchedule(schedule: BaseTaskSchedule) {
   taskScheduleStore.upsertSchedule(selectedTask.value.id, schedule)
 }
 
+function clearSchedule(id: string) {
+  if (!selectedTask.value) return
+  taskScheduleStore.deleteSchedule(id)
+}
+
 const reviewTask = taskStore.updateTask
 const createTaskTag = taskTagStore.createTag
 </script>
 
 <template>
-  <div class="s-task-management-container">
-    <div class="s-task-management">
+  <div class="s-task-mgmt-container">
+    <div class="s-task-mgmt">
       <div v-if="selectedTask" style="display: flex; flex-direction: column">
-        <ManagementPresentation
-          class="s-task-management-presentation"
+        <MgmtPresentation
+          class="s-task-mgmt-presentation"
           :key="selectedTask.id"
           :task="selectedTask"
           :tags="taskTagStore.tags"
@@ -42,12 +47,13 @@ const createTaskTag = taskTagStore.createTag
           @create-tag="createTaskTag"
         />
 
-        <ManagementSchedule
-          class="s-task-management-schedule"
+        <MgmtScheduler
+          class="s-task-mgmt-schedule"
           :key="selectedTask.id"
           :task-id="selectedTask.id"
           :schedule="taskSchedule"
           @schedule="createSchedule"
+          @clear-schedule="clearSchedule"
         />
       </div>
     </div>
@@ -55,20 +61,19 @@ const createTaskTag = taskTagStore.createTag
 </template>
 
 <style scoped>
-.s-task-management-container {
+.s-task-mgmt-container {
   color: inherit;
 }
 
-.s-task-management {
+.s-task-mgmt {
   padding: 2rem;
-  --s-presentation-thread-height: 100px;
 }
 
-.s-task-management-presentation {
+.s-task-mgmt-presentation {
   position: static;
 }
 
-.s-task-management-schedule {
+.s-task-mgmt-schedule {
   position: relative;
   align-self: flex-start;
 }
