@@ -28,7 +28,7 @@ const scheduledTasks = computed(() => taskScheduleStore.schedules)
 const tasks = ref(taskStore.tasks)
 const filter = ref<Filters | null>(null)
 const activeSearchTerm = ref<string | null>(null)
-const fuse = new Fuse(taskStore.tasks, { keys: ['title', 'description'], threshold: 0.5 })
+const fuse = new Fuse(taskStore.tasks, { keys: ['title', 'summary'], threshold: 0.5 })
 
 watch(taskStore.tasks, (latest) => {
   fuse.setCollection(latest)
