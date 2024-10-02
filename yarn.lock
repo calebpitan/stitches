@@ -7121,6 +7121,7 @@ __metadata:
     primevue: "npm:^4.0.7"
     reflect-metadata: "npm:^0.2.2"
     start-server-and-test: "npm:^2.0.4"
+    svgo: "npm:^3.3.2"
     typescript: "npm:~5.4.0"
     ulidx: "npm:^2.4.1"
     unplugin-vue-components: "npm:^0.27.4"
@@ -7257,7 +7258,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svgo@npm:^3.0.2":
+"svgo@npm:^3.0.2, svgo@npm:^3.3.2":
   version: 3.3.2
   resolution: "svgo@npm:3.3.2"
   dependencies:
