@@ -46,11 +46,46 @@ a,
   font-size: 0.875rem;
 }
 
+/* PrimeVue Tooltip customizations */
+.p-tooltip.s-tooltip {
+  --p-tooltip-background: var(--p-surface-900);
+  --p-tooltip-padding: 0.5em 1em;
+
+  font-size: 0.75rem;
+  user-select: none;
+}
+
+/* PrimeVue DatePicker customizations */
+.p-datepicker.s-datepicker {
+  width: auto;
+}
+
 .p-datepicker-input.s-datepicker-input {
   --p-inputtext-padding-y: 0.25rem;
   line-height: 1.6;
 }
 
+.p-datepicker-panel.s-datepicker-panel {
+  border: 0;
+  font-size: 0.875rem;
+}
+
+.p-datepicker-panel.s-datepicker-panel .p-datepicker-day-view,
+.p-datepicker-panel.s-datepicker-panel .p-datepicker-time-picker span {
+  font-size: 0.75rem;
+}
+
+.p-datepicker-panel.s-datepicker-panel .p-datepicker-day-view th,
+.p-datepicker-panel.s-datepicker-panel .p-datepicker-day-view td {
+  padding: 0.125rem;
+}
+
+.p-datepicker-panel.s-datepicker-panel .p-datepicker-day-view td > span {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* PrimeVue Select component customizations */
 .p-select.s-select,
 .p-multiselect.s-select,
 .p-datepicker-input.s-datepicker-input {
