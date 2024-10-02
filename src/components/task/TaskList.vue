@@ -100,7 +100,7 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
           class="s-taskitem"
           :tabindex="index === activeIndex ? 0 : -1"
           @click="activeIndex = index"
-          @dblclick.prevent="onSelect(element.id)"
+          @dblclick.capture.stop.prevent="onSelect(element.id)"
         >
           <div
             class="s-handle"

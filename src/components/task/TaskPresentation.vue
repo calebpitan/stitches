@@ -243,7 +243,6 @@ onMounted(() => {
         @focus="handleTitleFocus"
         @input="handleInput('title')"
         @paste.prevent="handlePaste"
-        @dblclick.stop=""
       >
         {{ task.title }}
       </div>
@@ -261,7 +260,6 @@ onMounted(() => {
         @focus="handleDescFocus"
         @input="handleInput('desc')"
         @paste.prevent="handlePaste"
-        @dblclick.stop=""
       >
         {{ task.summary }}
       </div>
