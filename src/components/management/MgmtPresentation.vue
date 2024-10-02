@@ -6,13 +6,13 @@ import type { TaskListItem, TaskTag } from '@/interfaces/task'
 import EditableText from '../editable/EditableText.vue'
 import TagsInput, { type TagsInputProps } from '../editable/TagsInput.vue'
 
-interface ManagementPresentationProps extends Pick<TagsInputProps, 'onCreateTag'> {
+interface MgmtPresentationProps extends Pick<TagsInputProps, 'onCreateTag'> {
   task: TaskListItem
   tags: TaskTag[]
   onReview?: (id: string, patch: Partial<TaskListItem>) => void
 }
 
-const props = withDefaults(defineProps<ManagementPresentationProps>(), {})
+const props = withDefaults(defineProps<MgmtPresentationProps>(), {})
 const suggestions = computed(() => props.tags)
 const taskTags = computed(() => {
   return props.tags.filter((t) => props.task.tagIds?.includes(t.id))

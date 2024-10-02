@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 
 import { SVG } from '@svgdotjs/svg.js'
 
+import { useLocale } from '@/composables/useLocale'
 import { usePrimaryColor } from '@/composables/usePrimaryColor'
 import type { BaseTaskSchedule, Frequency, TaskSchedule } from '@/interfaces/schedule'
 import { evaluate } from '@/utils'
@@ -11,11 +12,14 @@ import { frequencies } from '@/utils/scheduling'
 import CronScheduler from '../repeatables/CronScheduler.vue'
 import HStack from '../stack/HStack.vue'
 import VStack from '../stack/VStack.vue'
+import MgmtScheduleInfo from './MgmtScheduleInfo.vue'
+import MgmtScheduleSummary from './MgmtScheduleSummary.vue'
 
-interface ManagementScheduleProps {
+interface MgmtScheduleProps {
   taskId: string
   schedule: TaskSchedule | null
   onSchedule?: (schedule: BaseTaskSchedule | TaskSchedule) => void
+  onClearSchedule?: (id: string) => void
 }
 
 interface ThreadNode {
@@ -47,11 +51,11 @@ interface ThreadConfig {
   elements(): Array<CircleNode | LineNode>
 }
 
-const props = withDefaults(defineProps<ManagementScheduleProps>(), {})
+const props = withDefaults(defineProps<MgmtScheduleProps>(), {})
 
 const threadline = ref<HTMLDivElement | null>(null)
 
-const locale = ref('en-GB')
+const locale = useLocale()
 const isExpanded = ref(false)
 
 // The selected date time as timestamp for period the task is due
@@ -189,8 +193,16 @@ function drawThread(container: HTMLElement, config: ThreadConfig) {
   return (): void => void draw.remove()
 }
 
+function handleClearSchedule() {
+  if (props.schedule) {
+    props.onClearSchedule?.(props.schedule.id)
+  }
+
+  datetime.value = null
+  frequency.value = { type: 'never', until: null }
+}
+
 onMounted(() => {
-  locale.value = navigator.language
   watch(thread, (t, __, onCleanup) => onCleanup(drawThread(threadline.value!, t)), {
     immediate: true
   })
@@ -219,7 +231,7 @@ watch(
 </script>
 
 <template>
-  <div class="s-management-schedule">
+  <div class="s-mgmt-schedule">
     <div class="s-schedule-header">
       <div ref="threadline" class="s-threadline">
         <Button
@@ -234,36 +246,64 @@ watch(
       </div>
 
       <HStack
-        v-if="datetime !== null"
+        v-if="datetime !== null && isExpanded"
         class="s-schedule-headline"
         style="align-items: center"
         :spacing="1"
       >
-        <span class="s-schedule-headline-text">
-          {{ datetime.toLocaleDateString(locale, { dateStyle: 'long' }) }}
-        </span>
-        <span class="s-schedule-headline-text">|</span>
-        <span class="s-schedule-headline-text">
-          {{ datetime.toLocaleTimeString(locale, { timeStyle: 'short' }) }}
-        </span>
-
-        <Button
-          severity="danger"
-          style="margin-inline-start: auto; font-size: 0.875rem; line-height: 1; border: 0"
-          :text="true"
-          :dt="{ padding: { x: '0.0625rem', y: '0.0625rem' } }"
-          >Clear</Button
-        >
+        <MgmtScheduleSummary :schedule="schedule">
+          <template #clear-button>
+            <Button
+              class="s-mgmt-schedule-quick-actions"
+              severity="danger"
+              :text="true"
+              :dt="{ padding: { x: '0.0625rem', y: '0.0625rem' } }"
+              @click="handleClearSchedule"
+            >
+              Clear
+            </Button>
+          </template>
+        </MgmtScheduleSummary>
       </HStack>
     </div>
 
-    <div :class="['s-management-scheduler', { expanded: isExpanded }]">
-      <Transition name="scheduler-inner">
-        <HStack
-          v-if="isExpanded === true"
-          class="s-management-scheduler-stack"
-          :spacing="4"
-        >
+    <div :class="['s-mgmt-scheduler', { expanded: isExpanded }]">
+      <Transition name="scheduler-info">
+        <MgmtScheduleInfo v-if="isExpanded === false" :schedule>
+          <template #edit-button>
+            <Button
+              class="s-mgmt-schedule-quick-actions"
+              severity="info"
+              :text="true"
+              :dt="{
+                padding: { x: '0.0625rem', y: '0.0625rem' },
+                'text.info.color': '{ blue.700 }'
+              }"
+              @click="isExpanded = true"
+            >
+              Edit
+            </Button>
+          </template>
+
+          <template v-if="schedule" #clear-button>
+            <Button
+              class="s-mgmt-schedule-quick-actions"
+              severity="danger"
+              :text="true"
+              :dt="{
+                padding: { x: '0.0625rem', y: '0.0625rem' },
+                'text.danger.color': '{ red.800 }'
+              }"
+              @click="handleClearSchedule"
+            >
+              Clear
+            </Button>
+          </template>
+        </MgmtScheduleInfo>
+      </Transition>
+
+      <Transition name="scheduler-stack">
+        <HStack v-if="isExpanded === true" class="s-mgmt-scheduler-stack" :spacing="4">
           <DatePicker
             v-model="datetime"
             class="s-datepicker"
@@ -327,28 +367,31 @@ watch(
 
 <style scoped>
 .s-schedule-header {
+  --s-threadline-height: 48px;
+  --s-threadline-width: 32px;
+  --s-threadline-outset: -16px; /* The furthest point of the threadline on the negative x-margin */
+  --s-threadline-apparent-width: calc(var(--s-threadline-width) + var(--s-threadline-outset));
+  --s-threadline-stroke-width: 2px;
+
   position: relative;
 }
 
 .s-schedule-headline {
   position: absolute;
-  top: calc(24px - 0.5rem);
+  top: calc((var(--s-threadline-height) / 2) - 0.5rem);
   line-height: 1;
-  margin-inline-start: 1rem;
+  margin-inline-start: 0rem;
 }
 
-.s-schedule-headline-text {
-  --s-threadline-color-alpha: 1;
-  font-weight: 300;
+.s-mgmt-schedule-summary {
+  /* color: rgb(from var(--p-primary-color) r g b / 1); */
+  color: var(--s-script-subtle);
+}
 
-  &:nth-child(odd) {
-    color: rgba(var(--s-threadline-color-rgb) / var(--s-threadline-color-alpha));
-    color: var(--p-primary-color);
-  }
-
-  &:nth-child(even) {
-    color: var(--s-script-subtle);
-  }
+.s-mgmt-schedule-quick-actions {
+  font-size: 0.875rem;
+  line-height: 1;
+  border: 0;
 }
 
 .s-threadline {
@@ -365,15 +408,10 @@ watch(
 .s-scheduler-toggle {
   --p-icon-size: 0.75rem;
   --p-button-icon-only-width: 0.875rem;
-  --s-threadline-height: 48px;
-  --s-threadline-width: 32px;
-  --s-threadline-outset: -16px; /* The furthest point of the threadline on the negative x-margin */
-  --s-threadline-apparent-width: calc(var(--s-threadline-width) + var(--s-threadline-outset));
-  --s-threadline-stroke-width: 2px;
 
   padding: 0;
   position: absolute !important;
-  transition: transform 0.5s ease;
+  transition: transform calc(var(--s-mgmt-scheduler-stack-animation-timing) * 2) ease;
   top: calc((var(--s-threadline-height) - var(--p-button-icon-only-width)) / 2);
   right: calc(
     (var(--s-threadline-stroke-width) / 2) +
@@ -385,17 +423,18 @@ watch(
   }
 }
 
-.s-management-schedule {
+.s-mgmt-schedule {
   position: relative;
   width: 100%;
   --s-threadline-color-alpha: 0.3;
   --s-threadline-color-rgb: var(--s-primary-color-rgb);
   --s-threadline-color: rgba(var(--s-threadline-color-rgb) / var(--s-threadline-color-alpha));
+  --s-mgmt-scheduler-stack-animation-timing: 0.7s;
 }
 
-.s-management-scheduler {
+.s-mgmt-scheduler {
   display: grid;
-  grid-template-rows: 0fr;
+  grid-template-rows: 1fr;
   transition: grid-template-rows 0.5s ease-out;
 
   &.expanded {
@@ -403,12 +442,12 @@ watch(
   }
 }
 
-.s-management-scheduler-stack {
+.s-mgmt-scheduler-stack {
   position: relative;
   max-height: 100%;
 }
 
-.s-management-scheduler-stack::after {
+.s-mgmt-scheduler-stack::after {
   /* content: ''; */
   top: 0;
   left: 0;
@@ -423,23 +462,38 @@ watch(
 }
 
 /* TRANSITIONS */
-.scheduler-inner-enter-from,
-.scheduler-inner-leave-to {
+
+.scheduler-info-enter-from,
+.scheduler-info-leave-to,
+.scheduler-stack-enter-from,
+.scheduler-stack-leave-to {
   max-height: 0%;
   opacity: 0;
+  transform: translateY(-15%);
 }
 
-.scheduler-inner-enter-to,
-.scheduler-inner-leave-from {
+.scheduler-info-enter-to,
+.scheduler-info-leave-from,
+.scheduler-stack-enter-to,
+.scheduler-stack-leave-from {
   max-height: 100%;
 }
 
-.scheduler-inner-enter-active,
-.scheduler-inner-leave-active {
+.scheduler-info-enter-active,
+.scheduler-info-leave-active,
+.scheduler-stack-enter-active,
+.scheduler-stack-leave-active {
   overflow: hidden;
   transition:
-    opacity 0.5s linear,
-    max-height 0.5s ease-out;
+    opacity var(--s-mgmt-scheduler-stack-animation-timing) linear,
+    max-height var(--s-mgmt-scheduler-stack-animation-timing) ease-out,
+    transform var(--s-mgmt-scheduler-stack-animation-timing) ease;
+}
+
+.scheduler-stack-enter-active,
+.scheduler-info-enter-active {
+  transition-delay: var(--s-mgmt-scheduler-stack-animation-timing);
+  order: 1;
 }
 </style>
 
