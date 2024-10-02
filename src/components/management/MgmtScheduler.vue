@@ -257,7 +257,6 @@ watch(
               class="s-mgmt-schedule-quick-actions"
               severity="danger"
               :text="true"
-              :dt="{ padding: { x: '0.0625rem', y: '0.0625rem' } }"
               @click="handleClearSchedule"
             >
               Clear
@@ -275,10 +274,7 @@ watch(
               class="s-mgmt-schedule-quick-actions"
               severity="info"
               :text="true"
-              :dt="{
-                padding: { x: '0.0625rem', y: '0.0625rem' },
-                'text.info.color': '{ blue.700 }'
-              }"
+              :dt="{ 'text.info.color': '{ blue.700 }' }"
               @click="isExpanded = true"
             >
               Edit
@@ -290,10 +286,7 @@ watch(
               class="s-mgmt-schedule-quick-actions"
               severity="danger"
               :text="true"
-              :dt="{
-                padding: { x: '0.0625rem', y: '0.0625rem' },
-                'text.danger.color': '{ red.800 }'
-              }"
+              :dt="{ 'text.danger.color': '{ red.800 }' }"
               @click="handleClearSchedule"
             >
               Clear
@@ -389,9 +382,16 @@ watch(
 }
 
 .s-mgmt-schedule-quick-actions {
+  --p-button-text-info-hover-background: transparent;
+  --p-button-text-danger-hover-background: transparent;
+  --p-button-text-info-active-background: transparent;
+  --p-button-text-danger-active-background: transparent;
+  --p-button-padding-x: 0.0625rem;
+  --p-button-padding-y: 0.0625rem;
+
   font-size: 0.875rem;
   line-height: 1;
-  border: 0;
+  border-color: transparent;
 }
 
 .s-threadline {
@@ -429,7 +429,7 @@ watch(
   --s-threadline-color-alpha: 0.3;
   --s-threadline-color-rgb: var(--s-primary-color-rgb);
   --s-threadline-color: rgba(var(--s-threadline-color-rgb) / var(--s-threadline-color-alpha));
-  --s-mgmt-scheduler-stack-animation-timing: 0.7s;
+  --s-mgmt-scheduler-stack-animation-timing: 0.375s;
 }
 
 .s-mgmt-scheduler {
@@ -447,22 +447,7 @@ watch(
   max-height: 100%;
 }
 
-.s-mgmt-scheduler-stack::after {
-  /* content: ''; */
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  position: absolute;
-  border-radius: 1rem;
-  pointer-events: none;
-  border: 1px solid rgba(var(--s-primary-color-rgb) / 0.3);
-  background-color: rgba(var(--s-primary-color-rgb) / 0.05);
-}
-
 /* TRANSITIONS */
-
 .scheduler-info-enter-from,
 .scheduler-info-leave-to,
 .scheduler-stack-enter-from,
@@ -494,39 +479,5 @@ watch(
 .scheduler-info-enter-active {
   transition-delay: var(--s-mgmt-scheduler-stack-animation-timing);
   order: 1;
-}
-</style>
-
-<style>
-.s-tooltip {
-  --p-tooltip-background: var(--p-surface-900);
-  --p-tooltip-padding: 0.5em 1em;
-
-  font-size: 0.75rem;
-  user-select: none;
-}
-
-.p-datepicker.s-datepicker {
-  width: auto;
-}
-
-.p-datepicker-panel.s-datepicker-panel {
-  border: 0;
-  font-size: 0.875rem;
-}
-
-.p-datepicker-panel.s-datepicker-panel .p-datepicker-day-view,
-.p-datepicker-panel.s-datepicker-panel .p-datepicker-time-picker span {
-  font-size: 0.75rem;
-}
-
-.p-datepicker-panel.s-datepicker-panel .p-datepicker-day-view th,
-.p-datepicker-panel.s-datepicker-panel .p-datepicker-day-view td {
-  padding: 0.125rem;
-}
-
-.p-datepicker-panel.s-datepicker-panel .p-datepicker-day-view td > span {
-  width: 1.5rem;
-  height: 1.5rem;
 }
 </style>
