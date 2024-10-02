@@ -1,5 +1,5 @@
 const svgoCofig = {
-  // multipass: true,
+  multipass: false,
   plugins: [
     {
       name: 'preset-default'
