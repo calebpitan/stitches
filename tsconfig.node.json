@@ -12,6 +12,7 @@
     "composite": true,
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+    "allowJs": true,
 
     "module": "ESNext",
     "moduleResolution": "Bundler",

@@ -7,7 +7,8 @@ const yourConfig = {
     postcssPresetEnv({
       /* pluginOptions */
       features: {
-        'light-dark-function': true
+        'light-dark-function': true,
+        'relative-color-syntax': true
       }
     })
   ]

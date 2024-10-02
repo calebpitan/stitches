@@ -9,7 +9,7 @@ import { defineConfig } from 'vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import svgLoader from 'vite-svg-loader'
 
-import svgoConfig from './svgo.config'
+import svgoConfig from './svgo.config.mjs'
 
 // https://vitejs.dev/config/
 export default defineConfig({
