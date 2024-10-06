@@ -1,7 +1,7 @@
 {
   "extends": "@tsconfig/node20/tsconfig.json",
   "include": [
-    "vite.config.{ts,mjs}",
+    "vite.config.ts",
     "vitest.config.*",
     "cypress.config.*",
     "nightwatch.conf.*",
