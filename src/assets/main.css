@@ -13,7 +13,7 @@ input[type='search']::-webkit-search-results-decoration {
 }
 
 #app {
-  max-width: 1920px;
+  max-width: var(--s-3xl-viewport);
   width: 100%;
   margin: 0 auto;
   font-weight: normal;
@@ -34,12 +34,8 @@ a,
   }
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    flex-direction: column;
-    place-items: center;
-  }
+.pi {
+  --p-icon-size: 1em;
 }
 
 .p-floatlabel label.s-label {

@@ -1,0 +1,81 @@
+/* semantic color variables for this project */
+:root {
+  color-scheme: light dark;
+  --s-surface-ground: var(--p-surface-0);
+  --s-surface-middle: var(--p-surface-50);
+  --s-surface-lower: var(--p-surface-100);
+  --s-surface-through-rgb: 248 250 252;
+  --s-surface-through-alpha: 0.4;
+
+  --s-script-primary: rgba(0, 0, 0, 1);
+  --s-script-secondary: rgba(0, 0, 0, 0.65);
+  --s-script-subtle: rgba(0, 0, 0, 0.35);
+
+  --s-primary-color-rgb: 52 211 153;
+
+  --s-sm-viewport: 640px;
+  --s-md-viewport: 768px;
+  --s-lg-viewport: 1024px;
+  --s-xl-viewport: 1280px;
+  --s-2xl-viewport: 1536px;
+  --s-3xl-viewport: 1920px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --s-surface-ground: var(--p-surface-900);
+    --s-surface-middle: var(--p-surface-950);
+    --s-surface-lower: #000000;
+    --s-surface-through-rgb: 95 95 95;
+    --s-surface-through-alpha: 0.2;
+
+    --s-script-primary: rgba(255, 255, 255, 1);
+    --s-script-secondary: rgba(255, 255, 255, 0.75);
+    --s-script-subtle: rgba(255, 255, 255, 0.45);
+  }
+}
+
+:root {
+  --s-base-padding: 1.25rem;
+  --s-sidebar-zindex: 10;
+  --p-button-icon-only-width: var(--s-base-padding);
+
+  @media (--sm-viewport-min) and (--sm-viewport-max) {
+    --s-base-padding: 1.5rem;
+    --p-button-icon-only-width: var(--s-base-padding);
+  }
+
+  @media (--md-viewport-min) and (--md-viewport-max) {
+    --s-base-padding: 1.75rem;
+    --p-button-icon-only-width: var(--s-base-padding);
+  }
+
+  @media (--lg-viewport-min) {
+    --s-base-padding: 2rem;
+    --p-button-icon-only-width: var(--s-base-padding);
+  }
+}
+
+/* 40em */
+@custom-media --xs-viewport-max (max-width: 639.98px);
+@custom-media --sm-viewport-min (min-width: 640px);
+
+/* 48em */
+@custom-media --sm-viewport-max (max-width: 767.98px);
+@custom-media --md-viewport-min (min-width: 768px);
+
+/* 64em */
+@custom-media --md-viewport-max (max-width: 1023.98px);
+@custom-media --lg-viewport-min (min-width: 1024px);
+
+/* 80em */
+@custom-media --lg-viewport-max (max-width: 1279.98px);
+@custom-media --xl-viewport-min (min-width: 1280px);
+
+/* 96em */
+@custom-media --xl-viewport-max (max-width: 1535.98px);
+@custom-media --2xl-viewport-min (min-width: 1536px);
+
+/* 120em */
+@custom-media --2xl-viewport-max (max-width: 1919.98px);
+@custom-media --3xl-viewport-min (min-width: 1920px);
