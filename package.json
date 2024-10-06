@@ -36,6 +36,7 @@
     "vuedraggable": "git+https://github.com/zhyswan/vue.draggable.next.git#master"
   },
   "devDependencies": {
+    "@csstools/postcss-global-data": "^3.0.0",
     "@primevue/auto-import-resolver": "^4.0.7",
     "@rushstack/eslint-patch": "^1.8.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",

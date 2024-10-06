@@ -620,6 +620,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@csstools/postcss-global-data@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@csstools/postcss-global-data@npm:3.0.0"
+  peerDependencies:
+    postcss: ^8.4
+  checksum: 10c0/9c40b07c3c01c4736fca7835297685c5f865a93973d02214bcd9ed1300884fb2dcbb491afccf1e9a971e628340886be83f853b7a86ad51a104031440aad9dbcf
+  languageName: node
+  linkType: hard
+
 "@csstools/postcss-gradients-interpolation-method@npm:^5.0.2":
   version: 5.0.2
   resolution: "@csstools/postcss-gradients-interpolation-method@npm:5.0.2"
@@ -7086,6 +7095,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "stitches@workspace:."
   dependencies:
+    "@csstools/postcss-global-data": "npm:^3.0.0"
     "@primevue/auto-import-resolver": "npm:^4.0.7"
     "@primevue/themes": "npm:^4.0.7"
     "@rushstack/eslint-patch": "npm:^1.8.0"
