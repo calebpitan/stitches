@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import TaskAdd, { type TaskAddProps } from './TaskAdd.vue'
 import TaskSearch, { type TaskSearchProps } from './TaskSearch.vue'
+import TaskSort, { type TaskSortProps } from './TaskSort.vue'
 
-interface TaskToolbarProps extends TaskSearchProps, TaskAddProps {
+interface TaskToolbarProps extends TaskSearchProps, TaskAddProps, TaskSortProps {
   searchable?: boolean
 }
 
@@ -15,6 +16,7 @@ defineProps<TaskToolbarProps>()
 
     <div class="s-tools">
       <TaskAdd @add="onAdd" />
+      <TaskSort @sort="onSort" />
     </div>
   </div>
 </template>
@@ -23,6 +25,7 @@ defineProps<TaskToolbarProps>()
 .s-toolbar {
   display: flex;
   flex-direction: row;
+  gap: 0.5rem;
 }
 
 .s-toolbar > * + * {
@@ -30,10 +33,16 @@ defineProps<TaskToolbarProps>()
 }
 
 .s-toolbar-search {
-  flex: 0 1 auto;
+  flex: 1 0 auto;
 }
 
 .s-tools {
-  flex: 1 0 auto;
+  --p-button-icon-only-width: var(--s-base-padding);
+
+  display: inline-flex;
+  place-items: center;
+  gap: 0.5rem;
+  flex: 0 1 auto;
+  margin-inline-start: auto;
 }
 </style>

@@ -18,6 +18,7 @@ function addEmptyTask() {
     id="new-task-button"
     icon="pi pi-plus"
     aria-label="Add"
+    severity="secondary"
     @click="addEmptyTask"
     rounded
     text

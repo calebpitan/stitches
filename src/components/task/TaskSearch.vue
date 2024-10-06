@@ -18,7 +18,7 @@ const resetSearchTerm = () => (term.value = '')
 
 <template>
   <IconField>
-    <InputIcon class="pi pi-search s-searchicon" />
+    <InputIcon class="pi pi-search" />
     <InputText
       type="search"
       class="s-search"
@@ -33,13 +33,9 @@ const resetSearchTerm = () => (term.value = '')
       @click="resetSearchTerm"
     />
   </IconField>
-</template>
+</template> 
 
 <style scoped>
-.s-searchicon {
-  margin-top: calc(-1 * (var(--p-icon-size) / 1.5));
-}
-
 .s-search {
   box-shadow: none;
   border: 1px solid transparent;
