@@ -4,7 +4,7 @@ import Draggable from 'vuedraggable'
 
 import { type TaskListItem } from '@/interfaces/task'
 
-import DragHandle from '../icons/DragHandle.vue'
+import IconDragHandle from '../icons/IconDragHandle.vue'
 import TaskPresentation from './TaskPresentation.vue'
 
 type DraggableItem = { element: TaskListItem; index: number }
@@ -107,7 +107,7 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
             @mouseenter.stop="handling = true"
             @mouseleave.stop="handling = false"
           >
-            <DragHandle style="opacity: 0.1" />
+            <IconDragHandle style="opacity: 0.1" />
           </div>
           <TaskPresentation
             :task="element"
@@ -154,7 +154,7 @@ watch([dragging, handling], ([isDragging, isHandling], _, onCleanup) => {
   display: flex;
   position: relative;
   padding: 0 0 0 1.625rem;
-  margin-inline: -2rem;
+  margin-inline: calc(-1 * var(--s-base-padding));
   background-color: var(--s-surface-middle);
 
   &[draggable='true'] {
