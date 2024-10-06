@@ -3,11 +3,11 @@ import type { TaskSchedule } from '@/interfaces/schedule'
 
 import MgmtScheduleSummary from './MgmtScheduleSummary.vue'
 
-interface MgmtScheduleSummaryProps {
+interface MgmtScheduleInfoProps {
   schedule: TaskSchedule | null
 }
 
-withDefaults(defineProps<MgmtScheduleSummaryProps>(), {})
+withDefaults(defineProps<MgmtScheduleInfoProps>(), {})
 </script>
 
 <template>

@@ -2,8 +2,8 @@
 import { useLocale } from '@/composables/useLocale'
 import type { TaskSchedule } from '@/interfaces/schedule'
 
-import LoopOff from '../icons/LoopOff.vue'
-import LoopOn from '../icons/LoopOn.vue'
+import IconLoopOff from '../icons/IconLoopOff.vue'
+import IconLoopOn from '../icons/IconLoopOn.vue'
 import HStack from '../stack/HStack.vue'
 
 interface MgmtScheduleSummaryProps {
@@ -29,11 +29,11 @@ const locale = useLocale()
     <div v-else>You have not set a schedule for this task</div>
 
     <HStack v-if="schedule && schedule.frequency.type !== 'never'" :spacing="1">
-      <LoopOn />
+      <IconLoopOn />
       <span>{{ schedule.frequency.type }}</span>
 
       <template v-if="schedule.frequency.until !== null">
-        <LoopOff width="1.2em" height="1.2em" />
+        <IconLoopOff width="1.2em" height="1.2em" />
         <span>{{ schedule.frequency.until.toLocaleDateString(locale) }}</span>
       </template>
     </HStack>

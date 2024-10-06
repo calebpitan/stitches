@@ -9,6 +9,7 @@ import type { BaseTaskSchedule, Frequency, TaskSchedule } from '@/interfaces/sch
 import { evaluate } from '@/utils'
 import { frequencies } from '@/utils/scheduling'
 
+import IconClearAll from '../icons/IconClearAll.vue'
 import CronScheduler from '../repeatables/CronScheduler.vue'
 import HStack from '../stack/HStack.vue'
 import VStack from '../stack/VStack.vue'
@@ -82,9 +83,14 @@ const primaryColor = usePrimaryColor()
 // button.
 // ***************************************************************
 const tooltip = computed(() => {
+  const pt = { root: 's-tooltip', arrow: 's-tooltip-arrow', text: 's-tooltip-text' }
   return {
-    value: isExpanded.value === false ? 'Open scheduler' : 'Close scheduler',
-    pt: { root: 's-tooltip', arrow: 's-tooltip-arrow', text: 's-tooltip-text' }
+    toggle: {
+      pt,
+      value: isExpanded.value === false ? 'Open scheduler' : 'Close scheduler'
+    },
+    edit: { pt, value: 'Edit schedule', showDelay: 1000 },
+    clear: { pt, value: 'Clear all schedule', showDelay: 1000 }
   }
 })
 
@@ -235,7 +241,7 @@ watch(
     <div class="s-schedule-header">
       <div ref="threadline" class="s-threadline">
         <Button
-          v-tooltip="tooltip"
+          v-tooltip="tooltip.toggle"
           type="button"
           icon="pi pi-plus"
           :class="['s-scheduler-toggle', { expanded: isExpanded }]"
@@ -254,7 +260,7 @@ watch(
         <MgmtScheduleSummary :schedule="schedule">
           <template #clear-button>
             <Button
-              class="s-mgmt-schedule-quick-actions"
+              class="s-mgmt-schedule-quick-action"
               severity="danger"
               :text="true"
               @click="handleClearSchedule"
@@ -271,25 +277,26 @@ watch(
         <MgmtScheduleInfo v-if="isExpanded === false" :schedule>
           <template #edit-button>
             <Button
+              v-tooltip.bottom="tooltip.edit"
               class="s-mgmt-schedule-quick-actions"
-              severity="info"
-              :text="true"
-              :dt="{ 'text.info.color': '{ blue.700 }' }"
+              icon="pi pi-pencil"
+              :text="false"
+              :rounded="true"
               @click="isExpanded = true"
-            >
-              Edit
-            </Button>
+            />
           </template>
 
           <template v-if="schedule" #clear-button>
             <Button
+              v-tooltip.bottom="tooltip.clear"
               class="s-mgmt-schedule-quick-actions"
-              severity="danger"
-              :text="true"
-              :dt="{ 'text.danger.color': '{ red.800 }' }"
+              :text="false"
+              :rounded="true"
               @click="handleClearSchedule"
             >
-              Clear
+              <template #icon="{ class: cls }">
+                <IconClearAll :class="cls" width="1.5em" height="1.5em" />
+              </template>
             </Button>
           </template>
         </MgmtScheduleInfo>
@@ -377,11 +384,10 @@ watch(
 }
 
 .s-mgmt-schedule-summary {
-  /* color: rgb(from var(--p-primary-color) r g b / 1); */
   color: var(--s-script-subtle);
 }
 
-.s-mgmt-schedule-quick-actions {
+.s-mgmt-schedule-quick-action {
   --p-button-text-info-hover-background: transparent;
   --p-button-text-danger-hover-background: transparent;
   --p-button-text-info-active-background: transparent;
@@ -391,6 +397,17 @@ watch(
 
   font-size: 0.875rem;
   line-height: 1;
+  border-color: transparent;
+}
+
+.s-mgmt-schedule-quick-actions {
+  --p-button-padding-x: 0.0625rem;
+  --p-button-padding-y: 0.0625rem;
+  --p-button-icon-only-width: 1.75rem;
+
+  box-shadow: none;
+  font-size: 0.875rem;
+  text-decoration: none;
   border-color: transparent;
 }
 
