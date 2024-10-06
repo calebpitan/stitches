@@ -5,7 +5,7 @@ import { defineStore } from 'pinia'
 
 import type { BaseTaskListItem, TaskListItem } from '@/interfaces/task'
 import { TaskSerializer } from '@/serializers/task'
-import { createDeserializer, ulid } from '@/utils'
+import { createDeserializer, createReadGuard, ulid } from '@/utils'
 
 interface Serializables {
   tasks: TaskListItem[]
@@ -17,19 +17,16 @@ export const useTaskStore = defineStore(
   () => {
     const tasks = ref<TaskListItem[]>([])
     const selected = ref<string | null>(null)
-
-    function guard(id: string, task: TaskListItem | null): never | TaskListItem {
-      if (!task) throw new Error(`Task with ID "${id}" does not exist`)
-      return task
-    }
+    const guard = createReadGuard('Task')
 
     function findTaskIndex(id: string) {
-      return tasks.value.findIndex((t) => t.id === id)
+      const index = tasks.value.findIndex((t) => t.id === id)
+      return guard(index, false)
     }
 
     function findTask(id: string): TaskListItem | null {
       const index = findTaskIndex(id)
-      const task: TaskListItem | undefined = tasks.value[index]
+      const task = tasks.value.at(index)
 
       return task ?? null
     }
@@ -67,8 +64,8 @@ export const useTaskStore = defineStore(
 
     function removeTask(id: string) {
       const index = findTaskIndex(id)
-      if (index === -1) return
-      tasks.value.splice(index, 1)
+      guard(id, findTask(id))
+      return tasks.value.splice(index, 1).at(0)!
     }
 
     function toggleTask(id: string) {

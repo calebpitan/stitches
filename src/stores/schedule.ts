@@ -5,21 +5,22 @@ import { defineStore } from 'pinia'
 
 import type { BaseTaskSchedule, TaskSchedule } from '@/interfaces/schedule'
 import { ScheduleSerializer } from '@/serializers/schedule'
-import { createDeserializer, ulid } from '@/utils'
+import { createDeserializer, createReadGuard, ulid } from '@/utils'
 
 export const useTaskScheduleStore = defineStore(
   's-task-schedule',
   () => {
     const schedules = ref<TaskSchedule[]>([])
+    const guard = createReadGuard('Schedule')
 
     function findScheduleIndex(idOrTaskId: string) {
       const index = schedules.value.findIndex((s) => s.id === idOrTaskId || s.taskId === idOrTaskId)
-      return index
+      return guard(index, false)
     }
 
     function findSchedule(idOrTaskId: string): TaskSchedule | null {
       const index = findScheduleIndex(idOrTaskId)
-      const schedule: TaskSchedule | undefined = schedules.value[index]
+      const schedule: TaskSchedule | undefined = schedules.value.at(index)
       return schedule ?? null
     }
 
@@ -40,16 +41,8 @@ export const useTaskScheduleStore = defineStore(
     }
 
     function updateSchedule(id: string, patch: BaseTaskSchedule): TaskSchedule {
-      const index = findScheduleIndex(id)
-      const schedule = schedules.value.at(index)
-
-      if (!schedule) throw new Error(`Schedule with ID "${id}" does not exist`)
-
-      const update = { id, ...patch } // merge<TaskSchedule>(schedule, patch, {})
-
-      schedules.value.splice(index, 1, update)
-
-      return update
+      const schedule = guard(id, findSchedule(id))
+      return Object.assign(schedule, patch)
     }
 
     function upsertSchedule(taskId: string, patch: BaseTaskSchedule): TaskSchedule {
@@ -62,7 +55,7 @@ export const useTaskScheduleStore = defineStore(
 
     function deleteSchedule(id: string): TaskSchedule | null {
       const index = findScheduleIndex(id)
-      if (index === -1) return null
+      guard(id, findSchedule(id))
       return schedules.value.splice(index, 1).at(0)!
     }
 
