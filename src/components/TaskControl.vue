@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 
 import { $dt } from '@primevue/themes'
+import { useElementBounding } from '@vueuse/core'
 
 import Fuse from 'fuse.js'
 import type { MeterItem } from 'primevue/metergroup'
@@ -11,6 +12,7 @@ import { useTaskScheduleStore } from '@/stores/schedule'
 import { useTaskStore } from '@/stores/task'
 import { evaluate } from '@/utils'
 
+import SidebarControl from './bars/SidebarControl.vue'
 import EmptyTasks from './empty/EmptyTasks.vue'
 import TaskGroup from './task/TaskGroup.vue'
 import TaskHeader from './task/TaskHeader.vue'
@@ -18,6 +20,28 @@ import TaskList from './task/TaskList.vue'
 import TaskToolbar from './task/TaskToolbar.vue'
 
 type Filters = 'Completed' | 'Pending' | 'Recent' | 'Due' | 'Scheduled' | 'Today'
+type GroupedTask = { [P in Lowercase<Filters>]: TaskListItem[] } & {
+  get(label: Lowercase<Filters>): TaskListItem[]
+}
+
+export type TaskGroupbarViewChangeEvent = {
+  /**
+   * The type of visibility change; where `shifted` represents
+   * out of the viewport and `unshifted` represents within the
+   * viewport.
+   */
+  type: 'shifted' | 'unshifted'
+  /**
+   * The x-offset which is the inline size of the taskgroup bar
+   */
+  offset: number
+}
+
+interface TaskControlProps {
+  onGroupbarViewChange?(event: TaskGroupbarViewChangeEvent): void
+}
+
+const props = withDefaults(defineProps<TaskControlProps>(), {})
 
 const taskStore = useTaskStore()
 const taskScheduleStore = useTaskScheduleStore()
@@ -30,9 +54,9 @@ const filter = ref<Filters | null>(null)
 const activeSearchTerm = ref<string | null>(null)
 const fuse = new Fuse(taskStore.tasks, { keys: ['title', 'summary'], threshold: 0.5 })
 
-watch(taskStore.tasks, (latest) => {
-  fuse.setCollection(latest)
-})
+const taskGroupbarRef = ref<HTMLElement | null>(null)
+const taskGroupBarIsOpen = ref(true)
+const taskGroupbarRect = useElementBounding(taskGroupbarRef)
 
 const maxAddedAt = computed(() => {
   return storedTasks.value
@@ -40,7 +64,7 @@ const maxAddedAt = computed(() => {
     .reduce((prev, next) => Math.max(prev.valueOf(), next.valueOf()))
 })
 
-const grouped = computed<{ [P in Lowercase<Filters>]: TaskListItem[] }>(() => {
+const grouped = computed<GroupedTask>(() => {
   const completed = storedTasks.value.filter((t) => t.completed)
   const pending = storedTasks.value.filter((t) => !t.completed)
   const recent = storedTasks.value.filter((t) => {
@@ -58,7 +82,10 @@ const grouped = computed<{ [P in Lowercase<Filters>]: TaskListItem[] }>(() => {
     recent,
     due: [],
     scheduled,
-    today: []
+    today: [],
+    get(label: Lowercase<Filters>) {
+      return this[label]
+    }
   }
 })
 
@@ -129,83 +156,180 @@ function filterTasks(label: Filters | null) {
   filter.value = label
 }
 
+watch(taskStore.tasks, (latest) => {
+  fuse.setCollection(latest)
+})
+
 watch(filter, () => {
   if (!filter.value) return (tasks.value = taskStore.tasks)
   const label = filter.value.toLowerCase() as Lowercase<Filters>
-  tasks.value = grouped.value[label]
+  tasks.value = grouped.value.get(label)
+})
+
+watch(taskGroupBarIsOpen, (isOpen) => {
+  if (isOpen) {
+    return props.onGroupbarViewChange?.({
+      type: 'unshifted',
+      offset: 0
+    })
+  }
+
+  return props.onGroupbarViewChange?.({
+    type: 'shifted',
+    offset: -1 * taskGroupbarRect.width.value
+  })
 })
 </script>
 
 <template>
   <div class="s-task-control">
-    <div class="s-task-control-bar">
-      <TaskHeader class="s-task-header-customize">
-        <h1 class="s-title">{{ filter ?? 'Organizer' }}</h1>
+    <div
+      :class="['s-task-control-bar', { unshifted: !taskGroupBarIsOpen }]"
+      :style="{ '--s-taskgroupbar-width': `${taskGroupbarRect.width.value.toFixed(2)}px` }"
+    >
+      <div class="s-task-control-header">
+        <SidebarControl
+          class="s-task-control-sidebar-control"
+          :style="{ visibility: taskGroupBarIsOpen ? 'hidden' : undefined }"
+          :open="taskGroupBarIsOpen"
+          @toggle="taskGroupBarIsOpen = $event"
+        />
+        <TaskHeader class="s-task-header-customize">
+          <h1 class="s-title">{{ filter ?? 'Organizer' }}</h1>
 
-        <TaskToolbar @search="searchTasks" @add="addTask" :searchable="tasks.length > 0" />
-      </TaskHeader>
+          <TaskToolbar
+            @search="searchTasks"
+            @add="addTask"
+            @sort="console.log($event)"
+            :searchable="tasks.length > 0"
+          />
+        </TaskHeader>
+      </div>
 
-      <TaskList
-        :items="tasks"
-        @toggle="toggleTask"
-        @delete="removeTask"
-        @review="reviewTask"
-        @select="selectTask"
-      >
-        <template #empty>
-          <EmptyTasks style="margin-block-start: 10rem">
-            <template v-if="activeSearchTerm" #message>
-              <span>No tasks matching "{{ activeSearchTerm }}"</span>
-            </template>
-          </EmptyTasks>
-        </template>
-      </TaskList>
+      <div class="s-task-control-bar-items">
+        <TaskList
+          :items="tasks"
+          @toggle="toggleTask"
+          @delete="removeTask"
+          @review="reviewTask"
+          @select="selectTask"
+        >
+          <template #empty>
+            <EmptyTasks style="margin-block-start: 10rem">
+              <template v-if="activeSearchTerm" #message>
+                <span>No tasks matching "{{ activeSearchTerm }}"</span>
+              </template>
+            </EmptyTasks>
+          </template>
+        </TaskList>
+      </div>
     </div>
 
-    <TaskGroup
-      class="s-task-control-group"
-      :groups="groups"
-      :total="storedTasks.length"
-      :filter="filter"
-      @filter="filterTasks"
-    />
+    <div
+      ref="taskGroupbarRef"
+      :class="['s-task-control-group-bar', { shifted: !taskGroupBarIsOpen }]"
+      :aria-hidden="!taskGroupBarIsOpen ? true : undefined"
+    >
+      <SidebarControl
+        class="s-task-control-sidebar-control"
+        :style="{ visibility: !taskGroupBarIsOpen ? 'hidden' : undefined }"
+        :open="taskGroupBarIsOpen"
+        @toggle="taskGroupBarIsOpen = $event"
+      />
+      <TaskGroup
+        class="s-task-control-group"
+        :groups="groups"
+        :total="storedTasks.length"
+        :filter="filter"
+        @filter="filterTasks"
+      />
+    </div>
   </div>
 </template>
 
 <style scoped>
 .s-task-control {
+  --s-transition-timing: 0.35s ease;
+
   display: flex;
   flex-direction: row;
   height: 100%;
+  position: relative;
 }
 
 .s-task-control-bar {
   width: 100%;
-  padding: 2rem;
   overflow-y: auto;
   order: 1;
   flex: 1 1 auto;
   height: 100%;
   display: flex;
   flex-direction: column;
+  margin-inline-start: var(--s-taskgroupbar-width);
+  transition: margin-inline-start var(--s-transition-timing);
+
+  &.unshifted {
+    margin-inline-start: 0;
+  }
+}
+
+.s-task-control-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgb(from var(--s-surface-ground) r g b / 0.37);
+  backdrop-filter: blur(15px);
+  filter: saturate(180%);
+}
+
+.s-task-control-bar-items {
+  padding: 0 var(--s-base-padding) var(--s-base-padding);
+  flex: 1 1 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.s-task-control-sidebar-control {
+  padding: 0 calc(var(--s-base-padding) - (var(--p-button-icon-only-width) - 1em) / 2);
 }
 
 .s-task-header-customize {
-  margin-inline: -2rem;
-  padding: 0rem 2rem 1rem;
+  /* margin-inline: calc(-1 * var(--s-base-padding)); */
+  /* padding: 0rem var(--s-base-padding) 2.5rem; */
+  padding: var(--s-base-padding);
   position: relative;
-  z-index: 1;
   min-width: 100%;
   width: auto;
-  background-color: var(--s-surface-middle);
+}
+
+.s-task-control-group-bar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  flex: 0 1 auto;
+  background-color: var(--s-surface-ground);
+  position: absolute;
+  z-index: calc(var(--s-sidebar-zindex) * 2);
+  transition: transform var(--s-transition-timing);
+
+  &.shifted {
+    transform: translate(-100%);
+  }
+
+  @media (--lg-viewport-min) and (--lg-viewport-max) {
+    max-width: 250px;
+  }
+
+  @media (--xl-viewport-min) {
+    max-width: 370px;
+  }
 }
 
 .s-task-control-group {
-  max-width: 370px;
   height: 100%;
-  padding: 2rem;
-  background-color: var(--s-surface-ground);
-  flex: 0 1 100%;
+  padding: var(--s-base-padding);
+  /* flex: 0 1 100%; */
   height: 100%;
 }
 
@@ -213,5 +337,6 @@ watch(filter, () => {
   font-weight: 700;
   margin-block-start: 0;
   margin-block-end: 1rem;
+  line-height: 1;
 }
 </style>
