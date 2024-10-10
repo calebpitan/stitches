@@ -33,7 +33,7 @@ defineProps<TaskToolbarProps>()
 }
 
 .s-toolbar-search {
-  flex: 1 0 auto;
+  flex: 1 1 auto;
 }
 
 .s-tools {
