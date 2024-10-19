@@ -7,6 +7,7 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 import vueDevTools from 'vite-plugin-vue-devtools'
+import wasm from 'vite-plugin-wasm'
 import svgLoader from 'vite-svg-loader'
 
 import svgoConfig from './svgo.config.mjs'
@@ -17,6 +18,7 @@ export default defineConfig({
     vue(),
     vueJsx(),
     vueDevTools(),
+    wasm(),
     Components({ resolvers: [PrimeVueResolver()] }),
     svgLoader({ defaultImport: 'component', svgoConfig: svgoConfig as any })
   ],
