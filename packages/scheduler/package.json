@@ -1,0 +1,17 @@
+{
+  "name": "@stitches/scheduler",
+  "type": "module",
+  "collaborators": [
+    "Caleb Adepitan <calebpitan@gmail.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "pkg"
+  ],
+  "main": "pkg/scheduler.js",
+  "types": "pkg/scheduler.d.ts",
+  "sideEffects": [
+    "./pkg/scheduler.js",
+    "./pkg/snippets/*"
+  ]
+}
