@@ -45,9 +45,8 @@ impl StScheduler {
         }
     }
 
-    pub fn schedule(&mut self, r#for: StSchedule) {
-        let item = r#for;
-        let next_schedule = item.get_next_schedule();
+    pub fn schedule(&mut self, config: StSchedule) {
+        let next_schedule = config.get_next_schedule();
 
         self.pq.enqueue(next_schedule);
     }
