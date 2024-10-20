@@ -21,7 +21,6 @@
   },
   "dependencies": {
     "@primevue/themes": "^4.0.7",
-    "@stitches/scheduler": "workspaces:*",
     "@svgdotjs/svg.js": "^3.2.4",
     "@vue-js-cron/core": "^5.2.0",
     "@vueuse/core": "^11.1.0",
