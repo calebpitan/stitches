@@ -3,6 +3,9 @@ name = "scheduler"
 version = "0.1.0"
 authors = ["Caleb Adepitan <hello@calebpitan.com>"]
 edition = "2018"
+repository = "https://github.com/calebpitan/stitches"
+license = "MIT OR Apache-2.0"
+description = "A scheduler program for tracking schedules and dispatching timely events"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
