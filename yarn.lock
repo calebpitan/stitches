@@ -7317,7 +7317,7 @@ __metadata:
     vue: "npm:^3.4.29"
     vue-router: "npm:^4.3.3"
     vue-tsc: "npm:^2.0.21"
-    vuedraggable: "git+https://github.com/zhyswan/vue.draggable.next.git#master"
+    vuedraggable: "git+https://github.com/zhyswan/vue.draggable.next.git#b2d9bee9149071e7999f43c68753444c9c52c45a"
     wasm-pack: "npm:^0.13.0"
   languageName: unknown
   linkType: soft
@@ -8203,7 +8203,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vuedraggable@git+https://github.com/zhyswan/vue.draggable.next.git#master":
+"vuedraggable@git+https://github.com/zhyswan/vue.draggable.next.git#b2d9bee9149071e7999f43c68753444c9c52c45a":
   version: 4.1.3
   resolution: "vuedraggable@https://github.com/zhyswan/vue.draggable.next.git#commit=b2d9bee9149071e7999f43c68753444c9c52c45a"
   dependencies:

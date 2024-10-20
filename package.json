@@ -38,7 +38,7 @@
     "ulidx": "^2.4.1",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3",
-    "vuedraggable": "git+https://github.com/zhyswan/vue.draggable.next.git#master"
+    "vuedraggable": "git+https://github.com/zhyswan/vue.draggable.next.git#b2d9bee9149071e7999f43c68753444c9c52c45a"
   },
   "devDependencies": {
     "@csstools/postcss-global-data": "^3.0.0",
