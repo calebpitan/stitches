@@ -9,10 +9,17 @@
   "files": [
     "pkg"
   ],
+  "scripts": {
+    "build": "wasm-pack build"
+  },
   "main": "pkg/scheduler.js",
   "types": "pkg/scheduler.d.ts",
   "sideEffects": [
     "./pkg/scheduler.js",
     "./pkg/snippets/*"
-  ]
+  ],
+  "devDependencies": {
+    "wasm-pack": "^0.13.0"
+  },
+  "packageManager": "yarn@4.1.1"
 }
