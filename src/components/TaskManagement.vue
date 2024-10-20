@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+import { get_scheduler } from '@stitches/scheduler'
+
 import type { BaseTaskSchedule } from '@/interfaces/schedule'
 import { useTaskScheduleStore } from '@/stores/schedule'
 import { useTaskTagStore } from '@/stores/tag'
@@ -32,6 +34,10 @@ function clearSchedule(id: string) {
 
 const reviewTask = taskStore.updateTask
 const createTaskTag = taskTagStore.createTag
+
+const schdlr = get_scheduler()
+
+console.log(schdlr)
 </script>
 
 <template>
