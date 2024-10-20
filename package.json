@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "vite",
     "build": "run-p type-check build:wasm \"build-only {@}\" --",
-    "build:wasm": "yarn --cwd ./packages/scheduler build",
+    "build:wasm": "yarn --cwd ./packages/scheduler build --target deno",
     "preview": "vite preview",
     "test:unit": "vitest",
     "test:e2e": "start-server-and-test preview http://localhost:4173 'cypress run --e2e'",
