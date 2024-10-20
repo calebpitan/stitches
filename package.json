@@ -73,5 +73,6 @@
     "vitest": "^1.6.0",
     "vue-tsc": "^2.0.21",
     "wasm-pack": "^0.13.0"
-  }
+  },
+  "packageManager": "yarn@4.1.1"
 }
