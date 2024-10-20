@@ -1,6 +1,7 @@
 {
   "name": "@stitches/scheduler",
   "type": "module",
+  "private": true,
   "collaborators": [
     "Caleb Adepitan <calebpitan@gmail.com>"
   ],
