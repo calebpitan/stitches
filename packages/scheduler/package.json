@@ -10,6 +10,7 @@
     "pkg"
   ],
   "scripts": {
+    "postinstall": "yarn build",
     "build": "wasm-pack build"
   },
   "main": "pkg/scheduler.js",
