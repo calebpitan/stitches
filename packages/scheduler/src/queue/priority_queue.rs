@@ -46,8 +46,7 @@ where
         if self.is_empty() {
             return None;
         } else if self.heap.len() == 1 {
-            let data = self.heap.remove(0);
-            return Some(data);
+            return Some(self.heap.remove(0));
         }
 
         let root = self.heap.swap_remove(0);
