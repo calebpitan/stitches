@@ -7303,6 +7303,7 @@ __metadata:
     primeicons: "npm:^7.0.0"
     primevue: "npm:^4.0.7"
     reflect-metadata: "npm:^0.2.2"
+    rxjs: "npm:^7.8.1"
     start-server-and-test: "npm:^2.0.4"
     svgo: "npm:^3.3.2"
     typescript: "npm:~5.4.0"
