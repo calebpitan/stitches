@@ -1,11 +1,10 @@
-use std::cmp::Ordering;
+use std::cmp::{max, Ordering};
 
 use wasm_bindgen::prelude::*;
 
-use super::{
-    frequency::{StCustomFrequency, StFrequency, StRegularFrequency},
-    priority::StPriority,
-};
+use crate::scheduler::frequency::{StCustomFrequency, StFrequency, StRegularFrequency};
+use crate::scheduler::priority::StPriority;
+use crate::scheduler::time::{parse_cron_expr, utc_now, Timestamp};
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -75,6 +74,10 @@ impl StSchedule {
         }
     }
 
+    // pub(crate) fn get_id_as_str(&self) -> &str {
+    //     self.id.as_str()
+    // }
+
     pub fn get_id(&self) -> String {
         self.id.clone()
     }
@@ -111,29 +114,55 @@ impl StSchedule {
         None
     }
 
-    pub fn get_next_schedule(&self) -> StSchedule {
+    pub fn is_passed(&self) -> bool {
+        Timestamp::Millis(self.timestamp) < utc_now()
+    }
+
+    pub fn get_upcoming_schedule(&self) -> Option<StSchedule> {
         // Check if the current schedule has passed and generate the next
         // schedule relative to now from the StSchedule struct
-        let next_schedule = self
-            .frequency
-            .as_ref()
-            .map(|f| {
-                if let StFrequency::Custom(cstm_freq) = f {
-                    StSchedule::with_custom(
-                        &self.id,
-                        self.timestamp,
-                        cstm_freq.clone(),
-                        self.priority,
-                    )
-                } else if let StFrequency::Regular(reg_freq) = f {
-                    StSchedule::with_regular(&self.id, self.timestamp, *reg_freq, self.priority)
-                } else {
-                    panic!("Unreachable code")
-                }
-            })
-            .unwrap_or(StSchedule::new(&self.id, self.timestamp, self.priority));
+        if !self.is_passed() {
+            return None;
+        }
 
-        next_schedule
+        match &self.frequency {
+            Some(freq) => match freq {
+                StFrequency::Custom(cstm_freq) => {
+                    let crons = cstm_freq.get_crons_expressions();
+                    let timestamp = crons
+                        .iter()
+                        .take(3)
+                        .map(|c| {
+                            let ref_time = Timestamp::Millis(self.timestamp);
+                            let cur_time = utc_now();
+                            let time = parse_cron_expr(
+                                c.as_str(),
+                                Some(max(ref_time, cur_time)),
+                            );
+
+                            Timestamp::Millis(time.timestamp_millis() as u64)
+                        })
+                        .max();
+
+                    timestamp.map(|t| {
+                        StSchedule::with_custom(
+                            &self.id,
+                            t.to_ms(),
+                            cstm_freq.clone(),
+                            self.priority,
+                        )
+                    })
+                }
+
+                StFrequency::Regular(reg_freq) => Some(StSchedule::with_regular(
+                    &self.id,
+                    self.timestamp,
+                    *reg_freq,
+                    self.priority,
+                )),
+            },
+            None => None,
+        }
     }
 }
 
@@ -141,11 +170,10 @@ impl Ord for StSchedule {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         let order = self.timestamp.cmp(&other.timestamp);
 
-        if let Ordering::Equal = order {
-            return self.priority.cmp(&other.priority);
+        match order {
+            Ordering::Equal => self.priority.cmp(&other.priority),
+            _ => order,
         }
-
-        order
     }
 }
 
