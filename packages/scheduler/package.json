@@ -11,7 +11,9 @@
   ],
   "scripts": {
     "postinstall": "yarn build",
-    "build": "wasm-pack build"
+    "build": "wasm-pack build",
+    "test": "wasm-pack test --headless --chrome",
+    "test:watch": "cargo watch -i .gitignore -i \"pkg/*\" -s \"yarn test\""
   },
   "main": "pkg/scheduler.js",
   "types": "pkg/scheduler.d.ts",
