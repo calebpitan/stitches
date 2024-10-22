@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use std::ops::Sub;
 use std::time::Duration;
 
 use async_std::task;
@@ -33,6 +32,11 @@ pub struct StScheduler {
     pq: PriorityQueue<StSchedule>,
     receiver: Option<js_sys::Function>,
     _aborted: bool,
+}
+
+#[wasm_bindgen]
+pub struct StSchedulerRunner {
+    scheduler: StScheduler,
 }
 
 #[wasm_bindgen]
@@ -122,7 +126,7 @@ impl StScheduler {
 
             let peeked = self.pq.peek().expect("Expected a non-empty queue");
             let peeked_id = peeked.get_id();
-            let timestamp = Timestamp::Millis(peeked.get_timestamp().sub(3_600_000));
+            let timestamp = Timestamp::Millis(peeked.get_timestamp().saturating_sub(3_600_000));
             let now = utc_now();
             let difference = timestamp - now;
 
@@ -150,5 +154,21 @@ impl StScheduler {
                     .map(|r| r.call1(&JsValue::NULL, &JsValue::from_str(item.get_id().as_str())));
             }
         }
+    }
+}
+
+#[wasm_bindgen]
+impl StSchedulerRunner {
+    #[wasm_bindgen(constructor)]
+    pub fn new(scheduler: StScheduler) -> Self {
+        StSchedulerRunner { scheduler }
+    }
+
+    pub fn stop(&mut self) {
+        self.scheduler.abort();
+    }
+
+    pub fn run(&mut self) {
+        self.scheduler.unabort();
     }
 }
