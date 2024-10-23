@@ -14,6 +14,26 @@ export function never(_: never): never {
   throw new Error(`Unimplemented for ${_}`)
 }
 
+export function plural<S extends string, P extends string>(count: number, s: S, p: P) {
+  return count > 1 ? p : s
+}
+
+export function range(stop: number): Generator<number>
+export function range(start: number, stop: number, step?: number): Generator<number>
+export function* range(stopOrStart: number, stop?: number, step?: number) {
+  // TODO: make range work with integers only due to issue with float arithmetic
+  let start = 0
+  ;({ start, stop, step } =
+    stop === undefined
+      ? { start, stop: stopOrStart, step: 1 }
+      : { start: stopOrStart, stop: stop, step: Math.sign(stop - stopOrStart) })
+
+  const order = ((a: number, b: number) => (i: number) => (a < b ? i < b : i > b))(start, stop)
+  for (let i = start; order(i); i += step) {
+    yield i
+  }
+}
+
 export function sleep(ms: number): AsyncSleep {
   const controller = new AbortController()
   const future = new Promise<number>((resolve, reject) => {
