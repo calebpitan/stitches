@@ -8,14 +8,15 @@ interface StackProps {
   spacing?: number
 }
 
-withDefaults(defineProps<StackProps>(), { spacing: 8 })
+const props = withDefaults(defineProps<StackProps>(), { spacing: 8 })
+const { type, ...rest } = props
 </script>
 
 <template>
-  <HStack v-if="type === 'hstack'">
+  <HStack v-if="type === 'hstack'" v-bind="rest">
     <slot />
   </HStack>
-  <VStack v-else>
+  <VStack v-else v-bind="rest">
     <slot />
   </VStack>
 </template>
