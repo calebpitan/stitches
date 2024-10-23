@@ -38,6 +38,8 @@
 :root {
   --s-base-padding: 1.25rem;
   --s-sidebar-zindex: 10;
+  --s-input-padding-y: 0.25rem;
+  --s-input-line-height: 1.6;
   --p-button-icon-only-width: var(--s-base-padding);
 
   @media (--sm-viewport-min) and (--sm-viewport-max) {

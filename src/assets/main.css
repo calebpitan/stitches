@@ -57,8 +57,8 @@ a,
 }
 
 .p-datepicker-input.s-datepicker-input {
-  --p-inputtext-padding-y: 0.25rem;
-  line-height: 1.6;
+  --p-inputtext-padding-y: var(--s-input-padding-y);
+  line-height: var(--s-input-line-height);
 }
 
 .p-datepicker-panel.s-datepicker-panel {
@@ -99,9 +99,9 @@ a,
 
 .p-select-label.s-select-label,
 .p-multiselect.s-select .p-multiselect-label {
-  --p-select-padding-y: 0.25rem;
-  --p-multiselect-padding-y: 0.25rem;
-  line-height: 1.6;
+  --p-select-padding-y: var(--s-input-padding-y);
+  --p-multiselect-padding-y: var(--s-input-padding-y);
+  line-height: var(--s-input-line-height);
 }
 
 .p-select-overlay.s-select-overlay,
@@ -166,4 +166,38 @@ a,
   /* --p-checkbox-border-color: transparent; */
   --p-checkbox-background: transparent;
   --p-checkbox-shadow: none;
+}
+
+/* PrimeVue SelectButton component customizations */
+.p-selectbutton.s-selectbutton {
+  --p-togglebutton-background: var(--s-surface-lower);
+  --p-togglebutton-content-checked-background: var(--s-surface-ground);
+  --p-togglebutton-checked-background: var(--s-surface-lower);
+  /* --p-togglebutton-border-color: rgba(var(--s-surface-through-rgb) / 0.11);
+  --p-togglebutton-checked-border-color: rgba(var(--s-surface-through-rgb) / 0.11); */
+  --s-selectbutton-font-size: 0.875rem;
+  --s-selectbutton-grid-col: 3;
+
+  & > .p-togglebutton {
+    font-size: var(--s-selectbutton-font-size);
+  }
+}
+
+/* PrimeVue Input component customizations */
+.p-inputwrapper.s-inputwrapper {
+  --p-icon-size: 0.9375rem;
+}
+
+.p-inputtext.s-inputtext {
+  --p-inputtext-padding-y: var(--s-input-padding-y);
+  --p-inputtext-background: var(--s-surface-ground);
+
+  line-height: var(--s-input-line-height);
+  box-shadow: none;
+
+  &:not(:hover, :focus),
+  &:not(:hover, :focus),
+  &:not(:hover, :focus) {
+    --p-inputtext-border-color: transparent;
+  }
 }
