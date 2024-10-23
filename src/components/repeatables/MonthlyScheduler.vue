@@ -1,0 +1,166 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+
+import { plural, range } from '@/utils'
+import { ORDINAL_OPTIONS_GROUP, type Ordinals, WEEKDAY_OPTIONS } from '@/utils/scheduling'
+
+import Stack from '../stack/Stack.vue'
+
+/** Relationship */
+type Rel = 'On Days' | 'On The'
+
+const month = ref(1)
+const days = ref<Array<number>>([])
+const weekday = ref(1)
+const ordinal = ref<Lowercase<Ordinals>>('first')
+const rel = ref<Rel>('On Days')
+
+const dayOptions = computed(() => [...range(1, 32)])
+const relOptions = computed((): Array<Rel> => ['On Days', 'On The'])
+const weekdayOptions = computed(() => WEEKDAY_OPTIONS.slice())
+const ordinalOptionsGroup = computed(() => ORDINAL_OPTIONS_GROUP.slice())
+</script>
+
+<template>
+  <div class="s-weekly-scheduler">
+    <Stack type="vstack" :spacing="2">
+      <Stack type="hstack" :spacing="4">
+        <span class="s-label">Every</span>
+
+        <InputNumber
+          v-model="month"
+          id="wkly-scheduler-no-of-wks"
+          class="s-inputwrapper"
+          input-class="s-inputtext"
+          :min="1"
+          :max="200"
+          :allow-empty="false"
+          :show-buttons="true"
+          button-layout="stacked"
+          style="width: 6rem; font-size: 0.875rem"
+          :input-style="{ width: '100%', 'font-size': '0.875rem' }"
+        />
+
+        <label for="wkly-scheduler-no-of-wks" class="s-label">
+          {{ plural(month, 'Month', 'Months') }}
+        </label>
+      </Stack>
+
+      <Stack type="vstack" :spacing="2" style="width: 100%">
+        <SelectButton
+          v-model="rel"
+          class="s-selectbutton"
+          style="margin-inline: auto"
+          :options="relOptions"
+        />
+
+        <Stack v-if="rel === 'On Days'" type="vstack" :spacing="2" style="margin-inline: auto">
+          <SelectButton
+            v-model="days"
+            data-grid-col="7"
+            class="s-selectbutton smaller grided"
+            :multiple="true"
+            :options="dayOptions"
+          />
+        </Stack>
+
+        <Stack v-if="rel === 'On The'" type="hstack" :spacing="2">
+          <Select
+            v-model="ordinal"
+            class="s-select"
+            dropdown-icon="pi pi-angle-down"
+            label-class="s-select-label"
+            overlay-class="s-select-overlay"
+            :options="ordinalOptionsGroup"
+            option-label="alt"
+            option-value="value"
+            option-group-label="group"
+            option-group-children="items"
+          >
+            <template #optiongroup="{ option }">
+              <Divider v-if="option.group === 'others'" style="margin: 0" />
+              <span v-else aria-hidden="true" />
+            </template>
+          </Select>
+
+          <Select
+            v-model="weekday"
+            class="s-select"
+            dropdown-icon="pi pi-angle-down"
+            label-class="s-select-label"
+            overlay-class="s-select-overlay"
+            :options="weekdayOptions"
+            option-label="alt"
+            option-value="value"
+          />
+        </Stack>
+      </Stack>
+    </Stack>
+  </div>
+</template>
+
+<style scoped>
+.s-weekly-scheduler {
+  --scheduler-inner-padding: 1rem;
+
+  position: relative;
+  padding: var(--scheduler-inner-padding);
+  width: 100%;
+
+  &::after {
+    content: '';
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: absolute;
+    border-radius: 0.6875rem;
+    pointer-events: none;
+    border: 1px solid rgba(var(--s-primary-color-rgb) / 0.3);
+    background-color: rgba(var(--s-primary-color-rgb) / 0.025);
+  }
+}
+
+.s-selectbutton {
+  &.smaller {
+    --p-togglebutton-padding: 0.375rem 0.5rem;
+  }
+
+  &.grided {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+}
+
+.s-label {
+  font-size: 0.875rem;
+  color: var(--s-script-secondary);
+}
+</style>
+
+<style>
+.s-selectbutton[data-grid-col='7'].grided {
+  & > .p-togglebutton {
+    border-width: 0 0 1px 1px;
+
+    &:first-child {
+      border-bottom-left-radius: 0;
+    }
+
+    &:nth-child(7n) {
+      border-right-width: 1px;
+    }
+
+    /* The 1st through to 7th child */
+    &:nth-child(n + 1):nth-child(-n + 7) {
+      border-top-width: 1px;
+    }
+
+    &:last-child {
+      border-top-right-radius: 0;
+      border-right-width: 1px;
+    }
+  }
+}
+</style>

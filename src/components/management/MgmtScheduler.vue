@@ -7,10 +7,15 @@ import { useLocale } from '@/composables/useLocale'
 import { usePrimaryColor } from '@/composables/usePrimaryColor'
 import type { BaseTaskSchedule, Frequency, TaskSchedule } from '@/interfaces/schedule'
 import { evaluate } from '@/utils'
-import { frequencies } from '@/utils/scheduling'
+import { FREQUENCY_OPTIONS_GROUP } from '@/utils/scheduling'
 
 import IconClearAll from '../icons/IconClearAll.vue'
 import CronScheduler from '../repeatables/CronScheduler.vue'
+import DailyScheduler from '../repeatables/DailyScheduler.vue'
+import HourlyScheduler from '../repeatables/HourlyScheduler.vue'
+import MonthlyScheduler from '../repeatables/MonthlyScheduler.vue'
+import WeeklyScheduler from '../repeatables/WeeklyScheduler.vue'
+import YearlyScheduler from '../repeatables/YearlyScheduler.vue'
 import HStack from '../stack/HStack.vue'
 import VStack from '../stack/VStack.vue'
 import MgmtScheduleInfo from './MgmtScheduleInfo.vue'
@@ -75,6 +80,8 @@ const frequency = ref<Frequency>(
     }
   })
 )
+
+const frequencyOptionsGroup = computed(() => FREQUENCY_OPTIONS_GROUP.slice())
 
 const primaryColor = usePrimaryColor()
 
@@ -323,7 +330,7 @@ watch(
                   label-class="s-select-label"
                   overlay-class="s-select-overlay"
                   v-model="frequency.type"
-                  :options="frequencies"
+                  :options="frequencyOptionsGroup"
                   :option-group-label="'group'"
                   :option-group-children="'items'"
                   :option-label="'label'"
@@ -358,6 +365,12 @@ watch(
               :crons="frequency.crons"
               @change="frequency.crons = $event"
             />
+
+            <DailyScheduler v-if="frequency.type === 'day'" />
+            <HourlyScheduler v-if="frequency.type === 'hour'" />
+            <WeeklyScheduler v-if="frequency.type === 'week'" />
+            <MonthlyScheduler v-if="frequency.type === 'month'" />
+            <YearlyScheduler v-if="frequency.type === 'year'" />
           </VStack>
         </HStack>
       </Transition>
