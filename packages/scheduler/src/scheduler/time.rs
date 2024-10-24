@@ -91,7 +91,7 @@ pub fn _utc_now() -> u128 {
     epoch.as_millis()
 }
 
-pub fn utc_now() -> Timestamp {
+pub fn utc_timestamp() -> Timestamp {
     Timestamp::Millis(Utc::now().timestamp_millis() as u64)
 }
 

@@ -19,7 +19,7 @@ extern "C" {
 #[macro_export]
 macro_rules! console_log {
     ($($t:tt)*) => {
-        let time = crate::scheduler::time::utc_now().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
+        let time = crate::scheduler::time::utc_timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
         $crate::log(&format!("[Scheduler] - {}  INFO  {}", time, &format!($($t)*)));
     };
 }
@@ -27,7 +27,7 @@ macro_rules! console_log {
 #[macro_export]
 macro_rules! console_error {
     ($($t:tt)*) => {
-        let time = crate::scheduler::time::utc_now().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
+        let time = crate::scheduler::time::utc_timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
         $crate::error(&format!("[Scheduler] - {}  ERROR  {}", time, &format!($($t)*)));
     };
 }
