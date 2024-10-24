@@ -194,7 +194,7 @@ impl StSchedule {
                                 .map(|v| Timestamp::Millis(v.timestamp_millis() as u64))
                                 .unwrap()
                         })
-                        .max();
+                        .min();
 
                     timestamp.map(move |t| {
                         StSchedule::with_custom(
