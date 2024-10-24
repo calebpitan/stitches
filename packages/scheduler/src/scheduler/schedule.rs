@@ -85,7 +85,7 @@ impl StSchedule {
         }
 
         let elapsed = current_timestamp - timestamp;
-        let elapsed_hours_factor = elapsed.to_ms_f64() / hour_ms;
+        let elapsed_hours_factor = elapsed.as_ms_f64() / hour_ms;
         let next_hour_factor = elapsed_hours_factor.ceil();
         let next_hour_millis = hour_ms * next_hour_factor;
 
@@ -101,7 +101,7 @@ impl StSchedule {
         }
 
         let elapsed = current_timestamp - timestamp;
-        let elapsed_days_factor = elapsed.to_ms_f64() / day_ms;
+        let elapsed_days_factor = elapsed.as_ms_f64() / day_ms;
         let next_day_factor = elapsed_days_factor.ceil();
         let next_day_millis = day_ms * next_day_factor;
 
@@ -117,7 +117,7 @@ impl StSchedule {
         }
 
         let elapsed = current_timestamp - timestamp;
-        let elapsed_weeks_factor = elapsed.to_ms_f64() / week_ms;
+        let elapsed_weeks_factor = elapsed.as_ms_f64() / week_ms;
         let next_week_factor = elapsed_weeks_factor.ceil();
         let next_week_millis = week_ms * next_week_factor;
 
@@ -201,7 +201,7 @@ impl StSchedule {
                     timestamp.map(move |t| {
                         StSchedule::with_custom(
                             &self.id,
-                            t.to_ms(),
+                            t.as_ms(),
                             cstm_freq.to_owned(),
                             self.priority,
                         )
@@ -217,7 +217,7 @@ impl StSchedule {
 
                         Some(StSchedule::with_regular(
                             &self.id,
-                            next_timestamp.to_ms(),
+                            next_timestamp.as_ms(),
                             *reg_freq,
                             self.priority,
                         ))
@@ -229,7 +229,7 @@ impl StSchedule {
 
                         Some(StSchedule::with_regular(
                             &self.id,
-                            next_timestamp.to_ms(),
+                            next_timestamp.as_ms(),
                             *reg_freq,
                             self.priority,
                         ))
@@ -245,7 +245,7 @@ impl StSchedule {
 
                         Some(StSchedule::with_regular(
                             &self.id,
-                            next_timestamp.to_ms(),
+                            next_timestamp.as_ms(),
                             *reg_freq,
                             self.priority,
                         ))
