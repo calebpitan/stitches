@@ -29,6 +29,8 @@ pub struct StRegularFrequency {
 pub struct StCustomFrequency {
     pub ftype: StFrequencyType,
     pub until: Option<u64>,
+    /// The timezone offset in milliseconds to use for parsing the cron
+    pub tz_offset: i32,
     cron_expressions: Vec<String>,
 }
 
@@ -43,10 +45,11 @@ impl StRegularFrequency {
 #[wasm_bindgen]
 impl StCustomFrequency {
     #[wasm_bindgen(constructor)]
-    pub fn new(until: Option<u64>, cron_expressions: Vec<String>) -> Self {
+    pub fn new(until: Option<u64>, tz_offset: i32, cron_expressions: Vec<String>) -> Self {
         StCustomFrequency {
             ftype: StFrequencyType::Custom,
             until,
+            tz_offset,
             cron_expressions,
         }
     }
