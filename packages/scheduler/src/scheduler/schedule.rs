@@ -206,12 +206,56 @@ impl StSchedule {
                     })
                 }
 
-                StFrequency::Regular(reg_freq) => Some(StSchedule::with_regular(
-                    &self.id,
-                    self.timestamp,
-                    *reg_freq,
-                    self.priority,
-                )),
+                // For regular frequencies, match the repetition frequency type and calculate
+                // the timestamp in milliseconds for the upcoming schedule
+                StFrequency::Regular(reg_freq) => match reg_freq.ftype {
+                    StFrequencyType::Hour => {
+                        let next_timestamp =
+                            Self::next_hourly_timestamp(Timestamp::Millis(self.timestamp), 2);
+
+                        Some(StSchedule::with_regular(
+                            &self.id,
+                            next_timestamp.to_ms(),
+                            *reg_freq,
+                            self.priority,
+                        ))
+                    }
+
+                    StFrequencyType::Day => {
+                        let next_timestamp =
+                            Self::next_daily_timestamp(Timestamp::Millis(self.timestamp), 2);
+
+                        Some(StSchedule::with_regular(
+                            &self.id,
+                            next_timestamp.to_ms(),
+                            *reg_freq,
+                            self.priority,
+                        ))
+                    }
+
+                    StFrequencyType::Week => {
+                        let next_timestamp =
+                            Self::next_weekly_timestamp(Timestamp::Millis(self.timestamp), 2);
+
+                        // TODO: Check for specific days of the week and apply correction to either move
+                        // the timestamp forward or backward depending on if the specifies weekday(s) is
+                        // after or before the weekday of the timestamp.
+
+                        Some(StSchedule::with_regular(
+                            &self.id,
+                            next_timestamp.to_ms(),
+                            *reg_freq,
+                            self.priority,
+                        ))
+                    }
+
+                    _ => Some(StSchedule::with_regular(
+                        &self.id,
+                        self.timestamp,
+                        *reg_freq,
+                        self.priority,
+                    )),
+                },
             },
             None => None,
         }
