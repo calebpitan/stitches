@@ -65,6 +65,15 @@ impl Timestamp {
     }
 }
 
+impl std::fmt::Display for Timestamp {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Timestamp::Millis(ms) => write!(f, "{}ms", ms.to_string().as_str()),
+            Timestamp::Second(sec) => write!(f, "{}s", sec.to_string().as_str()),
+        }
+    }
+}
+
 impl Add for Timestamp {
     type Output = Timestamp;
 
