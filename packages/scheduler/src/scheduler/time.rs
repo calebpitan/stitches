@@ -1,8 +1,12 @@
 use chrono::prelude::*;
-use cron_parser::parse;
+use cron_parser::{parse, ParseError};
 use std::cmp::Ordering;
-use std::ops::{Add, Sub};
+use std::ops::{Add, Div, Sub};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+pub const HOUR_MILLIS: u32 = 3_600_000;
+pub const DAY_MILLIS: u32 = HOUR_MILLIS * 24;
+pub const WEEK_MILLIS: u32 = DAY_MILLIS * 7;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Timestamp {
@@ -110,18 +114,47 @@ pub fn utc_timestamp() -> Timestamp {
     Timestamp::Millis(Utc::now().timestamp_millis() as u64)
 }
 
-pub fn parse_cron_expr(expression: &str, after: Option<Timestamp>) -> DateTime<Utc> {
-    let after_dt = after
+/// Parse a cron expression into a UTC DateTime
+///
+/// # Arguments
+///
+/// * `expression` - The cron expression to parse into a UTC DateTime.
+/// * `tz_offset` - The timezone offset in milliseconds to use to interpret the cron expression.
+/// * `start_timestamp` - A timestamp used to specify the minimum datetime the datetime generated from the cron
+///     expression must start from.
+///
+/// # Note
+///
+/// The `tz_offset` which is a signed integer is needed because:
+///
+/// 1. A cron expression like `0 18 * * *` is interpreted in the timezone of `start_time`, which is assumed to be UTC
+///     (milliseconds).
+/// 2. That means `18` is taken as UTC `1800` hours, ignoring the timezone of the client that
+///     scheduled it, which, ordinarily, they would believe is in their own timezone.
+/// 3. The timezone offset (`tz_offset`) of the client is now being factored in to ensure consistency.
+/// 4. Say, the client's timezone is `+0100`, then `tz_offset` will be `3_600_000` which is one hour in
+///     milliseconds.
+/// 5. Without `tz_offset`, `18` would be `1800` hours UTC, and the generated time would be `1800 + 0100`,
+///     making `1900` hours for the client rather than `1800` hours.
+pub fn parse_cron_expr(
+    expression: &str,
+    tz_offset: i32,
+    start_timestamp: Option<Timestamp>,
+) -> Result<DateTime<Utc>, ParseError> {
+    let offset = FixedOffset::east_opt(tz_offset.div(1_000))
+        .unwrap_or_else(|| FixedOffset::east_opt(0).unwrap());
+
+    let start_time_utc = start_timestamp
         .as_ref()
         .map(|a| a.to_datetime())
         .unwrap_or_else(|| Utc::now());
 
-    let value = parse(expression, &after_dt);
+    let start_time = offset.from_utc_datetime(&start_time_utc.naive_utc());
 
-    match value {
-        Ok(result) => result,
-        Err(error) => {
-            panic!("{}", error)
-        }
+    let result = parse(expression, &start_time);
+
+    match result {
+        Ok(value) => Result::Ok(value.to_utc()),
+        Err(error) => Result::Err(error),
     }
 }
