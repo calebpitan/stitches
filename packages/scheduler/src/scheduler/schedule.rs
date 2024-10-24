@@ -74,6 +74,54 @@ impl StSchedule {
         }
     }
 
+    fn next_hourly_timestamp(timestamp: Timestamp, hours: u32) -> Timestamp {
+        let hour_ms = (HOUR_MILLIS * hours) as f64;
+        let current_timestamp = utc_timestamp();
+
+        if timestamp >= current_timestamp {
+            return timestamp;
+        }
+
+        let elapsed = current_timestamp - timestamp;
+        let elapsed_hours_factor = elapsed.to_ms_f64() / hour_ms;
+        let next_hour_factor = elapsed_hours_factor.ceil();
+        let next_hour_millis = hour_ms * next_hour_factor;
+
+        timestamp + Timestamp::Millis(next_hour_millis as u64)
+    }
+
+    fn next_daily_timestamp(timestamp: Timestamp, days: u32) -> Timestamp {
+        let day_ms = (DAY_MILLIS * days) as f64;
+        let current_timestamp = utc_timestamp();
+
+        if timestamp >= current_timestamp {
+            return timestamp;
+        }
+
+        let elapsed = current_timestamp - timestamp;
+        let elapsed_days_factor = elapsed.to_ms_f64() / day_ms;
+        let next_day_factor = elapsed_days_factor.ceil();
+        let next_day_millis = day_ms * next_day_factor;
+
+        timestamp + Timestamp::Millis(next_day_millis as u64)
+    }
+
+    fn next_weekly_timestamp(timestamp: Timestamp, weeks: u32) -> Timestamp {
+        let week_ms = (WEEK_MILLIS * weeks) as f64;
+        let current_timestamp = utc_timestamp();
+
+        if timestamp >= current_timestamp {
+            return timestamp;
+        }
+
+        let elapsed = current_timestamp - timestamp;
+        let elapsed_weeks_factor = elapsed.to_ms_f64() / week_ms;
+        let next_week_factor = elapsed_weeks_factor.ceil();
+        let next_week_millis = week_ms * next_week_factor;
+
+        timestamp + Timestamp::Millis(next_week_millis as u64)
+    }
+
     // pub(crate) fn get_id_as_str(&self) -> &str {
     //     self.id.as_str()
     // }
