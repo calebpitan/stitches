@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use std::time::Duration;
 
 use async_std::task;
 use wasm_bindgen::prelude::*;
@@ -7,7 +6,7 @@ use wasm_bindgen::prelude::*;
 use crate::console_log;
 use crate::queue::priority_queue::{Comparator, PriorityQueue};
 use crate::scheduler::schedule::StSchedule;
-use crate::scheduler::time::utc_now;
+use crate::scheduler::time::utc_timestamp;
 use crate::scheduler::time::Timestamp;
 
 pub struct ClosureComparator<F, T>
@@ -30,6 +29,7 @@ where
 #[wasm_bindgen]
 pub struct StScheduler {
     pq: PriorityQueue<StSchedule>,
+    /// A JavaScript function subscribing to the scheduler for updates
     receiver: Option<js_sys::Function>,
     _aborted: bool,
 }
@@ -62,7 +62,7 @@ impl StScheduler {
 
         console_log!("scheduler idling for {} milliseconds", sleep_ts.to_ms());
 
-        task::sleep(Duration::from_millis(sleep_ts.to_ms())).await
+        task::sleep(sleep_ts.to_std_duration()).await
     }
 
     pub fn add_schedule(&mut self, schedule: StSchedule) {
@@ -126,8 +126,8 @@ impl StScheduler {
 
             let peeked = self.pq.peek().expect("Expected a non-empty queue");
             let peeked_id = peeked.get_id();
-            let timestamp = Timestamp::Millis(peeked.get_timestamp().saturating_sub(3_600_000));
-            let now = utc_now();
+            let timestamp = Timestamp::Millis(peeked.get_timestamp());
+            let now = utc_timestamp();
             let difference = timestamp - now;
 
             if timestamp > now {
