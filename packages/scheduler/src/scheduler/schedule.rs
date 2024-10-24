@@ -163,9 +163,10 @@ impl StSchedule {
     }
 
     pub fn is_passed(&self) -> bool {
-        Timestamp::Millis(self.timestamp) < utc_now()
+        Timestamp::Millis(self.timestamp) < utc_timestamp()
     }
 
+    /// Calculate the upcoming schedule for the given schedule
     pub fn get_upcoming_schedule(&self) -> Option<StSchedule> {
         // Check if the current schedule has passed and generate the next
         // schedule relative to now from the StSchedule struct
@@ -181,22 +182,25 @@ impl StSchedule {
                         .iter()
                         .take(3)
                         .map(|c| {
-                            let ref_time = Timestamp::Millis(self.timestamp);
-                            let cur_time = utc_now();
-                            let time = parse_cron_expr(
+                            let ref_timestamp = Timestamp::Millis(self.timestamp);
+                            let cur_timestamp = utc_timestamp();
+                            let result = parse_cron_expr(
                                 c.as_str(),
-                                Some(max(ref_time, cur_time)),
+                                cstm_freq.tz_offset,
+                                Some(max(ref_timestamp, cur_timestamp)),
                             );
 
-                            Timestamp::Millis(time.timestamp_millis() as u64)
+                            result
+                                .map(|v| Timestamp::Millis(v.timestamp_millis() as u64))
+                                .unwrap()
                         })
                         .max();
 
-                    timestamp.map(|t| {
+                    timestamp.map(move |t| {
                         StSchedule::with_custom(
                             &self.id,
                             t.to_ms(),
-                            cstm_freq.clone(),
+                            cstm_freq.to_owned(),
                             self.priority,
                         )
                     })
