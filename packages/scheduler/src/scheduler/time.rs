@@ -20,6 +20,10 @@ impl Timestamp {
         }
     }
 
+    pub fn to_ms_f64(&self) -> f64 {
+        self.to_ms() as f64
+    }
+
     /// Convert the timestamp to number of seconds if it is in milliseconds
     pub fn to_sec(&self) -> u64 {
         match &self {
@@ -30,17 +34,28 @@ impl Timestamp {
 
     /// Convert the timestamp to a f64 floating point number of seconds
     /// if it's in milliseconds.
-    pub fn to_fsec(&self) -> f64 {
+    pub fn to_sec_f64(&self) -> f64 {
         match &self {
             Timestamp::Second(seconds) => *seconds as f64,
-            Timestamp::Millis(milliseconds) => (*milliseconds as f64) / 1_000_f64,
+            Timestamp::Millis(milliseconds) => (*milliseconds as f64).div(1_000_f64),
         }
     }
 
+    /// Converts `Timestamp` to a `std::time::Duration` in milliseconds
+    pub fn to_std_duration(&self) -> std::time::Duration {
+        std::time::Duration::from_millis(self.to_ms())
+    }
+
+    /// Converts `Timestamp` to a `chrono::DateTime<UTC>` with millisecond precision
+    ///
+    /// # Panics
+    ///
+    /// Panics if the given timestamp has an out-of-range number of milliseconds
     pub fn to_datetime(&self) -> DateTime<Utc> {
         DateTime::from_timestamp_millis(self.to_ms() as i64).expect("Invalid timestamp")
     }
 
+    /// Generates a `Timestamp` from a `chrono::DateTime<Utc>`
     pub fn from_datetime(&self, dt: DateTime<Utc>) -> Timestamp {
         Timestamp::Millis(dt.timestamp_millis() as u64)
     }
