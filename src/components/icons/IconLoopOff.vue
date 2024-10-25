@@ -13,6 +13,6 @@ defineProps<Props>()
 
 <template>
   <SIcon>
-    <LoopOff width="1em" height="1em" fill="currentColor" v-bind="$attrs" />
+    <LoopOff width="1em" height="1em" fill="currentColor" aria-label="Repeat off" v-bind="$attrs" />
   </SIcon>
 </template>

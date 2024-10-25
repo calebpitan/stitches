@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { SVGAttributes } from 'vue'
 
-import DragHandle from '@/assets/icons/draggable.svg'
+import Sort from '@/assets/icons/sort.svg'
 
 import SIcon from './SIcon.vue'
 
@@ -13,6 +13,6 @@ defineProps<Props>()
 
 <template>
   <SIcon>
-    <DragHandle fill="currentColor" aria-label="Drag" v-bind="$attrs" />
+    <Sort width="1.25em" height="1.25em" fill="currentColor" aria-label="Sort" v-bind="$attrs" />
   </SIcon>
 </template>

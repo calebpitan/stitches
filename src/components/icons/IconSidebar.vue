@@ -13,6 +13,12 @@ defineProps<Props>()
 
 <template>
   <SIcon>
-    <Sidebar width="1em" height="1em" fill="currentColor" v-bind="$attrs" />
+    <Sidebar
+      width="1em"
+      height="1em"
+      fill="currentColor"
+      aria-label="Toggle sidebar"
+      v-bind="$attrs"
+    />
   </SIcon>
 </template>

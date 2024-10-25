@@ -13,6 +13,6 @@ defineProps<Props>()
 
 <template>
   <SIcon>
-    <ClearAll width="1em" height="1em" fill="currentColor" v-bind="$attrs" />
+    <ClearAll width="1em" height="1em" fill="currentColor" aria-label="Clear all" v-bind="$attrs" />
   </SIcon>
 </template>

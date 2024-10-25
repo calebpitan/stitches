@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import { get_scheduler } from '@stitches/scheduler'
-
 import type { BaseTaskSchedule } from '@/interfaces/schedule'
 import { useTaskScheduleStore } from '@/stores/schedule'
 import { useTaskTagStore } from '@/stores/tag'
 import { useTaskStore } from '@/stores/task'
+import { SchedulerWorker } from '@/worker'
 
 import MgmtPresentation from './management/MgmtPresentation.vue'
 import MgmtScheduler from './management/MgmtScheduler.vue'
@@ -16,6 +15,7 @@ const taskStore = useTaskStore()
 const taskScheduleStore = useTaskScheduleStore()
 
 const selectedTask = computed(() => taskStore.findSelected())
+const controller = SchedulerWorker()
 
 const taskSchedule = computed(() => {
   if (!selectedTask.value) return null
@@ -24,7 +24,9 @@ const taskSchedule = computed(() => {
 
 function createSchedule(schedule: BaseTaskSchedule) {
   if (!selectedTask.value) return
-  taskScheduleStore.upsertSchedule(selectedTask.value.id, schedule)
+  const a = taskScheduleStore.upsertSchedule(selectedTask.value.id, schedule)
+  console.log(a)
+  // controller.add(JSON.p)
 }
 
 function clearSchedule(id: string) {
@@ -35,9 +37,7 @@ function clearSchedule(id: string) {
 const reviewTask = taskStore.updateTask
 const createTaskTag = taskTagStore.createTag
 
-const schdlr = get_scheduler()
-
-console.log(schdlr)
+console.log(controller)
 </script>
 
 <template>
