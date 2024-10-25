@@ -20,8 +20,6 @@ describe('#nextHourlySchedule', () => {
       timestamp.getUTCMilliseconds()
     )
 
-    console.log(expected.getUTCHours(), next)
-
     expect(next.toISOString()).toEqual(expected.toISOString())
   })
 })

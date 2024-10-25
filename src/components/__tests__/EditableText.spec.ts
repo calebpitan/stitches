@@ -18,7 +18,7 @@ describe('EditableText', () => {
         "data-placeholder": "Enter text...",
         "data-v-5e4b270b": "",
         "role": "generic",
-        "style": "overflow: hidden; user-select: none;",
+        "style": "display: -webkit-box; overflow: hidden; user-select: none;",
         "tabindex": "0",
       }
     `)
