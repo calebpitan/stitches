@@ -37,8 +37,9 @@ function create_st_schedule(data: TaskSchedule) {
       return new sch.StSchedule(data.id, timestamp)
     }
     case 'custom': {
+      const tzOffset = -1 * 60 * 1_000 * data.timestamp.getTimezoneOffset()
       const exprs = data.frequency.crons.map((c) => c.expression)
-      const freq = new sch.StCustomFrequency(until, exprs)
+      const freq = new sch.StCustomFrequency(until, tzOffset, exprs)
 
       return sch.StSchedule.with_custom(data.id, timestamp, freq)
     }
