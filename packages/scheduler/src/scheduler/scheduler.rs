@@ -55,12 +55,9 @@ impl StScheduler {
     }
 
     async fn idle(&self, till: Option<Timestamp>) {
-        let sleep_ts = match till {
-            Some(t) => t,
-            None => Timestamp::Millis(1000),
-        };
+        let sleep_ts = till.unwrap_or_else(|| Timestamp::Millis(1000));
 
-        console_log!("scheduler idling for {} milliseconds", sleep_ts.to_ms());
+        console_log!("scheduler idling for {} milliseconds", sleep_ts);
 
         task::sleep(sleep_ts.to_std_duration()).await
     }
@@ -132,11 +129,7 @@ impl StScheduler {
 
             if timestamp > now {
                 console_log!("there are no due schedules yet");
-                console_log!(
-                    "timestamp: {}; current time: {}",
-                    timestamp.to_ms().to_string().as_str(),
-                    now.to_ms().to_string().as_str()
-                );
+                console_log!("timestamp: {}; current time: {}", timestamp, now);
 
                 if difference > sleep_ts {
                     self.idle(Some(sleep_ts)).await;
