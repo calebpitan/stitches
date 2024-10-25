@@ -61,9 +61,4 @@ const day = ref(1)
   font-size: 0.875rem;
   color: var(--s-script-secondary);
 }
-/* 
-.s-select {
-  width: fit-content;
-  max-width: 150px;
-} */
 </style>
