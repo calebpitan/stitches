@@ -30,7 +30,10 @@ function create_st_schedule(data: TaskSchedule) {
   if (!data.timestamp) throw new Error('`timestamp` is required to create schedule')
 
   const timestamp = BigInt(data.timestamp.getTime())
-  const until = data.frequency.until ? BigInt(data.frequency.until.getTime()) : undefined
+  const until =
+    data.frequency.type !== 'never' && data.frequency.until
+      ? BigInt(data.frequency.until.getTime())
+      : undefined
 
   switch (data.frequency.type) {
     case 'never': {

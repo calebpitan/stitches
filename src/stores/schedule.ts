@@ -74,7 +74,8 @@ export const useTaskScheduleStore = defineStore(
         serialize: JSON.stringify,
         deserialize: createDeserializer<Record<'schedules', TaskSchedule[]>>((data) => {
           const serialized = plainToInstance(ScheduleSerializer, data.schedules, {
-            enableImplicitConversion: true
+            enableImplicitConversion: true,
+            strategy: 'excludeAll'
           })
 
           return { schedules: serialized }
