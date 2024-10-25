@@ -1,3 +1,5 @@
+import type { FirstUpper } from './types'
+
 export type FrequencyType = 'hour' | 'day' | 'week' | 'month' | 'year' | 'custom' | 'never'
 export type Weekday =
   | 'Monday'
@@ -8,6 +10,7 @@ export type Weekday =
   | 'Saturday'
   | 'Sunday'
 export type WeekdayShort = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun'
+export type WeekdayVariable = 'day' | 'weekday' | 'weekend-day'
 export type Month =
   | 'January'
   | 'February'
@@ -34,8 +37,8 @@ export type MonthShort =
   | 'Oct'
   | 'Nov'
   | 'Dec'
-export type Ordinals = 'First' | 'Second' | 'Third' | 'Fourth' | 'Fifth' | 'Last'
-export type OrdinalsAlt = '1st' | '2nd' | '3rd' | '4th' | '5th' | 'Last'
+export type Ordinals = 'first' | 'second' | 'third' | 'fourth' | 'fifth' | 'last'
+export type OrdinalsAlt = '1st' | '2nd' | '3rd' | '4th' | '5th' | 'last'
 
 export type FrquencyMapping = { label: string; value: FrequencyType }
 export type FrequencyGroup = { group: 'default' | 'custom'; items: Array<FrquencyMapping> }
@@ -44,11 +47,21 @@ export type WeekdayOption = { alt: WeekdayShort; value: number; label: Weekday }
 export type MonthOption = { alt: MonthShort; value: number; label: Month }
 
 export type OrdinalsMapping = {
-  label: Ordinals
-  alt: OrdinalsAlt
-  value: Lowercase<Ordinals>
+  label: FirstUpper<Ordinals>
+  alt: FirstUpper<OrdinalsAlt>
+  value: Ordinals
 }
 export type OrdinalsGroup = { group: 'default' | 'others'; items: Array<OrdinalsMapping> }
+
+export type WeekdayCustomMapping = {
+  alt: string
+  label: string
+  value: WeekdayVariable
+}
+
+export type WeekdayGroup =
+  | { group: 'default'; items: Array<WeekdayOption> }
+  | { group: 'variable'; items: Array<WeekdayCustomMapping> }
 
 export const FREQUENCY_OPTIONS_GROUP: readonly FrequencyGroup[] = Object.freeze([
   {
@@ -75,22 +88,34 @@ export const WEEKDAY_OPTIONS: readonly WeekdayOption[] = Object.freeze([
   { alt: 'Thu', value: 4, label: 'Thursday' },
   { alt: 'Fri', value: 5, label: 'Friday' },
   { alt: 'Sat', value: 6, label: 'Saturday' },
-  { alt: 'Sun', value: 7, label: 'Sunday' }
+  { alt: 'Sun', value: 0, label: 'Sunday' }
+])
+
+export const WEEKDAY_OPTIONS_GROUP: readonly WeekdayGroup[] = Object.freeze([
+  { group: 'default', items: WEEKDAY_OPTIONS.slice() },
+  {
+    group: 'variable',
+    items: [
+      { alt: 'day', value: 'day', label: 'Day' },
+      { alt: 'weekday', value: 'weekday', label: 'Weekday' },
+      { alt: 'weekend day', value: 'weekend-day', label: 'Weekend day' }
+    ]
+  }
 ])
 
 export const MONTH_OPTIONS: readonly MonthOption[] = Object.freeze([
-  { alt: 'Jan', value: 1, label: 'January' },
-  { alt: 'Feb', value: 2, label: 'February' },
-  { alt: 'Mar', value: 3, label: 'March' },
-  { alt: 'Apr', value: 4, label: 'April' },
-  { alt: 'May', value: 5, label: 'May' },
-  { alt: 'Jun', value: 6, label: 'June' },
-  { alt: 'Jul', value: 7, label: 'July' },
-  { alt: 'Aug', value: 8, label: 'August' },
-  { alt: 'Sep', value: 9, label: 'September' },
-  { alt: 'Oct', value: 10, label: 'October' },
-  { alt: 'Nov', value: 11, label: 'November' },
-  { alt: 'Dec', value: 12, label: 'December' }
+  { alt: 'Jan', value: 0, label: 'January' },
+  { alt: 'Feb', value: 1, label: 'February' },
+  { alt: 'Mar', value: 2, label: 'March' },
+  { alt: 'Apr', value: 3, label: 'April' },
+  { alt: 'May', value: 4, label: 'May' },
+  { alt: 'Jun', value: 5, label: 'June' },
+  { alt: 'Jul', value: 6, label: 'July' },
+  { alt: 'Aug', value: 7, label: 'August' },
+  { alt: 'Sep', value: 8, label: 'September' },
+  { alt: 'Oct', value: 9, label: 'October' },
+  { alt: 'Nov', value: 10, label: 'November' },
+  { alt: 'Dec', value: 11, label: 'December' }
 ])
 
 export const ORDINAL_OPTIONS_GROUP: readonly OrdinalsGroup[] = Object.freeze([

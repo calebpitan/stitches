@@ -52,6 +52,3 @@ describe('#nextWeeklyScheduleCorrectionFactor', () => {
     }
   })
 })
-
-// const weekdayOffset = next.getUTCDay() - schedule.weekday
-//       next.setDate(next.getDate() + weekdayOffset * -1)
