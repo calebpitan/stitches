@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest'
-
 import { mount } from '@vue/test-utils'
-import EditableText from '../editable/EditableText.vue'
 
-const sleep = (till: number) =>
-  new Promise<number>((resolve) => setTimeout(() => resolve(till), till))
+import { describe, expect, it } from 'vitest'
+
+import { sleep } from '@/utils'
+
+import EditableText from '../editable/EditableText.vue'
 
 describe('EditableText', () => {
   it('renders properly', () => {
