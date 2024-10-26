@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 
 import type { WeeklyExpr } from '@/interfaces/schedule'
 import { WEEKDAY_OPTIONS, plural } from '@/utils'
@@ -23,6 +23,8 @@ const props = withDefaults(defineProps<WeeklySchedulerProps>(), {
   }
 })
 
+const ids = { week: useId(), weekdays: useId() }
+
 const week = ref(props.expression.every)
 const weekdays = ref<Array<number>>(props.expression.subexpr.weekdays)
 
@@ -42,16 +44,16 @@ watch([week, weekdays], (args) => {
 </script>
 
 <template>
-  <div class="s-weekly-scheduler">
+  <div class="s-monthly-scheduler">
     <Stack type="vstack" :spacing="2">
       <Stack type="hstack" :spacing="4">
         <span class="s-label">Every</span>
 
         <InputNumber
           v-model="week"
-          id="wkly-scheduler-no-of-wks"
           class="s-inputwrapper"
           input-class="s-inputtext"
+          :input-id="ids.week"
           :min="1"
           :max="200"
           :allow-empty="false"
@@ -61,18 +63,18 @@ watch([week, weekdays], (args) => {
           :input-style="{ width: '100%', 'font-size': '0.875rem' }"
         />
 
-        <label for="wkly-scheduler-no-of-wks" class="s-label">
+        <label :for="ids.week" class="s-label">
           {{ plural(week, 'Week', 'Weeks') }}
         </label>
       </Stack>
 
       <Stack type="hstack" :spacing="4">
-        <label for="wkly-scheduler-wk-dys" class="s-label">On</label>
+        <span :id="ids.weekdays" class="s-label">On</span>
 
         <SelectButton
           v-model="weekdays"
-          id="wkly-scheduler-wk-dys"
           class="s-selectbutton"
+          :aria-labelledby="ids.weekdays"
           :multiple="true"
           :options="weekdayOptions"
           option-label="alt"
@@ -84,7 +86,7 @@ watch([week, weekdays], (args) => {
 </template>
 
 <style scoped>
-.s-weekly-scheduler {
+.s-monthly-scheduler {
   --scheduler-inner-padding: 1rem;
 
   position: relative;

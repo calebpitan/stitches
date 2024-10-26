@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 
 import type { MonthlyExpr } from '@/interfaces/schedule'
 import { evaluate, plural, range } from '@/utils'
@@ -16,6 +16,8 @@ export interface MonthlySchedulerProps {
   onExpressionChange: (expression: MonthlyExpr) => void
 }
 
+type UpdateData = { month: number; days: string[]; weekday: number; ordinal: Ordinals; rel: Rel }
+
 const props = withDefaults(defineProps<MonthlySchedulerProps>(), {
   expression: (props) => {
     return {
@@ -24,6 +26,8 @@ const props = withDefaults(defineProps<MonthlySchedulerProps>(), {
     }
   }
 })
+
+const ids = { months: useId() }
 
 const month = ref(props.expression.every)
 
@@ -65,8 +69,6 @@ const relOptions = computed((): Array<Rel> => ['On Days', 'On The'])
 const weekdayOptions = computed(() => WEEKDAY_OPTIONS.slice())
 const ordinalOptionsGroup = computed(() => ORDINAL_OPTIONS_GROUP.slice())
 
-type UpdateData = { month: number; days: string[]; weekday: number; ordinal: Ordinals; rel: Rel }
-
 function update(data: UpdateData) {
   const expr: MonthlyExpr = { every: data.month, subexpr: undefined! }
 
@@ -79,16 +81,6 @@ function update(data: UpdateData) {
   props.onExpressionChange(expr)
 }
 
-// onMounted(() => {
-//   update({
-//     month: month.value,
-//     days: days.value,
-//     weekday: weekday.value,
-//     ordinal: ordinal.value,
-//     rel: rel.value
-//   })
-// })
-
 watch([month, days, weekday, ordinal, rel], (args) => {
   const [month, days, weekday, ordinal, rel] = args
   update({ month, days, weekday, ordinal, rel })
@@ -96,15 +88,15 @@ watch([month, days, weekday, ordinal, rel], (args) => {
 </script>
 
 <template>
-  <div class="s-weekly-scheduler">
+  <div class="s-monthly-scheduler">
     <Stack type="vstack" :spacing="2">
       <Stack type="hstack" :spacing="4">
         <span class="s-label">Every</span>
 
         <InputNumber
           v-model="month"
-          id="wkly-scheduler-no-of-wks"
           class="s-inputwrapper"
+          :input-id="ids.months"
           input-class="s-inputtext"
           :min="1"
           :max="200"
@@ -115,7 +107,7 @@ watch([month, days, weekday, ordinal, rel], (args) => {
           :input-style="{ width: '100%', 'font-size': '0.875rem' }"
         />
 
-        <label for="wkly-scheduler-no-of-wks" class="s-label">
+        <label :for="ids.months" class="s-label">
           {{ plural(month, 'Month', 'Months') }}
         </label>
       </Stack>
@@ -174,7 +166,7 @@ watch([month, days, weekday, ordinal, rel], (args) => {
 </template>
 
 <style scoped>
-.s-weekly-scheduler {
+.s-monthly-scheduler {
   --scheduler-inner-padding: 1rem;
 
   position: relative;

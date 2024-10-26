@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, useId, watch } from 'vue'
 
 import type { DailyExpr } from '@/interfaces/schedule'
 import { plural } from '@/utils'
@@ -19,6 +19,8 @@ const props = withDefaults(defineProps<DailySchedulerProps>(), {
   }
 })
 
+const ids = { days: useId() }
+
 const day = ref(props.expression.every)
 
 watch(day, (day) => props.onExpressionChange({ every: day }))
@@ -31,7 +33,7 @@ watch(day, (day) => props.onExpressionChange({ every: day }))
 
       <InputNumber
         v-model="day"
-        id="dly-scheduler-no-of-dys"
+        :input-id="ids.days"
         class="s-inputwrapper"
         input-class="s-inputtext"
         :min="1"
@@ -43,7 +45,7 @@ watch(day, (day) => props.onExpressionChange({ every: day }))
         :input-style="{ width: '100%', 'font-size': '0.875rem' }"
       />
 
-      <label for="dly-scheduler-no-of-dys" class="s-label">
+      <label :for="ids.days" class="s-label">
         {{ plural(day, 'Day', 'Days') }}
       </label>
     </Stack>

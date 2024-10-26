@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, useId, watch } from 'vue'
 
 import Popover from 'primevue/popover'
 
@@ -16,6 +16,8 @@ const props = withDefaults(defineProps<TagsInputProps>(), {
   initialTags: () => [],
   suggestions: () => []
 })
+
+const ids = { tags_input: useId() }
 
 const inputRef = ref<HTMLInputElement | null>(null)
 const popover = ref<InstanceType<typeof Popover> | null>(null)
@@ -116,7 +118,10 @@ watch(tags, (latest) => {
         #{{ tag }}
       </Tag>
 
+      <label :for="ids.tags_input" class="p-hidden-accessible">Enter tags</label>
+
       <input
+        :id="ids.tags_input"
         type="text"
         ref="inputRef"
         class="s-tagsinput"

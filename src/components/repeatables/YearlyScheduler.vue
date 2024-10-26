@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 
 import type { SelectButtonChangeEvent } from 'primevue/selectbutton'
 
@@ -21,6 +21,14 @@ export interface YearlySchedulerProps {
   onExpressionChange: (expression: YearlyExpr) => void
 }
 
+type UpdateData = {
+  year: number
+  months: number[]
+  weekday: number | WeekdayVariable
+  ordinal: Ordinals
+  weekdayRelActive: boolean
+}
+
 const props = withDefaults(defineProps<YearlySchedulerProps>(), {
   expression: (props) => {
     return {
@@ -33,6 +41,8 @@ const props = withDefaults(defineProps<YearlySchedulerProps>(), {
     }
   }
 })
+
+const ids = { year: useId(), months: useId(), rel: useId() }
 
 const year = ref(props.expression.every)
 const months = ref<Array<number>>(evaluate(() => props.expression.subexpr.in.months))
@@ -57,14 +67,6 @@ function handleMonthChange(evt: SelectButtonChangeEvent) {
   months.value = value
 }
 
-type UpdateData = {
-  year: number
-  months: number[]
-  weekday: number | WeekdayVariable
-  ordinal: Ordinals
-  weekdayRelActive: boolean
-}
-
 function update(data: UpdateData) {
   const expr: YearlyExpr = { every: data.year, subexpr: { in: { months: data.months } } }
 
@@ -79,16 +81,6 @@ function update(data: UpdateData) {
   props.onExpressionChange(expr)
 }
 
-// onMounted(() => {
-//   update({
-//     year: year.value,
-//     months: months.value,
-//     ordinal: ordinal.value,
-//     weekday: weekday.value,
-//     weekdayRelActive: weekdayRelActive.value
-//   })
-// })
-
 watch([year, months, weekday, ordinal, weekdayRelActive], (args) => {
   const [year, months, weekday, ordinal, weekdayRelActive] = args
 
@@ -97,16 +89,16 @@ watch([year, months, weekday, ordinal, weekdayRelActive], (args) => {
 </script>
 
 <template>
-  <div class="s-weekly-scheduler">
+  <div class="s-monthly-scheduler">
     <Stack type="vstack" :spacing="2">
       <Stack type="hstack" :spacing="4">
         <span class="s-label">Every</span>
 
         <InputNumber
           v-model="year"
-          id="wkly-scheduler-no-of-wks"
           class="s-inputwrapper"
           input-class="s-inputtext"
+          :input-id="ids.year"
           :min="1"
           :max="200"
           :allow-empty="false"
@@ -116,16 +108,17 @@ watch([year, months, weekday, ordinal, weekdayRelActive], (args) => {
           :input-style="{ width: '100%', 'font-size': '0.875rem' }"
         />
 
-        <label for="wkly-scheduler-no-of-wks" class="s-label">
+        <label :for="ids.year" class="s-label">
           {{ plural(year, 'Year', 'Years') }}
         </label>
       </Stack>
 
       <Stack type="vstack" :spacing="0" style="width: 100%; align-items: center">
-        <label class="s-label" style="align-self: self-start">in</label>
+        <span :id="ids.months" class="s-label" style="align-self: self-start">in</span>
         <SelectButton
           class="s-selectbutton grided"
           data-grid-col="4"
+          :aria-labelledby="ids.months"
           :model-value="months"
           :multiple="true"
           :options="monthOptions"
@@ -141,10 +134,10 @@ watch([year, months, weekday, ordinal, weekdayRelActive], (args) => {
             v-model="weekdayRelActive"
             class="s-checkbox"
             data-s-wkrel
-            input-id="weekday-rel"
+            :input-id="ids.rel"
             :binary="true"
           />
-          <label for="weekday-rel" class="s-label">On The</label>
+          <label :for="ids.rel" class="s-label">On The</label>
         </Stack>
 
         <Stack type="hstack" :spacing="2">
@@ -192,7 +185,7 @@ watch([year, months, weekday, ordinal, weekdayRelActive], (args) => {
 </template>
 
 <style scoped>
-.s-weekly-scheduler {
+.s-monthly-scheduler {
   --scheduler-inner-padding: 1rem;
 
   position: relative;

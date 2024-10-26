@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, useId, watch } from 'vue'
 
 import type { HourlyExpr } from '@/interfaces/schedule'
 import { plural } from '@/utils'
@@ -19,6 +19,8 @@ const props = withDefaults(defineProps<HourlySchedulerProps>(), {
   }
 })
 
+const ids = { hours: useId() }
+
 const hour = ref(props.expression.every)
 
 watch(hour, (hour) => props.onExpressionChange({ every: hour }))
@@ -31,9 +33,9 @@ watch(hour, (hour) => props.onExpressionChange({ every: hour }))
 
       <InputNumber
         v-model="hour"
-        id="hrly-scheduler-no-of-hrs"
         class="s-inputwrapper"
         input-class="s-inputtext"
+        :input-id="ids.hours"
         :min="1"
         :max="200"
         :allow-empty="false"
@@ -43,7 +45,7 @@ watch(hour, (hour) => props.onExpressionChange({ every: hour }))
         :input-style="{ width: '100%', 'font-size': '0.875rem' }"
       />
 
-      <label for="hrly-scheduler-no-of-hrs" class="s-label">
+      <label :for="ids.hours" class="s-label">
         {{ plural(hour, 'Hour', 'Hours') }}
       </label>
     </Stack>

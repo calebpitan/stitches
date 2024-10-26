@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, useId, watch } from 'vue'
 
 import { CronCore } from '@vue-js-cron/core'
 
@@ -19,6 +19,8 @@ export interface CronSchedulerProps {
 }
 
 const props = withDefaults(defineProps<CronSchedulerProps>(), {})
+
+const ids = { period: useId(), field: useId() }
 
 const tm = computed(() => props && timeToParts(props.timestamp ?? new Date()))
 const config = computed(() => {
@@ -62,7 +64,7 @@ watch(schedules, (s) => props.onChange?.(s), { deep: true })
         >
           <HStack :spacing="1" style="flex-wrap: wrap; justify-content: flex-start">
             <HStack :spacing="1" style="align-items: center">
-              <label :for="`cron-scheduler-${period.prefix}`" class="s-label">
+              <label :for="ids.period" class="s-label">
                 {{ period.prefix }}
               </label>
 
@@ -71,7 +73,7 @@ watch(schedules, (s) => props.onChange?.(s), { deep: true })
                 dropdown-icon="pi pi-angle-down"
                 label-class="s-select-label"
                 overlay-class="s-select-overlay"
-                :id="`cron-scheduler-${period.prefix}`"
+                :input-id="ids.period"
                 :model-value="period.attrs.modelValue"
                 :options="period.items"
                 :option-label="'text'"
@@ -91,13 +93,13 @@ watch(schedules, (s) => props.onChange?.(s), { deep: true })
 
             <template v-for="f in fields" :key="f.id">
               <HStack :spacing="1" style="align-items: center">
-                <label :for="`cron-scheduler-${f.id}`" class="s-label"> {{ f.prefix }}</label>
+                <label :for="`${ids.field}-${f.id}`" class="s-label"> {{ f.prefix }}</label>
 
                 <MultiSelect
                   class="s-select"
                   dropdown-icon="pi pi-angle-down"
                   overlay-class="s-select-overlay"
-                  :id="`cron-scheduler-${f.id}`"
+                  :input-id="`${ids.field}-${f.id}`"
                   :placeholder="f.selectedStr"
                   :model-value="f.attrs.modelValue"
                   :options="f.items"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, ref, useId, watch, watchEffect } from 'vue'
 
 import { SVG } from '@svgdotjs/svg.js'
 
@@ -60,6 +60,8 @@ interface ThreadlineConfig {
 }
 
 const props = withDefaults(defineProps<MgmtScheduleProps>(), {})
+
+const ids = { repeat: useId(), repeat_until: useId() }
 
 const threadline = ref<HTMLDivElement | null>(null)
 
@@ -355,6 +357,7 @@ watch(
               v-tooltip.bottom="tooltip.edit"
               class="s-mgmt-schedule-quick-actions"
               icon="pi pi-pencil"
+              aria-label="Edit schedule"
               :text="false"
               :rounded="true"
               @click="isExpanded = true"
@@ -365,6 +368,7 @@ watch(
             <Button
               v-tooltip.bottom="tooltip.clear"
               class="s-mgmt-schedule-quick-actions"
+              aria-label="Clear schedule"
               :text="false"
               :rounded="true"
               @click="handleClearSchedule"
@@ -392,11 +396,11 @@ watch(
             <HStack :spacing="4" style="margin-top: 1rem">
               <FloatLabel>
                 <Select
-                  id="s-schedule-repeat"
                   class="s-select"
                   dropdown-icon="pi pi-angle-down"
                   label-class="s-select-label"
                   overlay-class="s-select-overlay"
+                  :input-id="ids.repeat"
                   :model-value="frequency.type"
                   :options="frequencyOptionsGroup"
                   :option-group-label="'group'"
@@ -410,20 +414,20 @@ watch(
                     <span v-else aria-hidden="true" />
                   </template>
                 </Select>
-                <label for="s-schedule-repeat" class="s-label">Repeat</label>
+                <label :for="ids.repeat" class="s-label">Repeat</label>
               </FloatLabel>
 
               <FloatLabel v-if="frequency.type !== 'never'">
                 <DatePicker
-                  id="s-schedule-repeat-until"
                   v-model="frequency.until"
                   class="s-datepicker"
                   input-class="s-datepicker-input"
                   panel-class="s-datepicker-panel"
                   date-format="dd/mm/yy"
+                  :input-id="ids.repeat_until"
                   :inline="false"
                 />
-                <label for="s-schedule-repeat-until" class="s-label"> Until </label>
+                <label :for="ids.repeat_until" class="s-label"> Until </label>
               </FloatLabel>
             </HStack>
 
