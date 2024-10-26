@@ -1,11 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
+import type { HourlyExpr } from '@/interfaces/schedule'
 import { plural } from '@/utils'
 
 import Stack from '../stack/Stack.vue'
 
-const hour = ref(1)
+export interface HourlySchedulerProps {
+  expression?: HourlyExpr
+  onExpressionChange: (expr: HourlyExpr) => void
+}
+
+const props = withDefaults(defineProps<HourlySchedulerProps>(), {
+  expression: () => {
+    return {
+      every: 1
+    }
+  }
+})
+
+const hour = ref(props.expression.every)
+
+watch(hour, (hour) => props.onExpressionChange({ every: hour }))
 </script>
 
 <template>

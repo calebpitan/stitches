@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
-import { plural, range } from '@/utils'
+import type { MonthlyExpr } from '@/interfaces/schedule'
+import { evaluate, plural, range } from '@/utils'
 import { ORDINAL_OPTIONS_GROUP, type Ordinals, WEEKDAY_OPTIONS } from '@/utils/scheduling'
 
 import Stack from '../stack/Stack.vue'
@@ -9,16 +10,89 @@ import Stack from '../stack/Stack.vue'
 /** Relationship */
 type Rel = 'On Days' | 'On The'
 
-const month = ref(1)
-const days = ref<Array<number>>([])
-const weekday = ref(1)
-const ordinal = ref<Lowercase<Ordinals>>('first')
-const rel = ref<Rel>('On Days')
+export interface MonthlySchedulerProps {
+  timestamp: Date | null
+  expression?: MonthlyExpr
+  onExpressionChange: (expression: MonthlyExpr) => void
+}
 
-const dayOptions = computed(() => [...range(1, 32)])
+const props = withDefaults(defineProps<MonthlySchedulerProps>(), {
+  expression: (props) => {
+    return {
+      every: 1,
+      subexpr: { days: [(props.timestamp ?? new Date()).getDate()], type: 'ondays' }
+    }
+  }
+})
+
+const month = ref(props.expression.every)
+
+const days = ref<Array<string>>(
+  evaluate(() => {
+    const type = props.expression.subexpr.type
+    if (type === 'ondays') {
+      return props.expression.subexpr.days.map((d) => d.toString())
+    }
+    return []
+  })
+)
+
+const weekday = ref(
+  evaluate(() => {
+    const type = props.expression.subexpr.type
+    if (type === 'onthe') return props.expression.subexpr.weekday
+    return 0
+  })
+)
+
+const ordinal = ref<Lowercase<Ordinals>>(
+  evaluate(() => {
+    const type = props.expression.subexpr.type
+    if (type === 'onthe') return props.expression.subexpr.ordinal
+    return 'first'
+  })
+)
+
+const rel = ref<Rel>(
+  evaluate(() => {
+    const type = props.expression.subexpr.type
+    return type === 'ondays' ? 'On Days' : 'On The'
+  })
+)
+
+const dayOptions = computed(() => Array.from(range(1, 32)).map((d) => d.toString()))
 const relOptions = computed((): Array<Rel> => ['On Days', 'On The'])
 const weekdayOptions = computed(() => WEEKDAY_OPTIONS.slice())
 const ordinalOptionsGroup = computed(() => ORDINAL_OPTIONS_GROUP.slice())
+
+type UpdateData = { month: number; days: string[]; weekday: number; ordinal: Ordinals; rel: Rel }
+
+function update(data: UpdateData) {
+  const expr: MonthlyExpr = { every: data.month, subexpr: undefined! }
+
+  if (data.rel === 'On Days') {
+    expr.subexpr = { type: 'ondays', days: data.days.map((d) => Number(d)) }
+  } else {
+    expr.subexpr = { type: 'onthe', ordinal: data.ordinal, weekday: data.weekday }
+  }
+
+  props.onExpressionChange(expr)
+}
+
+// onMounted(() => {
+//   update({
+//     month: month.value,
+//     days: days.value,
+//     weekday: weekday.value,
+//     ordinal: ordinal.value,
+//     rel: rel.value
+//   })
+// })
+
+watch([month, days, weekday, ordinal, rel], (args) => {
+  const [month, days, weekday, ordinal, rel] = args
+  update({ month, days, weekday, ordinal, rel })
+})
 </script>
 
 <template>

@@ -1,25 +1,99 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
-import { plural } from '@/utils'
+import type { SelectButtonChangeEvent } from 'primevue/selectbutton'
+
+import type { YearlyExpr } from '@/interfaces/schedule'
+import { evaluate, plural } from '@/utils'
 import {
   MONTH_OPTIONS,
   ORDINAL_OPTIONS_GROUP,
   type Ordinals,
-  WEEKDAY_OPTIONS
+  WEEKDAY_OPTIONS_GROUP,
+  type WeekdayVariable
 } from '@/utils/scheduling'
 
 import Stack from '../stack/Stack.vue'
 
-const year = ref(1)
-const months = ref<Array<number>>([])
-const weekday = ref(1)
-const ordinal = ref<Lowercase<Ordinals>>('first')
-const weekdayRelActive = ref(false)
+export interface YearlySchedulerProps {
+  timestamp: Date | null
+  expression?: YearlyExpr
+  onExpressionChange: (expression: YearlyExpr) => void
+}
 
-const weekdayOptions = computed(() => WEEKDAY_OPTIONS.slice())
+const props = withDefaults(defineProps<YearlySchedulerProps>(), {
+  expression: (props) => {
+    return {
+      every: 1,
+      subexpr: {
+        in: {
+          months: [(props.timestamp ?? new Date()).getMonth()]
+        }
+      }
+    }
+  }
+})
+
+const year = ref(props.expression.every)
+const months = ref<Array<number>>(evaluate(() => props.expression.subexpr.in.months))
+const weekday = ref<number | WeekdayVariable>(
+  evaluate(() => {
+    const { subexpr } = props.expression
+    return subexpr.on?.weekday || subexpr.on?.variable || 0
+  })
+)
+const ordinal = ref(evaluate(() => props.expression.subexpr.on?.ordinal ?? 'first'))
+const weekdayRelActive = ref(evaluate(() => !!props.expression.subexpr.on))
+
+const weekdayOptionsGroup = computed(() => WEEKDAY_OPTIONS_GROUP.slice())
 const monthOptions = computed(() => MONTH_OPTIONS.slice())
 const ordinalOptionsGroup = computed(() => ORDINAL_OPTIONS_GROUP.slice())
+
+function handleMonthChange(evt: SelectButtonChangeEvent) {
+  const value = evt.value as typeof months.value
+  // Ensure months can't be an empty array
+  if (months.value.length === 1 && value.length === 0) return
+  if (value.length === 0) return
+  months.value = value
+}
+
+type UpdateData = {
+  year: number
+  months: number[]
+  weekday: number | WeekdayVariable
+  ordinal: Ordinals
+  weekdayRelActive: boolean
+}
+
+function update(data: UpdateData) {
+  const expr: YearlyExpr = { every: data.year, subexpr: { in: { months: data.months } } }
+
+  if (data.weekdayRelActive) {
+    expr.subexpr.on = {
+      ordinal: data.ordinal,
+      weekday: typeof data.weekday === 'number' ? data.weekday : undefined,
+      variable: typeof data.weekday === 'string' ? data.weekday : undefined
+    }
+  }
+
+  props.onExpressionChange(expr)
+}
+
+// onMounted(() => {
+//   update({
+//     year: year.value,
+//     months: months.value,
+//     ordinal: ordinal.value,
+//     weekday: weekday.value,
+//     weekdayRelActive: weekdayRelActive.value
+//   })
+// })
+
+watch([year, months, weekday, ordinal, weekdayRelActive], (args) => {
+  const [year, months, weekday, ordinal, weekdayRelActive] = args
+
+  update({ year, months, ordinal, weekday, weekdayRelActive })
+})
 </script>
 
 <template>
@@ -50,13 +124,14 @@ const ordinalOptionsGroup = computed(() => ORDINAL_OPTIONS_GROUP.slice())
       <Stack type="vstack" :spacing="0" style="width: 100%; align-items: center">
         <label class="s-label" style="align-self: self-start">in</label>
         <SelectButton
-          v-model="months"
-          data-grid-col="4"
           class="s-selectbutton grided"
+          data-grid-col="4"
+          :model-value="months"
           :multiple="true"
           :options="monthOptions"
           option-label="alt"
           option-value="value"
+          @change="handleMonthChange"
         />
       </Stack>
 
@@ -99,10 +174,17 @@ const ordinalOptionsGroup = computed(() => ORDINAL_OPTIONS_GROUP.slice())
             label-class="s-select-label"
             overlay-class="s-select-overlay"
             :disabled="!weekdayRelActive"
-            :options="weekdayOptions"
+            :options="weekdayOptionsGroup"
+            option-group-label="group"
+            option-group-children="items"
             option-label="alt"
             option-value="value"
-          />
+          >
+            <template #optiongroup="{ option }">
+              <Divider v-if="option.group === 'variable'" style="margin: 0" />
+              <span v-else aria-hidden="true" />
+            </template>
+          </Select>
         </Stack>
       </Stack>
     </Stack>

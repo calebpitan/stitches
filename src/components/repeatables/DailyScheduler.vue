@@ -1,11 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
+import type { DailyExpr } from '@/interfaces/schedule'
 import { plural } from '@/utils'
 
 import Stack from '../stack/Stack.vue'
 
-const day = ref(1)
+export interface DailySchedulerProps {
+  expression?: DailyExpr
+  onExpressionChange: (expr: DailyExpr) => void
+}
+
+const props = withDefaults(defineProps<DailySchedulerProps>(), {
+  expression: () => {
+    return {
+      every: 1
+    }
+  }
+})
+
+const day = ref(props.expression.every)
+
+watch(day, (day) => props.onExpressionChange({ every: day }))
 </script>
 
 <template>

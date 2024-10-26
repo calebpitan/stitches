@@ -35,7 +35,15 @@ export interface YearlyIn {
 export interface YearlyOnThe {
   ordinal: Ordinals
   weekday?: number
-  custom?: WeekdayVariable
+  /**
+   * A variable weekday that is dynamically computed based on the
+   * value specified here, and could be any weekday.
+   *
+   * - If the value is `'day'`, it could be the 1st to 5th or last day of the month
+   * - If the value is `'weekday'`, it could be the 1st to 5th or last of one of Mon-Fri of the month
+   * - If the value is `'weekend-day'`, it could be the 1st to 5th or last of any of Sat-Sun of the month
+   */
+  variable?: WeekdayVariable
 }
 
 export interface YearlyExpr extends BaseRegularExpr {
@@ -48,7 +56,7 @@ export interface YearlyExpr extends BaseRegularExpr {
 export type RegularExpression<
   T extends Exclude<FrequencyType, 'custom' | 'never'>,
   E extends BaseRegularExpr
-> = { type: T; expr: E } & BaseFrequency
+> = { type: T; exprs: E } & BaseFrequency
 
 export interface CronSchedule {
   expression: string
@@ -57,7 +65,7 @@ export interface CronSchedule {
 
 export interface BaseFrequency {
   type: FrequencyType
-  until: Date | null
+  until?: Date | null
 }
 
 export type RegularFrequency =

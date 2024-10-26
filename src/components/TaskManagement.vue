@@ -24,8 +24,7 @@ const taskSchedule = computed(() => {
 
 function createSchedule(schedule: BaseTaskSchedule) {
   if (!selectedTask.value) return
-  const a = taskScheduleStore.upsertSchedule(selectedTask.value.id, schedule)
-  console.log(a)
+  taskScheduleStore.upsertSchedule(selectedTask.value.id, schedule)
   // controller.add(JSON.p)
 }
 

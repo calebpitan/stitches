@@ -3,6 +3,8 @@ import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 
 import { SVG } from '@svgdotjs/svg.js'
 
+import type { SelectChangeEvent } from 'primevue/select'
+
 import { useLocale } from '@/composables/useLocale'
 import { usePrimaryColor } from '@/composables/usePrimaryColor'
 import type { BaseTaskSchedule, Frequency, TaskSchedule } from '@/interfaces/schedule'
@@ -50,7 +52,7 @@ interface LineNode extends ThreadNode {
   y2: number
 }
 
-interface ThreadConfig {
+interface ThreadlineConfig {
   width: number
   height: number
   viewbox(): [number, number, number, number]
@@ -72,11 +74,12 @@ const frequency = ref<Frequency>(
     const f = props.schedule?.frequency
     switch (f?.type) {
       case undefined:
-        return { type: 'never', until: null }
+      case 'never':
+        return { type: 'never' }
       case 'custom':
         return { type: f.type, until: f.until, crons: f.crons }
       default:
-        return { type: f!.type, until: f!.until }
+        return Object.assign({}, f)
     }
   })
 )
@@ -105,7 +108,7 @@ const tooltip = computed(() => {
 // Configuration object for declaring properties of threadline to
 // be drawn.
 // ***************************************************************
-const thread = computed<ThreadConfig>(() => {
+const thread = computed<ThreadlineConfig>(() => {
   return {
     width: 32,
     height: 48,
@@ -164,7 +167,7 @@ const thread = computed<ThreadConfig>(() => {
   }
 })
 
-function drawThread(container: HTMLElement, config: ThreadConfig) {
+function drawThread(container: HTMLElement, config: ThreadlineConfig) {
   const draw = SVG()
   const group = draw.group()
 
@@ -212,7 +215,7 @@ function handleClearSchedule() {
   }
 
   datetime.value = null
-  frequency.value = { type: 'never', until: null }
+  frequency.value = { type: 'never' }
 }
 
 onMounted(() => {
@@ -224,9 +227,74 @@ onMounted(() => {
 watchEffect(() => {
   if (frequency.value.type !== 'custom') {
     // @ts-expect-error
-    frequency.value = { ...frequency.value, crons: [] }
+    delete frequency.value.crons
   }
 })
+
+function handleFrequencyTypeChange(evt: SelectChangeEvent) {
+  const timestamp = datetime.value ?? new Date()
+  const type = evt.value as typeof frequency.value.type
+
+  if (type === frequency.value.type) return
+
+  switch (type) {
+    case 'hour':
+    case 'day':
+      Object.assign(frequency.value, { type, exprs: { every: 1 } })
+      break
+    case 'week':
+      Object.assign(frequency.value, { type, exprs: { every: 1, subexpr: { weekdays: [] } } })
+      break
+    case 'month':
+      Object.assign(frequency.value, {
+        type,
+        exprs: {
+          every: 1,
+          subexpr: {
+            type: 'ondays',
+            days: [timestamp.getDate()]
+          }
+        }
+      })
+      break
+    case 'year':
+      Object.assign(frequency.value, {
+        type,
+        exprs: {
+          every: 1,
+          subexpr: {
+            in: {
+              months: [timestamp.getMonth()]
+            }
+          }
+        }
+      })
+      break
+    case 'custom':
+      Object.assign(frequency.value, {
+        type,
+        crons: [
+          {
+            // prettier-ignore
+            expression: [
+              timestamp.getMinutes(), 
+              timestamp.getHours(), 
+              '*', 
+              '*', 
+              '*'
+            ].join(' '),
+            frequency: 'day'
+          }
+        ]
+      })
+      break
+    case 'never':
+      frequency.value = { type }
+      break
+    default:
+    // no default
+  }
+}
 
 watch(
   [datetime, frequency],
@@ -329,12 +397,13 @@ watch(
                   dropdown-icon="pi pi-angle-down"
                   label-class="s-select-label"
                   overlay-class="s-select-overlay"
-                  v-model="frequency.type"
+                  :model-value="frequency.type"
                   :options="frequencyOptionsGroup"
                   :option-group-label="'group'"
                   :option-group-children="'items'"
                   :option-label="'label'"
                   :option-value="'value'"
+                  @change="handleFrequencyTypeChange"
                 >
                   <template #optiongroup="{ option }">
                     <Divider v-if="option.group === 'custom'" style="margin: 0" />
@@ -366,11 +435,44 @@ watch(
               @change="frequency.crons = $event"
             />
 
-            <DailyScheduler v-if="frequency.type === 'day'" />
-            <HourlyScheduler v-if="frequency.type === 'hour'" />
-            <WeeklyScheduler v-if="frequency.type === 'week'" />
-            <MonthlyScheduler v-if="frequency.type === 'month'" />
-            <YearlyScheduler v-if="frequency.type === 'year'" />
+            <DailyScheduler
+              v-if="frequency.type === 'day'"
+              :expression="
+                schedule?.frequency.type === 'day' ? schedule.frequency.exprs : undefined
+              "
+              @expression-change="frequency.exprs = $event"
+            />
+            <HourlyScheduler
+              v-if="frequency.type === 'hour'"
+              :expression="
+                schedule?.frequency.type === 'hour' ? schedule.frequency.exprs : undefined
+              "
+              @expression-change="frequency.exprs = $event"
+            />
+            <WeeklyScheduler
+              v-if="frequency.type === 'week'"
+              :timestamp="datetime"
+              :expression="
+                schedule?.frequency.type === 'week' ? schedule.frequency.exprs : undefined
+              "
+              @expression-change="frequency.exprs = $event"
+            />
+            <MonthlyScheduler
+              v-if="frequency.type === 'month'"
+              :timestamp="datetime"
+              :expression="
+                schedule?.frequency.type === 'month' ? schedule.frequency.exprs : undefined
+              "
+              @expression-change="frequency.exprs = $event"
+            />
+            <YearlyScheduler
+              v-if="frequency.type === 'year'"
+              :timestamp="datetime"
+              :expression="
+                schedule?.frequency.type === 'year' ? schedule.frequency.exprs : undefined
+              "
+              @expression-change="frequency.exprs = $event"
+            />
           </VStack>
         </HStack>
       </Transition>

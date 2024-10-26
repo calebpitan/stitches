@@ -13,6 +13,17 @@ interface MgmtScheduleSummaryProps {
 withDefaults(defineProps<MgmtScheduleSummaryProps>(), {})
 
 const locale = useLocale()
+const freqTypeMap = {
+  hour: 'hourly',
+  day: 'daily',
+  week: 'weekly',
+  month: 'monthly',
+  year: 'yearly',
+  custom: 'custom',
+  get(key: Exclude<keyof typeof this, 'get'>) {
+    return this[key]
+  }
+}
 </script>
 
 <template>
@@ -30,9 +41,9 @@ const locale = useLocale()
 
     <HStack v-if="schedule && schedule.frequency.type !== 'never'" :spacing="1">
       <IconLoopOn />
-      <span>{{ schedule.frequency.type }}</span>
+      <span>{{ freqTypeMap.get(schedule.frequency.type) }}</span>
 
-      <template v-if="schedule.frequency.until !== null">
+      <template v-if="schedule.frequency.until">
         <IconLoopOff width="1.2em" height="1.2em" />
         <span>{{ schedule.frequency.until.toLocaleDateString(locale) }}</span>
       </template>

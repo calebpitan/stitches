@@ -1,14 +1,44 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 
+import type { WeeklyExpr } from '@/interfaces/schedule'
 import { WEEKDAY_OPTIONS, plural } from '@/utils'
 
 import Stack from '../stack/Stack.vue'
 
-const week = ref(1)
-const weekday = ref<Array<number>>([])
+export interface WeeklySchedulerProps {
+  timestamp: Date | null
+  expression?: WeeklyExpr
+  onExpressionChange: (expr: WeeklyExpr) => void
+}
+
+type UpdateData = { week: number; weekdays: number[] }
+
+const props = withDefaults(defineProps<WeeklySchedulerProps>(), {
+  expression: (props) => {
+    return {
+      every: 1,
+      subexpr: { weekdays: [(props.timestamp ?? new Date()).getDay()] }
+    }
+  }
+})
+
+const week = ref(props.expression.every)
+const weekdays = ref<Array<number>>(props.expression.subexpr.weekdays)
 
 const weekdayOptions = computed(() => WEEKDAY_OPTIONS.slice())
+
+function update(data: UpdateData) {
+  const expr: WeeklyExpr = { every: data.week, subexpr: { weekdays: data.weekdays } }
+
+  props.onExpressionChange(expr)
+}
+
+watch([week, weekdays], (args) => {
+  const [week, weekdays] = args
+
+  update({ week, weekdays })
+})
 </script>
 
 <template>
@@ -40,7 +70,7 @@ const weekdayOptions = computed(() => WEEKDAY_OPTIONS.slice())
         <label for="wkly-scheduler-wk-dys" class="s-label">On</label>
 
         <SelectButton
-          v-model="weekday"
+          v-model="weekdays"
           id="wkly-scheduler-wk-dys"
           class="s-selectbutton"
           :multiple="true"

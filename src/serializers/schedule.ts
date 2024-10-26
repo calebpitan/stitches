@@ -24,7 +24,7 @@ import type { FrequencyType, Ordinals, WeekdayVariable } from '@/utils/schedulin
 // ***************************************************************
 @Expose()
 abstract class AbstractExprSerializer implements BaseRegularExpr {
-  every: number
+  @Type(() => Number) every: number
 }
 
 // ***************************************************************
@@ -40,13 +40,12 @@ class DailyExprSerializer extends AbstractExprSerializer implements DailyExpr {}
 // ***************************************************************
 @Expose()
 class WeeklySubExprSerializer {
-  @Type(() => Number)
-  weekdays: Array<number>
+  @Type(() => Number) weekdays: Array<number>
 }
 
 @Expose()
 class WeeklyExprSerializer extends AbstractExprSerializer implements WeeklyExpr {
-  subexpr: WeeklySubExprSerializer
+  @Type(() => WeeklySubExprSerializer) subexpr: WeeklySubExprSerializer
 }
 
 // ***************************************************************
@@ -62,7 +61,7 @@ class MonthlyOnDaysSerializer implements MonthlyOnDays {
 class MonthlyOnTheSerializer implements MonthlyOnThe {
   @Type(() => String) type: 'onthe'
   @Type(() => String) ordinal: Ordinals
-  weekday: number
+  @Type(() => Number) weekday: number
 }
 
 @Expose()
@@ -85,20 +84,20 @@ class YearlyInSerializer implements YearlyIn {
 
 @Expose()
 class YearlyOnTheSerializer implements YearlyOnThe {
-  @Type(() => String) custom?: WeekdayVariable | undefined
+  @Type(() => String) variable?: WeekdayVariable | undefined
   @Type(() => String) ordinal: Ordinals
   @Type(() => Number) weekday?: number | undefined
 }
 
 @Expose()
 class YearlySubExprSerializer {
-  in: YearlyInSerializer
-  on?: YearlyOnTheSerializer
+  @Type(() => YearlyInSerializer) in: YearlyInSerializer
+  @Type(() => YearlyOnTheSerializer) on?: YearlyOnTheSerializer
 }
 
 @Expose()
 class YearlyExprSerializer extends AbstractExprSerializer implements YearlyExpr {
-  subexpr: YearlySubExprSerializer
+  @Type(() => YearlySubExprSerializer) subexpr: YearlySubExprSerializer
 }
 
 // ***************************************************************
@@ -165,9 +164,11 @@ export class ScheduleSerializer implements TaskSchedule {
   taskId: string
 
   @Type((o) => {
-    return o?.object.frequency.type === 'custom'
-      ? CustomFrequencySerializer
-      : RegularFrequencySerializer
+    return o?.object.frequency.type === 'never'
+      ? () => void 0
+      : o?.object.frequency.type === 'custom'
+        ? CustomFrequencySerializer
+        : RegularFrequencySerializer
   })
   frequency: Frequency
 
