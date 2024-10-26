@@ -114,7 +114,7 @@ watch([year, months, weekday, ordinal, weekdayRelActive], (args) => {
       </Stack>
 
       <Stack type="vstack" :spacing="0" style="width: 100%; align-items: center">
-        <span :id="ids.months" class="s-label" style="align-self: self-start">in</span>
+        <span :id="ids.months" class="s-label" style="align-self: self-start">In</span>
         <SelectButton
           class="s-selectbutton grided"
           data-grid-col="4"
