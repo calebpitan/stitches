@@ -2,7 +2,7 @@ use std::cmp::{max, Ordering};
 
 use wasm_bindgen::prelude::*;
 
-use crate::scheduler::frequency::StCustomFrequency;
+use crate::scheduler::frequency::{HasEvery, StCustomFrequency};
 use crate::scheduler::frequency::{StFrequency, StFrequencyType, StRegularFrequency};
 use crate::scheduler::priority::StPriority;
 use crate::scheduler::time::{parse_cron_expr, utc_timestamp, Timestamp};
@@ -24,6 +24,12 @@ impl StSchedule {
     ///
     /// The defualt initializer: useful for schedules without
     /// any repeating frequency
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The identifier for this schedule
+    /// * `timestamp` - The timestamp in milliseconds
+    /// * `priority` - The priority of schedule used to measure importance
     pub fn new(id: &str, timestamp: u64, priority: Option<StPriority>) -> StSchedule {
         StSchedule {
             id: String::from(id),
@@ -62,6 +68,13 @@ impl StSchedule {
     ///
     /// The custom initializer: useful for schedules with a custom (CRON)
     /// repeating frequency
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The identifier for this schedule
+    /// * `timestamp` - The timestamp in milliseconds
+    /// * `freq` - The repeat frequency of schedule
+    /// * `priority` - The priority of schedule used to measure importance
     pub fn with_custom(
         id: &str,
         timestamp: u64,
@@ -147,7 +160,7 @@ impl StSchedule {
     pub fn get_custom_frequency(&self) -> Option<StCustomFrequency> {
         if let Some(freq) = &self.frequency {
             if let StFrequency::Custom(cstm_freq) = &freq {
-                return Some(cstm_freq.clone());
+                return Some(cstm_freq.to_owned());
             }
         }
 
@@ -157,7 +170,7 @@ impl StSchedule {
     pub fn get_regular_frequency(&self) -> Option<StRegularFrequency> {
         if let Some(freq) = &self.frequency {
             if let StFrequency::Regular(reg_freq) = &freq {
-                return Some(*reg_freq);
+                return Some(reg_freq.to_owned());
             }
         }
 
@@ -179,7 +192,7 @@ impl StSchedule {
         match &self.frequency {
             Some(freq) => match freq {
                 StFrequency::Custom(cstm_freq) => {
-                    let crons = cstm_freq.get_crons_expressions();
+                    let crons = cstm_freq.get_cron_expressions();
                     let timestamp = crons
                         .iter()
                         .take(3)
@@ -212,32 +225,38 @@ impl StSchedule {
                 // the timestamp in milliseconds for the upcoming schedule
                 StFrequency::Regular(reg_freq) => match reg_freq.ftype {
                     StFrequencyType::Hour => {
-                        let next_timestamp =
-                            Self::next_hourly_timestamp(Timestamp::Millis(self.timestamp), 2);
+                        let next_timestamp = Self::next_hourly_timestamp(
+                            Timestamp::Millis(self.timestamp),
+                            reg_freq.get_expr().every(),
+                        );
 
                         Some(StSchedule::with_regular(
                             &self.id,
                             next_timestamp.as_ms(),
-                            *reg_freq,
+                            reg_freq.to_owned(),
                             self.priority,
                         ))
                     }
 
                     StFrequencyType::Day => {
-                        let next_timestamp =
-                            Self::next_daily_timestamp(Timestamp::Millis(self.timestamp), 2);
+                        let next_timestamp = Self::next_daily_timestamp(
+                            Timestamp::Millis(self.timestamp),
+                            reg_freq.get_expr().every(),
+                        );
 
                         Some(StSchedule::with_regular(
                             &self.id,
                             next_timestamp.as_ms(),
-                            *reg_freq,
+                            reg_freq.to_owned(),
                             self.priority,
                         ))
                     }
 
                     StFrequencyType::Week => {
-                        let next_timestamp =
-                            Self::next_weekly_timestamp(Timestamp::Millis(self.timestamp), 2);
+                        let next_timestamp = Self::next_weekly_timestamp(
+                            Timestamp::Millis(self.timestamp),
+                            reg_freq.get_expr().every(),
+                        );
 
                         // TODO: Check for specific days of the week and apply correction to either move
                         // the timestamp forward or backward depending on if the specifies weekday(s) is
@@ -246,7 +265,7 @@ impl StSchedule {
                         Some(StSchedule::with_regular(
                             &self.id,
                             next_timestamp.as_ms(),
-                            *reg_freq,
+                            reg_freq.to_owned(),
                             self.priority,
                         ))
                     }
@@ -254,7 +273,7 @@ impl StSchedule {
                     _ => Some(StSchedule::with_regular(
                         &self.id,
                         self.timestamp,
-                        *reg_freq,
+                        reg_freq.to_owned(),
                         self.priority,
                     )),
                 },
