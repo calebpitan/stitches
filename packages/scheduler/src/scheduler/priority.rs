@@ -12,25 +12,17 @@ pub enum StPriority {
 
 impl Ord for StPriority {
     fn cmp(&self, other: &Self) -> Ordering {
-        let self_priority = match self {
-            StPriority::High => -1,
-            StPriority::Medium => 0,
-            StPriority::Low => 1,
+        let value_of = |v: &Self| match v {
+            Self::High => -1,
+            Self::Medium => 0,
+            Self::Low => 1,
         };
 
-        let other_priority = match other {
-            StPriority::High => -1,
-            StPriority::Medium => 0,
-            StPriority::Low => 1,
-        };
+        let self_priority = value_of(&self);
+        let other_priority = value_of(&other);
 
-        if self_priority < other_priority {
-            Ordering::Greater
-        } else if self_priority > other_priority {
-            Ordering::Less
-        } else {
-            Ordering::Equal
-        }
+        // place other before self for an inverse ordering
+        other_priority.cmp(&self_priority)
     }
 }
 
