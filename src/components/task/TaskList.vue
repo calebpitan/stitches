@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+
 import Draggable from 'vuedraggable'
 
 import { type TaskListItem } from '@/interfaces/task'
