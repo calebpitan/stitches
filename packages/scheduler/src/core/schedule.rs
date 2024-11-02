@@ -1,18 +1,22 @@
+use core::fmt;
 use std::cmp::{max, Ordering};
 
+use chrono::prelude::*;
 use wasm_bindgen::prelude::*;
 
-use crate::scheduler::frequency::{HasEvery, StCustomFrequency};
-use crate::scheduler::frequency::{StFrequency, StFrequencyType, StRegularFrequency};
-use crate::scheduler::priority::StPriority;
-use crate::scheduler::time::{parse_cron_expr, utc_timestamp, Timestamp};
-use crate::scheduler::time::{DAY_MILLIS, HOUR_MILLIS, WEEK_MILLIS};
+use crate::core::frequency::StConstWeekday;
+use crate::core::frequency::StFrequencyExpression;
+use crate::core::frequency::{Repeating, StCustomFrequency};
+use crate::core::frequency::{StFrequency, StRegularFrequency};
+use crate::core::priority::StPriority;
+use crate::core::time::{parse_cron_expr, utc_timestamp, Timestamp};
+use crate::core::time::{DAY_MILLIS, HOUR_MILLIS, WEEK_MILLIS};
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StSchedule {
     id: String,
-    timestamp: u64,
+    timestamp: Timestamp,
     priority: Option<StPriority>,
     frequency: Option<StFrequency>,
 }
@@ -35,7 +39,7 @@ impl StSchedule {
             id: String::from(id),
             frequency: None,
             priority,
-            timestamp,
+            timestamp: Timestamp::Millis(timestamp),
         }
     }
 
@@ -60,7 +64,7 @@ impl StSchedule {
             id: String::from(id),
             frequency: Some(StFrequency::Regular(freq)),
             priority,
-            timestamp,
+            timestamp: Timestamp::Millis(timestamp),
         }
     }
 
@@ -85,12 +89,12 @@ impl StSchedule {
             id: String::from(id),
             frequency: Some(StFrequency::Custom(freq)),
             priority,
-            timestamp,
+            timestamp: Timestamp::Millis(timestamp),
         }
     }
 
-    fn next_hourly_timestamp(timestamp: Timestamp, hours: u32) -> Timestamp {
-        let hour_ms = (HOUR_MILLIS * hours) as f64;
+    fn next_hourly_timestamp(timestamp: Timestamp, hours: u64) -> Timestamp {
+        let hour_ms = (HOUR_MILLIS * hours as u64) as f64;
         let current_timestamp = utc_timestamp();
 
         if timestamp >= current_timestamp {
@@ -105,7 +109,7 @@ impl StSchedule {
         timestamp + Timestamp::Millis(next_hour_millis as u64)
     }
 
-    fn next_daily_timestamp(timestamp: Timestamp, days: u32) -> Timestamp {
+    fn next_daily_timestamp(timestamp: Timestamp, days: u64) -> Timestamp {
         let day_ms = (DAY_MILLIS * days) as f64;
         let current_timestamp = utc_timestamp();
 
@@ -121,7 +125,7 @@ impl StSchedule {
         timestamp + Timestamp::Millis(next_day_millis as u64)
     }
 
-    fn next_weekly_timestamp(timestamp: Timestamp, weeks: u32) -> Timestamp {
+    fn next_weekly_timestamp(timestamp: Timestamp, weeks: u64) -> Timestamp {
         let week_ms = (WEEK_MILLIS * weeks) as f64;
         let current_timestamp = utc_timestamp();
 
@@ -137,6 +141,43 @@ impl StSchedule {
         timestamp + Timestamp::Millis(next_week_millis as u64)
     }
 
+    /// Compute the correction factor that places a weekly `timestamp` at exactly the weekday,
+    /// in the same week as the `timestamp`, specified in its schedule frequency.
+    ///
+    /// It calculates the time in milliseconds that takes the `timestamp` either ahead or behind to
+    /// exactly the weekday, from `weekdays`, that outputs the least time in milliseconds.
+    ///
+    /// This method should be used after [`StSchedule::next_weekly_timestamp`](#method.next_weekly_timestamp)
+    /// when `weekdays` is provided.
+    ///
+    /// Returns a tuple of `(neg: bool, correction: Timestamp)`
+    fn next_weekly_correction_factor(
+        timestamp: &Timestamp,
+        weekdays: &Vec<StConstWeekday>,
+    ) -> (bool, Timestamp) {
+        let minimum = weekdays
+            .iter()
+            .map(|weekday| {
+                let datetime = timestamp.to_datetime();
+                let ts_weekday = StConstWeekday::from_chrono_weekday(&datetime.weekday());
+
+                // This computes how many days behind or ahead, in the same week, is the
+                // timestamp from the day of the specified weekday
+                let weekday_offset = StConstWeekday::to_value(&ts_weekday) as i64
+                    - StConstWeekday::to_value(weekday) as i64;
+
+                (DAY_MILLIS as i64) * weekday_offset * -1
+            })
+            .min()
+            .unwrap_or(0);
+
+        if minimum.signum() == -1 {
+            return (true, Timestamp::Millis(minimum as u64));
+        }
+
+        return (false, Timestamp::Millis(minimum as u64));
+    }
+
     // pub(crate) fn get_id_as_str(&self) -> &str {
     //     self.id.as_str()
     // }
@@ -146,7 +187,7 @@ impl StSchedule {
     }
 
     pub fn get_timestamp(&self) -> u64 {
-        self.timestamp
+        self.timestamp.as_ms()
     }
 
     pub fn get_priority(&self) -> Option<StPriority> {
@@ -178,7 +219,7 @@ impl StSchedule {
     }
 
     pub fn is_passed(&self) -> bool {
-        Timestamp::Millis(self.timestamp) < utc_timestamp()
+        self.timestamp < utc_timestamp()
     }
 
     /// Calculate the upcoming schedule for the given schedule
@@ -197,12 +238,10 @@ impl StSchedule {
                         .iter()
                         .take(3)
                         .map(|c| {
-                            let ref_timestamp = Timestamp::Millis(self.timestamp);
-                            let cur_timestamp = utc_timestamp();
                             let result = parse_cron_expr(
                                 c.as_str(),
                                 cstm_freq.tz_offset,
-                                Some(max(ref_timestamp, cur_timestamp)),
+                                Some(max(&self.timestamp, &utc_timestamp())),
                             );
 
                             result
@@ -211,7 +250,7 @@ impl StSchedule {
                         })
                         .min();
 
-                    timestamp.map(move |t| {
+                    timestamp.map(|t| {
                         StSchedule::with_custom(
                             &self.id,
                             t.as_ms(),
@@ -223,10 +262,10 @@ impl StSchedule {
 
                 // For regular frequencies, match the repetition frequency type and calculate
                 // the timestamp in milliseconds for the upcoming schedule
-                StFrequency::Regular(reg_freq) => match reg_freq.ftype {
-                    StFrequencyType::Hour => {
+                StFrequency::Regular(reg_freq) => match reg_freq.get_expr() {
+                    StFrequencyExpression::Hourly(_expr) => {
                         let next_timestamp = Self::next_hourly_timestamp(
-                            Timestamp::Millis(self.timestamp),
+                            self.timestamp,
                             reg_freq.get_expr().every(),
                         );
 
@@ -238,11 +277,9 @@ impl StSchedule {
                         ))
                     }
 
-                    StFrequencyType::Day => {
-                        let next_timestamp = Self::next_daily_timestamp(
-                            Timestamp::Millis(self.timestamp),
-                            reg_freq.get_expr().every(),
-                        );
+                    StFrequencyExpression::Daily(_expr) => {
+                        let next_timestamp =
+                            Self::next_daily_timestamp(self.timestamp, reg_freq.get_expr().every());
 
                         Some(StSchedule::with_regular(
                             &self.id,
@@ -252,11 +289,24 @@ impl StSchedule {
                         ))
                     }
 
-                    StFrequencyType::Week => {
-                        let next_timestamp = Self::next_weekly_timestamp(
-                            Timestamp::Millis(self.timestamp),
+                    StFrequencyExpression::Weekly(expr) => {
+                        let mut next_timestamp = Self::next_weekly_timestamp(
+                            self.timestamp,
                             reg_freq.get_expr().every(),
                         );
+
+                        let subexpr = expr.get_subexpr();
+
+                        let (neg, correction) = Self::next_weekly_correction_factor(
+                            &next_timestamp,
+                            subexpr.get_weekdays(),
+                        );
+
+                        if neg {
+                            next_timestamp -= correction;
+                        } else {
+                            next_timestamp += correction
+                        }
 
                         // TODO: Check for specific days of the week and apply correction to either move
                         // the timestamp forward or backward depending on if the specifies weekday(s) is
@@ -272,7 +322,7 @@ impl StSchedule {
 
                     _ => Some(StSchedule::with_regular(
                         &self.id,
-                        self.timestamp,
+                        self.timestamp.as_ms(),
                         reg_freq.to_owned(),
                         self.priority,
                     )),
@@ -280,6 +330,12 @@ impl StSchedule {
             },
             None => None,
         }
+    }
+}
+
+impl fmt::Display for StSchedule {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:#?}", &self)
     }
 }
 
@@ -297,5 +353,63 @@ impl Ord for StSchedule {
 impl PartialOrd for StSchedule {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test_configure!(run_in_browser);
+
+    static TIMESTAMP: Timestamp = Timestamp::Millis(1729520340000);
+
+    #[allow(dead_code)]
+    #[wasm_bindgen_test]
+    pub fn test_next_hourly_schedule() {
+        {
+            let hours = 1;
+            let next_timestamp = StSchedule::next_hourly_timestamp(TIMESTAMP, hours);
+
+            assert_eq!(
+                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / HOUR_MILLIS) % hours,
+                0,
+            )
+        }
+
+        {
+            let hours = 4;
+            let next_timestamp = StSchedule::next_hourly_timestamp(TIMESTAMP, hours);
+
+            assert_eq!(
+                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / HOUR_MILLIS) % hours,
+                0,
+            )
+        }
+    }
+
+    #[allow(dead_code)]
+    #[wasm_bindgen_test]
+    pub fn test_next_weekly_schedule() {
+        {
+            let weeks = 1;
+            let next_timestamp = StSchedule::next_weekly_timestamp(TIMESTAMP, weeks);
+
+            assert_eq!(
+                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / WEEK_MILLIS) % weeks,
+                0,
+            )
+        }
+
+        {
+            let weeks = 3;
+            let next_timestamp = StSchedule::next_weekly_timestamp(TIMESTAMP, weeks);
+
+            assert_eq!(
+                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / WEEK_MILLIS) % weeks,
+                0,
+            )
+        }
     }
 }

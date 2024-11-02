@@ -1,12 +1,12 @@
 use chrono::prelude::*;
 use cron_parser::{parse, ParseError};
 use std::cmp::Ordering;
-use std::ops::{Add, Div, Sub};
+use std::ops::{Add, AddAssign, Div, Sub, SubAssign};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub const HOUR_MILLIS: u32 = 3_600_000;
-pub const DAY_MILLIS: u32 = HOUR_MILLIS * 24;
-pub const WEEK_MILLIS: u32 = DAY_MILLIS * 7;
+pub const HOUR_MILLIS: u64 = 3_600_000;
+pub const DAY_MILLIS: u64 = HOUR_MILLIS * 24;
+pub const WEEK_MILLIS: u64 = DAY_MILLIS * 7;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Timestamp {
@@ -90,6 +90,18 @@ impl Sub for Timestamp {
     }
 }
 
+impl AddAssign for Timestamp {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = self.add(rhs);
+    }
+}
+
+impl SubAssign for Timestamp {
+    fn sub_assign(&mut self, rhs: Self) {
+        *self = self.sub(rhs);
+    }
+}
+
 impl PartialEq for Timestamp {
     fn eq(&self, other: &Self) -> bool {
         self.as_ms() == other.as_ms()
@@ -148,7 +160,7 @@ pub fn utc_timestamp() -> Timestamp {
 pub fn parse_cron_expr(
     expression: &str,
     tz_offset: i32,
-    start_timestamp: Option<Timestamp>,
+    start_timestamp: Option<&Timestamp>,
 ) -> Result<DateTime<Utc>, ParseError> {
     let offset = FixedOffset::east_opt(tz_offset.div(1_000))
         .unwrap_or_else(|| FixedOffset::east_opt(0).unwrap());

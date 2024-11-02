@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 
-use crate::scheduler::frequency::StFrequencyType;
+use crate::core::frequency::StFrequencyType;
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,11 +1,14 @@
 mod utils;
 
-mod queue;
-mod scheduler;
+pub mod core;
+pub mod queue;
 
 use wasm_bindgen::prelude::*;
 
-use scheduler::scheduler::StScheduler;
+use core::{
+    frequency::{StConstWeekday, StOrdinals},
+    scheduler::StScheduler,
+};
 
 #[wasm_bindgen]
 extern "C" {
@@ -19,7 +22,7 @@ extern "C" {
 #[macro_export]
 macro_rules! console_log {
     ($($t:tt)*) => {
-        let time = crate::scheduler::time::utc_timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
+        let time = crate::core::time::utc_timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
         $crate::log(&format!("[Scheduler] - {}  INFO  {}", time, &format!($($t)*)));
     };
 }
@@ -27,7 +30,7 @@ macro_rules! console_log {
 #[macro_export]
 macro_rules! console_error {
     ($($t:tt)*) => {
-        let time = crate::scheduler::time::utc_timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
+        let time = crate::core::time::utc_timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
         $crate::error(&format!("[Scheduler] - {}  ERROR  {}", time, &format!($($t)*)));
     };
 }
@@ -38,3 +41,42 @@ pub fn get_scheduler() -> StScheduler {
 
     scheduler
 }
+
+/// Gets the enum variant from a value between 0-6
+///
+/// # Panics
+///
+/// When the supplied value is out of bounds, that is, greater than 6
+#[wasm_bindgen]
+pub fn st_const_weekday_from_value(value: u8) -> StConstWeekday {
+    StConstWeekday::from_value(&value)
+}
+
+/// Gets the enum variant from a value between 0-4 and 255
+///
+/// 0-4 are First to Fifth, respectively, consecutively, and 255 is Last
+///
+/// # Panics
+///
+/// When the supplied value is out of bounds, that is, greater than 4 and less than 255
+#[wasm_bindgen]
+pub fn st_ordinals_from_value(value: u8) -> StOrdinals {
+    StOrdinals::from_value(&value)
+}
+
+// macro_rules! doc_inherited {
+//     ($name:ident) => {
+//         #[doc = "This function performs some operation."]
+//         pub fn $name() {
+//             println!("{} called", stringify!($name));
+//         }
+//     };
+// }
+
+// doc_inherited!(function_a);
+// doc_inherited!(function_b);
+
+// fn main() {
+//     function_a(); // Output: function_a called
+//     function_b(); // Output: function_b called
+// }

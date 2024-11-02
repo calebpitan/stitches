@@ -5,9 +5,9 @@ use wasm_bindgen::prelude::*;
 
 use crate::console_log;
 use crate::queue::priority_queue::{Comparator, PriorityQueue};
-use crate::scheduler::schedule::StSchedule;
-use crate::scheduler::time::utc_timestamp;
-use crate::scheduler::time::Timestamp;
+use crate::core::schedule::StSchedule;
+use crate::core::time::utc_timestamp;
+use crate::core::time::Timestamp;
 
 pub struct ClosureComparator<F, T>
 where
@@ -157,11 +157,60 @@ impl StSchedulerRunner {
         StSchedulerRunner { scheduler }
     }
 
+    async fn idle(&self, till: Option<Timestamp>) {
+        let sleep_ts = till.unwrap_or_else(|| Timestamp::Millis(1000));
+
+        console_log!("scheduler idling for {} milliseconds", sleep_ts);
+
+        task::sleep(sleep_ts.to_std_duration()).await
+    }
+
     pub fn stop(&mut self) {
         self.scheduler.abort();
     }
 
-    pub fn run(&mut self) {
+    pub async fn run(&mut self) {
         self.scheduler.unabort();
+        let sleep_ts = Timestamp::Millis(1000);
+
+        console_log!("scheduler running");
+
+        loop {
+            if self.scheduler.isaborted() {
+                break;
+            }
+
+            if self.scheduler.pq.is_empty() {
+                self.idle(None).await;
+                continue;
+            }
+
+            let peeked = self.scheduler.pq.peek().unwrap();
+            let peeked_id = peeked.get_id();
+            let timestamp = Timestamp::Millis(peeked.get_timestamp());
+            let now = utc_timestamp();
+            let difference = timestamp - now;
+
+            if timestamp > now {
+                console_log!("there are no due schedules yet");
+                console_log!("timestamp: {}; current time: {}", timestamp, now);
+
+                if difference > sleep_ts {
+                    self.idle(Some(sleep_ts)).await;
+                    continue;
+                }
+                continue;
+            } else if timestamp >= now {
+                console_log!("dispatching one schedule found to be due");
+
+                let item = self.scheduler.pq.dequeue().unwrap();
+                let item_id = item.get_id();
+                assert_eq!(item_id, peeked_id);
+                self.scheduler
+                    .receiver
+                    .as_ref()
+                    .map(|r| r.call1(&JsValue::NULL, &JsValue::from_str(item.get_id().as_str())));
+            }
+        }
     }
 }
