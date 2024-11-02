@@ -93,13 +93,14 @@ watch(schedules, (s) => props.onChange?.(s), { deep: true })
 
             <template v-for="f in fields" :key="f.id">
               <HStack :spacing="1" style="align-items: center">
-                <label :for="`${ids.field}-${f.id}`" class="s-label"> {{ f.prefix }}</label>
+                <label :for="`${ids.field}_${f.id}`" class="s-label"> {{ f.prefix }}</label>
 
                 <MultiSelect
                   class="s-select"
                   dropdown-icon="pi pi-angle-down"
                   overlay-class="s-select-overlay"
-                  :input-id="`${ids.field}-${f.id}`"
+                  :id="`crn_schdlr_${f.id}`"
+                  :input-id="`${ids.field}_${f.id}`"
                   :placeholder="f.selectedStr"
                   :model-value="f.attrs.modelValue"
                   :options="f.items"
@@ -267,12 +268,12 @@ watch(schedules, (s) => props.onChange?.(s), { deep: true })
 </style>
 
 <style>
-ul#cron-scheduler-hour_list.p-multiselect-list {
+ul#crn_schdlr_hour_list.p-multiselect-list {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
 }
 
-ul#cron-scheduler-minute_list.p-multiselect-list {
+ul#crn_schdlr_minute_list.p-multiselect-list {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
 }
