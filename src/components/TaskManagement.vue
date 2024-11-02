@@ -71,7 +71,7 @@ console.log(controller)
 }
 
 .s-task-mgmt {
-  padding: 2rem;
+  padding: var(--s-base-padding);
 }
 
 .s-task-mgmt-presentation {

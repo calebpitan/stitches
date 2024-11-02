@@ -308,7 +308,7 @@ watch(taskGroupBarIsOpen, (isOpen) => {
   flex-direction: column;
   height: 100%;
   flex: 0 1 auto;
-  background-color: var(--s-surface-ground);
+  background-color: var(--s-surface-elevated);
   position: absolute;
   z-index: calc(var(--s-sidebar-zindex) * 2);
   transition: transform var(--s-transition-timing);
