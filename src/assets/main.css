@@ -62,6 +62,8 @@ a,
 }
 
 .p-datepicker-panel.s-datepicker-panel {
+  --p-datepicker-header-background: var(--s-surface-ground);
+  --p-datepicker-panel-background: var(--s-surface-ground);
   border: 0;
   font-size: 0.875rem;
 }
@@ -171,12 +173,19 @@ a,
 /* PrimeVue SelectButton component customizations */
 .p-selectbutton.s-selectbutton {
   --p-togglebutton-background: var(--s-surface-lower);
-  --p-togglebutton-content-checked-background: var(--s-surface-ground);
+  --p-togglebutton-content-checked-background: var(--s-surface-elevated);
   --p-togglebutton-checked-background: var(--s-surface-lower);
-  /* --p-togglebutton-border-color: rgba(var(--s-surface-through-rgb) / 0.11);
-  --p-togglebutton-checked-border-color: rgba(var(--s-surface-through-rgb) / 0.11); */
+  --p-togglebutton-hover-background: var(--s-surface-middle);
+
   --s-selectbutton-font-size: 0.875rem;
   --s-selectbutton-grid-col: 3;
+
+  @media (prefers-color-scheme: dark) {
+    --p-togglebutton-background: var(--s-surface-ground);
+    --p-togglebutton-content-checked-background: var(--s-surface-elevated);
+    --p-togglebutton-checked-background: var(--s-surface-ground);
+    --p-togglebutton-hover-background: var(--s-surface-elevated);
+  }
 
   & > .p-togglebutton {
     font-size: var(--s-selectbutton-font-size);
