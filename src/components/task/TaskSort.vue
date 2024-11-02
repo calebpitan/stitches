@@ -6,19 +6,18 @@ import IconSort from '../icons/IconSort.vue'
 type Sort = -1 | 1
 
 export type TaskSortConfig = Partial<{ addedAt: Sort; completedAt: Sort }>
+export type TaskSortEmits = { sort: [config: TaskSortConfig] }
+export interface TaskSortProps {}
 
-export interface TaskSortProps {
-  onSort: (config: TaskSortConfig) => void
-}
-
-const props = defineProps<TaskSortProps>()
+defineProps<TaskSortProps>()
+const emit = defineEmits<TaskSortEmits>()
 
 const config = ref<TaskSortConfig>({})
 
 function openSortMenu() {}
 
 watch(config, (cfg) => {
-  props.onSort(cfg)
+  emit('sort', cfg)
 })
 </script>
 

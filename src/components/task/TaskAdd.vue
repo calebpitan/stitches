@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import type { BaseTaskListItem } from '@/interfaces/task'
 
-export interface TaskAddProps {
-  onAdd: (item: BaseTaskListItem) => void
-}
+export type TaskAddEmits = { add: [item: BaseTaskListItem] }
+export interface TaskAddProps {}
 
-const props = defineProps<TaskAddProps>()
+defineProps<TaskAddProps>()
+const emit = defineEmits<TaskAddEmits>()
 
 function addEmptyTask() {
-  props.onAdd({ title: '', summary: '' })
+  emit('add', { title: '', summary: '' })
 }
 </script>
 

@@ -1,22 +1,37 @@
 <script setup lang="ts">
-import TaskAdd, { type TaskAddProps } from './TaskAdd.vue'
-import TaskSearch, { type TaskSearchProps } from './TaskSearch.vue'
-import TaskSort, { type TaskSortProps } from './TaskSort.vue'
+import type { BaseTaskListItem } from '@/interfaces/task'
 
-interface TaskToolbarProps extends TaskSearchProps, TaskAddProps, TaskSortProps {
+import TaskAdd, { type TaskAddEmits } from './TaskAdd.vue'
+import TaskSearch, { type TaskSearchEmits, type TaskSearchProps } from './TaskSearch.vue'
+import TaskSort, { type TaskSortConfig, type TaskSortEmits } from './TaskSort.vue'
+
+interface TaskToolbarProps extends TaskSearchProps {
   searchable?: boolean
 }
 
 defineProps<TaskToolbarProps>()
+const emit = defineEmits<TaskSearchEmits & TaskAddEmits & TaskSortEmits>()
+
+function addItem(item: BaseTaskListItem) {
+  emit('add', item)
+}
+
+function searchTerm(term: string | null) {
+  emit('search', term)
+}
+
+function sortItems(config: TaskSortConfig) {
+  emit('sort', config)
+}
 </script>
 
 <template>
   <div class="s-toolbar">
-    <TaskSearch class="s-toolbar-search" :searchable="searchable" @search="onSearch" />
+    <TaskSearch class="s-toolbar-search" :searchable="searchable" @search="searchTerm($event)" />
 
     <div class="s-tools">
-      <TaskAdd @add="onAdd" />
-      <TaskSort @sort="onSort" />
+      <TaskAdd @add="addItem($event)" />
+      <TaskSort @sort="sortItems($event)" />
     </div>
   </div>
 </template>

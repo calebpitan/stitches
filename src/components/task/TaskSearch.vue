@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 
+export type TaskSearchEmits = { search: [term: string | null] }
 export interface TaskSearchProps {
   searchable?: boolean
-  onSearch: (term: string | null) => void
 }
 
+defineProps<TaskSearchProps>()
+const emit = defineEmits<TaskSearchEmits>()
+
 const term = ref('')
-const props = defineProps<TaskSearchProps>()
 
 watch(term, (value) => {
-  props.onSearch(value.trim() ?? null)
+  emit('search', value.trim() ?? null)
 })
 
 const resetSearchTerm = () => (term.value = '')
@@ -33,13 +35,14 @@ const resetSearchTerm = () => (term.value = '')
       @click="resetSearchTerm"
     />
   </IconField>
-</template> 
+</template>
 
 <style scoped>
 .s-search {
   box-shadow: none;
   border: 1px solid transparent;
-  background: var(--s-surface-ground);
+  background: var(--s-surface-elevated);
+  background: rgba(from var(--s-surface-elevated) r g b / 0.68);
 }
 
 .s-search:focus-visible {
