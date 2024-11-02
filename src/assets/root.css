@@ -1,9 +1,10 @@
 /* semantic color variables for this project */
 :root {
   color-scheme: light dark;
-  --s-surface-ground: var(--p-surface-0);
-  --s-surface-middle: var(--p-surface-50);
-  --s-surface-lower: var(--p-surface-100);
+  --s-surface-elevated: var(--p-surface-0);
+  --s-surface-ground: var(--p-surface-50);
+  --s-surface-middle: var(--p-surface-100);
+  --s-surface-lower: var(--p-surface-200);
   --s-surface-through-rgb: 248 250 252;
   --s-surface-through-alpha: 0.4;
 
@@ -23,6 +24,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    --s-surface-elevated: #2f2f35;
     --s-surface-ground: var(--p-surface-900);
     --s-surface-middle: var(--p-surface-950);
     --s-surface-lower: #000000;
@@ -37,6 +39,9 @@
 
 :root {
   --s-base-padding: 1.25rem;
+  --s-base-radius: 0.375rem;
+  --s-normal-radius: 0.625rem;
+  --s-cornered-radius: 3.125rem;
   --s-sidebar-zindex: 10;
   --s-input-padding-y: 0.25rem;
   --s-input-line-height: 1.6;
