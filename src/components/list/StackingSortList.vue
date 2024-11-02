@@ -96,7 +96,6 @@ watch([dragging, handling], ([dragging, handling], _, onCleanup) => {
         :class="['s-stacking-listitem', listitemClass, { stacked, reversed }]"
         :data-index="index"
         :style="{
-          '--i': size,
           '--n-index': size - 1 - index,
           '--s-index': index
         }"
