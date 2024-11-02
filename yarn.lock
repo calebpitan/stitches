@@ -1881,7 +1881,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/sortablejs@npm:^1":
+"@types/sortablejs@npm:^1.15.8":
   version: 1.15.8
   resolution: "@types/sortablejs@npm:1.15.8"
   checksum: 10c0/cac9c8279ead93b5fc6b0dde6bf4b1c4fe067d40d7b2b3415880df823f2efe5779616009488f940a003687ace70cb3d52bda168dfad2b5f4242403cd8f4ed500
@@ -7291,7 +7291,7 @@ __metadata:
     "@tsconfig/node20": "npm:^20.1.4"
     "@types/jsdom": "npm:^21.1.7"
     "@types/node": "npm:^20.14.5"
-    "@types/sortablejs": "npm:^1"
+    "@types/sortablejs": "npm:^1.15.8"
     "@vitejs/plugin-vue": "npm:^5.0.5"
     "@vitejs/plugin-vue-jsx": "npm:^4.0.0"
     "@vue-js-cron/core": "npm:^5.2.0"
