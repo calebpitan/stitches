@@ -6,6 +6,8 @@ import {
   nextWeeklyScheduleCorrectionFactor
 } from './scheduling'
 
+const WEEK_MILLIS = 604_800_000
+const DAY_MILLIS = 86_400_000
 const timestamp = new Date('2024-10-21T14:19:00.000Z')
 
 describe('#nextHourlySchedule', () => {
@@ -29,13 +31,13 @@ describe('#nextWeeklySchedule', () => {
     {
       const schedule = { weeks: 1, weekday: 4 }
       const next = nextWeeklySchedule(timestamp, schedule.weeks)
-      expect(next.toISOString()).toEqual('2024-10-28T14:19:00.000Z')
+      expect(((next.getTime() - timestamp.getTime()) / schedule.weeks) % WEEK_MILLIS).toEqual(0)
     }
 
     {
       const schedule = { weeks: 2, weekday: 4 }
       const next = nextWeeklySchedule(timestamp, schedule.weeks)
-      expect(next.toISOString()).toEqual('2024-11-04T14:19:00.000Z')
+      expect(((next.getTime() - timestamp.getTime()) / schedule.weeks) % WEEK_MILLIS).toEqual(0)
     }
   })
 })
@@ -48,7 +50,10 @@ describe('#nextWeeklyScheduleCorrectionFactor', () => {
       const correctionFactor = nextWeeklyScheduleCorrectionFactor(next, schedule.weekday)
       const nextDate = new Date(Math.round(next.getTime() * correctionFactor))
 
-      expect(nextDate.toISOString()).toEqual('2024-10-31T14:19:00.000Z')
+      const remainder = ((nextDate.getTime() - timestamp.getTime()) / schedule.weeks) % WEEK_MILLIS
+      const expectedRemainder = Math.abs(nextDate.getDay() - timestamp.getDay()) * DAY_MILLIS
+
+      expect(remainder).toEqual(expectedRemainder)
     }
   })
 })

@@ -1,4 +1,5 @@
 import type { FirstUpper } from './types'
+import { never } from './utils'
 
 export type FrequencyType = 'hour' | 'day' | 'week' | 'month' | 'year' | 'custom' | 'never'
 export type Weekday =
@@ -134,6 +135,25 @@ export const ORDINAL_OPTIONS_GROUP: readonly OrdinalsGroup[] = Object.freeze([
     items: [{ label: 'Last', alt: 'Last', value: 'last' }]
   }
 ])
+
+export function ordinalToUint8(ordinal: Ordinals) {
+  switch (ordinal) {
+    case 'first':
+      return 0x00
+    case 'second':
+      return 0x01
+    case 'third':
+      return 0x02
+    case 'fourth':
+      return 0x03
+    case 'fifth':
+      return 0x04
+    case 'last':
+      return 0xff
+    default:
+      never(ordinal)
+  }
+}
 
 export function nextHourlySchedule(timestamp: Date, hours: number) {
   const hourMillis = 3_600_000 * hours

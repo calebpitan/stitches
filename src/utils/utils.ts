@@ -63,6 +63,8 @@ export function sleep(ms: number): AsyncSleep {
   }
 }
 
+export const isFn = (v: any): v is (...args: any[]) => any => typeof v === 'function'
+
 export function timeToParts(timestamp: Date) {
   const minute = timestamp.getMinutes()
   const hour = timestamp.getHours()
