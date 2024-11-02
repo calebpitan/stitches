@@ -66,7 +66,9 @@ const ids = { repeat: useId(), repeat_until: useId() }
 const threadline = ref<HTMLDivElement | null>(null)
 
 const locale = useLocale()
-const isExpanded = ref(false)
+const primaryColor = usePrimaryColor()
+
+const isExpanded = ref(true)
 
 // The selected date time as timestamp for period the task is due
 const datetime = ref<Date | null>(props.schedule?.timestamp ?? null)
@@ -87,8 +89,6 @@ const frequency = ref<Frequency>(
 )
 
 const frequencyOptionsGroup = computed(() => FREQUENCY_OPTIONS_GROUP.slice())
-
-const primaryColor = usePrimaryColor()
 
 // ***************************************************************
 // Tooltip properties for the scheduler expand-collapse toggle
@@ -349,9 +349,10 @@ watch(
       </HStack>
     </div>
 
-    <div :class="['s-mgmt-scheduler', { expanded: isExpanded }]">
-      <Transition name="scheduler-info">
-        <MgmtScheduleInfo v-if="isExpanded === false" :schedule>
+    <div class="s-mgmt-scheduler">
+      <div :aria-hidden="isExpanded === true" :class="['s-animated', { active: !isExpanded }]">
+        <!-- NOTE: Ensure there's an `overflow: hidden;` rule for height animation to work using grid/grid-template-rows -->
+        <MgmtScheduleInfo :schedule>
           <template #edit-button>
             <Button
               v-tooltip.bottom="tooltip.edit"
@@ -379,10 +380,10 @@ watch(
             </Button>
           </template>
         </MgmtScheduleInfo>
-      </Transition>
+      </div>
 
-      <Transition name="scheduler-stack">
-        <HStack v-if="isExpanded === true" class="s-mgmt-scheduler-stack" :spacing="4">
+      <div :aria-hidden="isExpanded === false" :class="['s-animated', { active: isExpanded }]">
+        <HStack class="s-mgmt-scheduler-stack" :spacing="4">
           <DatePicker
             v-model="datetime"
             class="s-datepicker"
@@ -479,12 +480,21 @@ watch(
             />
           </VStack>
         </HStack>
-      </Transition>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.s-mgmt-schedule {
+  position: relative;
+  width: 100%;
+  --s-threadline-color-alpha: 0.3;
+  --s-threadline-color-rgb: var(--s-primary-color-rgb);
+  --s-threadline-color: rgba(var(--s-threadline-color-rgb) / var(--s-threadline-color-alpha));
+  --s-mgmt-scheduler-editor-animation-timing: 0.5s;
+}
+
 .s-schedule-header {
   --s-threadline-height: 48px;
   --s-threadline-width: 32px;
@@ -495,14 +505,40 @@ watch(
   position: relative;
 }
 
+.s-threadline {
+  width: 32px;
+  position: relative;
+  right: 1rem;
+  margin-inline-start: auto;
+  margin-block: 0.5rem;
+  color: var(--s-threadline-color);
+  display: flex;
+  justify-content: center;
+}
+
+.s-scheduler-toggle {
+  --p-icon-size: 0.75rem;
+  --p-button-icon-only-width: 0.875rem;
+
+  padding: 0;
+  position: absolute !important;
+  transition: transform calc(var(--s-mgmt-scheduler-editor-animation-timing) * 2) ease;
+  top: calc((var(--s-threadline-height) - var(--p-button-icon-only-width)) / 2);
+  right: calc(
+    (var(--s-threadline-stroke-width) / 2) +
+      ((var(--s-threadline-apparent-width) - var(--p-button-icon-only-width)) / 2)
+  );
+
+  &.expanded {
+    transform: rotate(45deg);
+  }
+}
+
 .s-schedule-headline {
   position: absolute;
   top: calc((var(--s-threadline-height) / 2) - 0.5rem);
   line-height: 1;
   margin-inline-start: 0rem;
-}
-
-.s-mgmt-schedule-summary {
   color: var(--s-script-subtle);
 }
 
@@ -530,90 +566,59 @@ watch(
   border-color: transparent;
 }
 
-.s-threadline {
-  width: 32px;
-  position: relative;
-  right: 1rem;
-  margin-inline-start: auto;
-  margin-block: 0.5rem;
-  color: var(--s-threadline-color);
-  display: flex;
-  justify-content: center;
-}
-
-.s-scheduler-toggle {
-  --p-icon-size: 0.75rem;
-  --p-button-icon-only-width: 0.875rem;
-
-  padding: 0;
-  position: absolute !important;
-  transition: transform calc(var(--s-mgmt-scheduler-stack-animation-timing) * 2) ease;
-  top: calc((var(--s-threadline-height) - var(--p-button-icon-only-width)) / 2);
-  right: calc(
-    (var(--s-threadline-stroke-width) / 2) +
-      ((var(--s-threadline-apparent-width) - var(--p-button-icon-only-width)) / 2)
-  );
-
-  &.expanded {
-    transform: rotate(45deg);
-  }
-}
-
-.s-mgmt-schedule {
-  position: relative;
-  width: 100%;
-  --s-threadline-color-alpha: 0.3;
-  --s-threadline-color-rgb: var(--s-primary-color-rgb);
-  --s-threadline-color: rgba(var(--s-threadline-color-rgb) / var(--s-threadline-color-alpha));
-  --s-mgmt-scheduler-stack-animation-timing: 0.375s;
-}
-
-.s-mgmt-scheduler {
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows 0.5s ease-out;
-
-  &.expanded {
-    grid-template-rows: 1fr;
-  }
-}
-
 .s-mgmt-scheduler-stack {
   position: relative;
+  padding-block: 0.5rem;
   max-height: 100%;
+  /* The `overflow: hidden;` rule is essential for the height animation using grid/grid-template-rows */
+  overflow: hidden;
+}
+
+.s-animated {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-15%);
+  transition: all var(--s-mgmt-scheduler-editor-animation-timing) ease-out;
+
+  &.active {
+    grid-template-rows: 1fr;
+    transform: translateY(0);
+    opacity: 1;
+    transition-delay: var(--s-mgmt-scheduler-editor-animation-timing);
+  }
 }
 
 /* TRANSITIONS */
-.scheduler-info-enter-from,
-.scheduler-info-leave-to,
-.scheduler-stack-enter-from,
-.scheduler-stack-leave-to {
-  max-height: 0%;
+.scheduler-summary-enter-from,
+.scheduler-summary-leave-to,
+.scheduler-editor-enter-from,
+.scheduler-editor-leave-to {
+  grid-template-rows: 0fr;
   opacity: 0;
   transform: translateY(-15%);
 }
 
-.scheduler-info-enter-to,
-.scheduler-info-leave-from,
-.scheduler-stack-enter-to,
-.scheduler-stack-leave-from {
-  max-height: 100%;
+.scheduler-summary-enter-to,
+.scheduler-summary-leave-from,
+.scheduler-editor-enter-to,
+.scheduler-editor-leave-from {
+  grid-template-rows: 1fr;
 }
 
-.scheduler-info-enter-active,
-.scheduler-info-leave-active,
-.scheduler-stack-enter-active,
-.scheduler-stack-leave-active {
+.scheduler-summary-enter-active,
+.scheduler-summary-leave-active,
+.scheduler-editor-enter-active,
+.scheduler-editor-leave-active {
   overflow: hidden;
   transition:
-    opacity var(--s-mgmt-scheduler-stack-animation-timing) linear,
-    max-height var(--s-mgmt-scheduler-stack-animation-timing) ease-out,
-    transform var(--s-mgmt-scheduler-stack-animation-timing) ease;
+    opacity var(--s-mgmt-scheduler-editor-animation-timing) linear,
+    grid-template-rows var(--s-mgmt-scheduler-editor-animation-timing) ease-out,
+    transform var(--s-mgmt-scheduler-editor-animation-timing) ease;
 }
 
-.scheduler-stack-enter-active,
-.scheduler-info-enter-active {
-  transition-delay: var(--s-mgmt-scheduler-stack-animation-timing);
-  order: 1;
+.scheduler-editor-enter-active,
+.scheduler-summary-enter-active {
+  transition-delay: var(--s-mgmt-scheduler-editor-animation-timing);
 }
 </style>
