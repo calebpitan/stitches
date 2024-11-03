@@ -1,0 +1,35 @@
+{
+  "name": "@stitches/io",
+  "type": "module",
+  "version": "0.1.0",
+  "collaborators": [
+    "Caleb Adepitan <calebpitan@gmail.com>"
+  ],
+  "exports": {
+    "types": "./dist/src/index.d.ts",
+    "default": "./dist/src/index.js",
+    "schema": "./dist/src/schema/index.js"
+  },
+  "scripts": {
+    "postinstall": "yarn build",
+    "prebuild": "run-s migrate:generate migrate:deploy",
+    "build:tsc": "tsc",
+    "build": "run-s prebuild build:tsc",
+    "migrate:deploy": "node ./scripts/deploy.mjs",
+    "migrate:generate": "drizzle-kit generate"
+  },
+  "packageManager": "yarn@4.1.1",
+  "dependencies": {
+    "drizzle-orm": "^0.36.0",
+    "ulidx": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/sql.js": "^1",
+    "drizzle-kit": "^0.27.1",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "sql.js": "^1.12.0"
+  }
+}
