@@ -14,10 +14,12 @@ const root = path.resolve(url.fileURLToPath(path.dirname(import.meta.url)), '..'
 const outdir = path.resolve(root, './src/migrations/')
 const outfile = path.resolve(outdir, 'deployment.json')
 
+console.log()
+
 for (let index = 0; index < journal.entries.length; index++) {
   const { when, idx, tag } = journal.entries[index]
 
-  console.log(`parsing ${tag}`)
+  console.log('(%d) Parsing migration tagged "%s"', index + 1, tag)
 
   const filepath = path.resolve(root, 'drizzle', `${tag}.sql`)
   const migration_file = fs.readFileSync(filepath).toString()
@@ -37,3 +39,6 @@ for (let index = 0; index < journal.entries.length; index++) {
 if (fs.existsSync(outdir) === false) fs.mkdirSync(outdir)
 
 fs.writeFileSync(outfile, JSON.stringify(migrate, null, 2))
+
+console.log()
+console.log('Migration deployment config file written out to "%s"\n', outfile)
