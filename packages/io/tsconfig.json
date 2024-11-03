@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "alwaysStrict": true,
+    "composite": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "outDir": "./dist",
+    "sourceMap": true,
+    "strict": true,
+    "target": "ESNext",
+    "skipLibCheck": true,
+    "declaration": true,
+    "resolveJsonModule": true
+  },
+  "files": ["src/migrations/deployment.json"],
+  "exclude": ["dist", "scripts"],
+  "include": ["src/**/*.ts"]
+}
