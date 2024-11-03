@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1730637643964,
+      "tag": "0000_flawless_newton_destine",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1730638810191,
+      "tag": "0001_curvy_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1730640452968,
+      "tag": "0002_fair_spot",
+      "breakpoints": true
+    }
+  ]
+}
