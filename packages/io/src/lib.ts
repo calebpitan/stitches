@@ -3,20 +3,23 @@ import initSqlJs from 'sql.js'
 
 import * as schema from './schema'
 import { migrate } from './migrator'
+import { TagsRepository } from './repositories/tags'
 import { TasksRepository } from './repositories/tasks'
 
 export type StitchesIOConfig = {
   /**
    * The URL to the wasm file for the SQLite 3 WebAssembly binary.
    */
-  wasm?: URL
+  wasm?: URL | false
+  log?: boolean
 }
 
 export interface StitchesIORepos {
   tasks: TasksRepository
+  tags: TagsRepository
 }
 
-export interface StitchesIODriver {
+export interface StitchesIOPort {
   /**
    * The database schema objects
    */
@@ -31,7 +34,7 @@ export interface StitchesIODriver {
    */
   mapper: SQLJsDatabase<typeof schema>
   /**
-   * A method to use to export the database file from memeory as a
+   * A method to use to export the database file from memory as a
    * `Uint8Array` representation in memory.
    */
   export(): Uint8Array
@@ -42,21 +45,27 @@ export interface StitchesIODriver {
    */
   migrate(): void
   /**
-   * Clones a new `StitchesIODriver` with the given database
+   * Clones a new `StitchesIOPort` with the given database
    * using the same config as previously.
    *
-   * @param database The database to clone the driver with
-   * @returns The newly cloned `StitchesIODriver` with `database`
+   * @param database The database to clone the port with
+   * @returns The newly cloned `StitchesIOPort` with `database`
    */
-  clone(database: Uint8Array): Promise<StitchesIODriver>
+  clone(database: Uint8Array): Promise<StitchesIOPort>
   /**
    * Close the database connection and free any memory being used.
    */
   close(): void
 }
 
+function getFileLocator(url?: URL) {
+  return (filename: string) => {
+    return (url ?? new URL(filename, 'https://sql.js.org/dist/')).toString()
+  }
+}
+
 /**
- * Opens a SQLite database file and connect to it, returning a driver for working
+ * Opens a SQLite database file and connect to it, returning a port for working
  * with the database and a repository for accessing the entities on the database.
  *
  * NOTE: That there's the assumption that the database file conforms or would
@@ -66,23 +75,26 @@ export interface StitchesIODriver {
  *
  * @param database The typed array view on the database file to open
  * @param config The setup configurations
- * @returns A promises that resolves to an IO driver
+ * @returns A promises that resolves to an IO port
  */
 export async function open(
   database: Uint8Array,
-  config?: StitchesIOConfig
-): Promise<StitchesIODriver> {
-  const sqljs = await initSqlJs({
-    locateFile: (filename: string) => {
-      return (config?.wasm ?? new URL(filename, 'https://sql.js.org/dist')).toString()
-    }
-  })
+  config: StitchesIOConfig = {}
+): Promise<StitchesIOPort> {
+  const cfg: initSqlJs.SqlJsConfig = {
+    locateFile: config.wasm !== false ? getFileLocator(config.wasm) : undefined
+  }
 
-  const sqlite = new sqljs.Database(database)
-  const mapper = drizzle(sqlite, { casing: 'snake_case', schema })
-  const repo: StitchesIORepos = { tasks: new TasksRepository(mapper) }
+  const SQLite = await initSqlJs(cfg)
+  const sqlite = new SQLite.Database(database)
+  const mapper = drizzle(sqlite, { casing: 'snake_case', schema, logger: config.log })
 
-  const driver: StitchesIODriver = {
+  const repo: StitchesIORepos = {
+    tasks: new TasksRepository(mapper),
+    tags: new TagsRepository(mapper)
+  }
+
+  const port: StitchesIOPort = {
     schema,
     mapper,
     repo,
@@ -92,5 +104,5 @@ export async function open(
     close: () => sqlite.close()
   }
 
-  return driver
+  return port
 }

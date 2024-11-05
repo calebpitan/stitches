@@ -1,4 +1,20 @@
 #!/usr/bin/env node
+
+/*!
+ * A simple migration deployment script that must always be run before
+ * build.
+ *
+ * I know "migration deployment script" is an interesting choice of word,
+ * especially since there's no deployment to any conventional database
+ * instance like, AWS, etc., happening. But what would I rather call it?
+ *
+ * Deploys the migration to an intermediate state stored a JSON
+ * configurations that can be serialized, loaded, and run in browsers
+ * using a migrator.
+ *
+ * This script was originally adapted from:
+ * https://github.com/drizzle-team/drizzle-orm/issues/1009#issuecomment-2193012293
+ */
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'

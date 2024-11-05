@@ -1,18 +1,26 @@
+/*!
+ * Allows running migrations in the browser after they have been exported to a
+ * serializabele format (JSON) by `/scripts/deploy.mjs`, the result of which is
+ * found at `./migrations/deployment.json`.
+ *
+ * This script was originally adapted from:
+ * https://github.com/drizzle-team/drizzle-orm/issues/1009#issuecomment-2193012293
+ */
 import { sql } from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
 
 import config from './migrations/deployment.json'
 
-export function migrate<TSchema extends Record<string, unknown>>(db: SQLJsDatabase<TSchema>) {
-  const TABLE_NAME = sql.identifier('__drizzle_migrations')
+export const TABLE_NAME = sql.identifier('__drizzle_migrations')
 
+export function migrate<TSchema extends Record<string, unknown>>(db: SQLJsDatabase<TSchema>) {
   db.run(
     sql`
       CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (
         id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
         hash TEXT NOT NULL,
         tag TEXT NOT NULL,
-        created_at INTEGER DEFAULT (strftime('%f', 'now') * 1000) NOT NULL
+        created_at INTEGER NOT NULL
       );
     `
   )
@@ -42,15 +50,18 @@ export function migrate<TSchema extends Record<string, unknown>>(db: SQLJsDataba
   db.transaction((tx) => {
     migrations.forEach((migration, i) => {
       console.info('%d. Deploying migration:', i + 1)
-      console.info('    TAG => %s', migration.tag)
-      console.info('    HASH => %s', migration.hash)
+      console.info('     TAG => %s', migration.tag)
+      console.info('     HASH => %s', migration.hash)
       migration.sql.forEach((stmt) => tx.run(stmt))
 
       tx.run(
-        sql`INSERT INTO ${TABLE_NAME} ("hash", "created_at", "tag") VALUES(
+        sql`
+          INSERT INTO ${TABLE_NAME} ("hash", "created_at", "tag") VALUES (
             ${sql.raw(`'${migration.hash}'`)},
             ${sql.raw(`${migration.when}`)},
-            ${sql.raw(`'${migration.tag}'`)})`
+            ${sql.raw(`'${migration.tag}'`)}
+          );
+        `
       )
     })
   })
