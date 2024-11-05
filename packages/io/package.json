@@ -7,8 +7,7 @@
   ],
   "exports": {
     "types": "./dist/src/index.d.ts",
-    "default": "./dist/src/index.js",
-    "schema": "./dist/src/schema/index.js"
+    "default": "./dist/src/index.js"
   },
   "scripts": {
     "postinstall": "yarn build",
