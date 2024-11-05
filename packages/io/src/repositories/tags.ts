@@ -10,7 +10,7 @@ type TagCreatePayload = Omit<TagPayload, 'updatedAt'>
 type TagUpdatePayload = Omit<TagPayload, 'id' | 'createdAt'>
 
 export class TagsRepository {
-  constructor(private readonly db: SQLJsDatabase<typeof schema>) {}
+  constructor(private readonly db: SQLJsDatabase<schema.Schema>) {}
 
   /**
    * Create a new `Tag` record in the database
@@ -18,16 +18,25 @@ export class TagsRepository {
    * @param payload The data to create on the database
    * @returns The newly created `Tag`
    */
-  create(payload: TagCreatePayload) {
-    const result = this.db.insert(schema.tags).values({
+  create(payload: TagCreatePayload[]): Promise<(typeof schema.tags.$inferSelect)[]>
+  create(payload: TagCreatePayload): Promise<typeof schema.tags.$inferSelect>
+  async create(payload: TagCreatePayload | TagCreatePayload[]) {
+    const toData = (payload: TagCreatePayload) => ({
       id: payload.id,
       label: payload.label,
       createdAt: payload.createdAt
     })
 
-    const tag = result.returning().get()
+    const data = Array.isArray(payload) ? payload.map(toData) : toData(payload)
 
-    return tag
+    if (Array.isArray(data)) {
+      const result = this.db.insert(schema.tags).values(data)
+      return await result.returning()
+    }
+
+    const result = this.db.insert(schema.tags).values(data)
+
+    return (await result.returning()).at(0)!
   }
 
   /**
@@ -38,11 +47,15 @@ export class TagsRepository {
    * @param id The ID of the `Tag` to find
    * @returns The `Tag` matching the provided ID, otherwise `undefined`
    */
-  findById(id: string) {
-    const result = this.db.select().from(schema.tags).where(eq(schema.tags.id, id))
-    const tag = withUnredacted(result, schema.tags).get()
+  async findById(id: string) {
+    const filters = withUnredacted(schema.tags, [eq(schema.tags.id, id)])
+    const result = await this.db
+      .select()
+      .from(schema.tags)
+      .where(and(...filters))
+    const tags = result.at(0)
 
-    return tag
+    return tags
   }
 
   /**
@@ -50,9 +63,12 @@ export class TagsRepository {
    *
    * @returns A list of `Tag`s
    */
-  findMany() {
-    const result = this.db.select().from(schema.tags)
-    const tags = withUnredacted(result, schema.tags).all()
+  async findMany() {
+    const filters = withUnredacted(schema.tags, [])
+    const tags = await this.db
+      .select()
+      .from(schema.tags)
+      .where(and(...filters))
 
     return tags
   }
@@ -64,9 +80,13 @@ export class TagsRepository {
    *
    * @returns The **redacted** `Tag` matching the provided ID, otherwise `undefined`
    */
-  findRedactedById(id: string) {
-    const result = this.db.select().from(schema.tags).where(eq(schema.tags.id, id))
-    const tags = withRedacted(result, schema.tags).all()
+  async findRedactedById(id: string) {
+    const filters = withRedacted(schema.tags, [eq(schema.tags.id, id)])
+    const result = await this.db
+      .select()
+      .from(schema.tags)
+      .where(and(...filters))
+    const tags = result.at(0)
 
     return tags
   }
@@ -76,9 +96,12 @@ export class TagsRepository {
    *
    * @returns A list of previously **redacted** `Tag`s
    */
-  findRedacted() {
-    const result = this.db.select().from(schema.tags)
-    const tags = withRedacted(result, schema.tags).all()
+  async findRedacted() {
+    const filters = withRedacted(schema.tags, [])
+    const tags = await this.db
+      .select()
+      .from(schema.tags)
+      .where(and(...filters))
 
     return tags
   }
@@ -90,13 +113,17 @@ export class TagsRepository {
    * @param patch The patch to apply to the `Tag`
    * @returns The updated `Tag`, with the patch applied
    */
-  update(id: string, patch: Partial<TagUpdatePayload>) {
-    const result = this.db
+  async update(id: string, patch: Partial<TagUpdatePayload>) {
+    const filters = withUnredacted(schema.tags, [eq(schema.tasks.id, id)])
+    const result = await this.db
       .update(schema.tags)
       .set({ label: patch.label })
-      .where(eq(schema.tags.id, id))
+      .where(and(...filters))
+      .returning()
 
-    return result.returning().get()
+    const tags = result.at(0)
+
+    return tags
   }
 
   /**
@@ -106,13 +133,15 @@ export class TagsRepository {
    * @param id The ID of the `Tag` to redact
    * @returns The redacted `Tag`
    */
-  redact(id: string) {
-    const result = this.db
+  async redact(id: string) {
+    const filters = [eq(schema.tags.id, id), isNull(schema.tags.deletedAt)]
+    const result = await this.db
       .update(schema.tags)
       .set({ deletedAt: fragments.now })
-      .where(and(eq(schema.tags.id, id), isNull(schema.tags.deletedAt)))
+      .where(and(...filters))
+      .returning()
 
-    const redacted = result.returning().get()
+    const redacted = result.at(0)
 
     return redacted
   }
@@ -124,13 +153,15 @@ export class TagsRepository {
    * @param id The ID of the `Tag` to restore
    * @returns The restored `Tag`
    */
-  restore(id: string) {
-    const result = this.db
+  async restore(id: string) {
+    const filters = [eq(schema.tags.id, id), isNotNull(schema.tags.deletedAt)]
+    const result = await this.db
       .update(schema.tags)
       .set({ deletedAt: null })
-      .where(and(eq(schema.tags.id, id), isNotNull(schema.tags.deletedAt)))
+      .where(and(...filters))
+      .returning()
 
-    const restored = result.returning().get()
+    const restored = result.at(0)
 
     return restored
   }
@@ -144,9 +175,9 @@ export class TagsRepository {
    * @param id The ID of the `Tag` to delete
    * @returns The deleted `Tag`
    */
-  delete(id: string) {
-    const result = this.db.delete(schema.tags).where(eq(schema.tags.id, id))
-    const deleted = result.returning().get()
+  async delete(id: string) {
+    const result = await this.db.delete(schema.tags).where(eq(schema.tags.id, id)).returning()
+    const deleted = result.at(0)
 
     return deleted
   }

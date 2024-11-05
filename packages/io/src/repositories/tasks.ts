@@ -5,12 +5,12 @@ import * as schema from '../schema'
 import { fragments } from '../utils'
 import { withRedacted, withUnredacted } from './utils'
 
-type TaskPayload = typeof schema.tasks.$inferInsert
-type TaskCreatePayload = Omit<TaskPayload, 'updatedAt'>
-type TaskUpdatePayload = Omit<TaskPayload, 'id' | 'createdAt'>
+export type TaskPayload = typeof schema.tasks.$inferInsert
+export type TaskCreatePayload = Omit<TaskPayload, 'updatedAt'>
+export type TaskUpdatePayload = Omit<TaskPayload, 'id' | 'createdAt'>
 
 export class TasksRepository {
-  constructor(private readonly db: SQLJsDatabase<typeof schema>) {}
+  constructor(private readonly db: SQLJsDatabase<schema.Schema>) {}
 
   /**
    * Create a new `Task` record in the database
@@ -18,17 +18,26 @@ export class TasksRepository {
    * @param payload The data to create on the database
    * @returns The newly created record
    */
-  create(payload: TaskCreatePayload) {
-    const result = this.db.insert(schema.tasks).values({
+  create(payload: TaskCreatePayload[]): Promise<(typeof schema.tasks.$inferSelect)[]>
+  create(payload: TaskCreatePayload): Promise<typeof schema.tasks.$inferSelect>
+  async create(payload: TaskCreatePayload | TaskCreatePayload[]) {
+    const toData = (payload: TaskCreatePayload) => ({
       id: payload.id,
       title: payload.title,
       summary: payload.summary,
       createdAt: payload.createdAt
     })
 
-    const task = result.returning().get()
+    const data = Array.isArray(payload) ? payload.map(toData) : toData(payload)
 
-    return task
+    if (Array.isArray(data)) {
+      const result = this.db.insert(schema.tasks).values(data)
+      return await result.returning()
+    }
+
+    const result = this.db.insert(schema.tasks).values(data)
+
+    return (await result.returning()).at(0)!
   }
 
   /**
@@ -39,9 +48,12 @@ export class TasksRepository {
    * @param id The ID of the `Task` to find
    * @returns The `Task` matching the provided ID, otherwise `undefined`
    */
-  findById(id: string) {
-    const result = this.db.select().from(schema.tasks).where(eq(schema.tasks.id, id))
-    const task = withUnredacted(result, schema.tasks).get()
+  async findById(id: string) {
+    const result = await this.db
+      .select()
+      .from(schema.tasks)
+      .where(and(...withUnredacted(schema.tasks, [eq(schema.tasks.id, id)])))
+    const task = result.at(0)
 
     return task
   }
@@ -51,9 +63,11 @@ export class TasksRepository {
    *
    * @returns A list of `Task`s
    */
-  findMany() {
-    const result = this.db.select().from(schema.tasks)
-    const tasks = withUnredacted(result, schema.tasks).all()
+  async findMany() {
+    const tasks = await this.db
+      .select()
+      .from(schema.tasks)
+      .where(and(...withUnredacted(schema.tasks, [])))
 
     return tasks
   }
@@ -65,9 +79,12 @@ export class TasksRepository {
    *
    * @returns The **redacted** `Task` matching the provided ID, otherwise `undefined`
    */
-  findRedactedById(id: string) {
-    const result = this.db.select().from(schema.tasks).where(eq(schema.tasks.id, id))
-    const tasks = withRedacted(result, schema.tasks).all()
+  async findRedactedById(id: string) {
+    const result = await this.db
+      .select()
+      .from(schema.tasks)
+      .where(and(...withRedacted(schema.tasks, [eq(schema.tasks.id, id)])))
+    const tasks = result.at(0)
 
     return tasks
   }
@@ -77,9 +94,11 @@ export class TasksRepository {
    *
    * @returns A list of previously **redacted** `Task`s
    */
-  findRedacted() {
-    const result = this.db.select().from(schema.tasks)
-    const tasks = withRedacted(result, schema.tasks).all()
+  async findRedacted() {
+    const tasks = await this.db
+      .select()
+      .from(schema.tasks)
+      .where(and(...withRedacted(schema.tasks, [])))
 
     return tasks
   }
@@ -91,13 +110,16 @@ export class TasksRepository {
    * @param patch The patch to apply to the `Task`
    * @returns The updated `Task`, with the patch applied
    */
-  update(id: string, patch: Partial<TaskUpdatePayload>) {
-    const result = this.db
+  async update(id: string, patch: Partial<TaskUpdatePayload>) {
+    const result = await this.db
       .update(schema.tasks)
       .set({ title: patch.title, summary: patch.summary })
-      .where(eq(schema.tasks.id, id))
+      .where(and(...withUnredacted(schema.tasks, [eq(schema.tasks.id, id)])))
+      .returning()
 
-    return result.returning().get()
+    const task = result.at(0)
+
+    return task
   }
 
   /**
@@ -107,13 +129,14 @@ export class TasksRepository {
    * @param id The ID of the `Task` to redact
    * @returns The redacted `Task`
    */
-  redact(id: string) {
-    const result = this.db
+  async redact(id: string) {
+    const result = await this.db
       .update(schema.tasks)
       .set({ deletedAt: fragments.now })
       .where(and(eq(schema.tasks.id, id), isNull(schema.tasks.deletedAt)))
+      .returning()
 
-    const redacted = result.returning().get()
+    const redacted = result.at(0)
 
     return redacted
   }
@@ -125,13 +148,14 @@ export class TasksRepository {
    * @param id The ID of the `Task` to restore
    * @returns The restored `Task`
    */
-  restore(id: string) {
-    const result = this.db
+  async restore(id: string) {
+    const result = await this.db
       .update(schema.tasks)
       .set({ deletedAt: null })
       .where(and(eq(schema.tasks.id, id), isNotNull(schema.tasks.deletedAt)))
+      .returning()
 
-    const restored = result.returning().get()
+    const restored = result.at(0)
 
     return restored
   }
@@ -145,9 +169,9 @@ export class TasksRepository {
    * @param id The ID of the `Task` to delete
    * @returns The deleted `Task`
    */
-  delete(id: string) {
-    const result = this.db.delete(schema.tasks).where(eq(schema.tasks.id, id))
-    const deleted = result.returning().get()
+  async delete(id: string) {
+    const result = await this.db.delete(schema.tasks).where(eq(schema.tasks.id, id)).returning()
+    const deleted = result.at(0)
 
     return deleted
   }
