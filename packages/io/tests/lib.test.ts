@@ -1,4 +1,4 @@
-import { sql } from 'drizzle-orm'
+import { getTableName, sql } from 'drizzle-orm'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { StitchesIOPort, open } from '../src/lib'
@@ -116,7 +116,11 @@ describe('#open', () => {
 
       port.migrate()
 
-      const tables = ['tasks', 'tags', 'tags_to_tasks']
+      const tables = (
+        ['tasks', 'tags', 'tagsToTasks'] as const satisfies ReadonlyArray<keyof typeof port.schema>
+      ).map((k) => {
+        return getTableName(port.schema[k])
+      })
 
       const result = port.mapper.all<{ name: string }>(
         sql`SELECT name FROM sqlite_master WHERE type='table';`
