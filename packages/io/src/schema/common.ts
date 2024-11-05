@@ -12,7 +12,7 @@ export const timestamps = {
   createdAt: integer({ mode: 'timestamp_ms' }).default(fragments.now).notNull(),
   updatedAt: integer({ mode: 'timestamp_ms' })
     .default(fragments.now)
-    .$onUpdateFn(() => fragments.now)
+    .$onUpdateFn(() => new Date())
     .notNull(),
   deletedAt: integer({ mode: 'timestamp_ms' })
 }
