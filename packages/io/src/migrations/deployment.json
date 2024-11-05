@@ -1,53 +1,13 @@
 [
   {
     "idx": 0,
-    "when": 1730637643964,
-    "tag": "0000_flawless_newton_destine",
-    "hash": "7396347ef1af5eb3a2954dc21ceb9969ed25943241f1adb15b9bf3a461202e88",
+    "when": 1730841320931,
+    "tag": "0000_ambitious_kat_farrell",
+    "hash": "d828c8d291dae4d7a4a7e6f5c63923e691951b78d18dd13c5e837814b1f52116",
     "sql": [
       "CREATE TABLE `tags_to_tasks` (`tag_id` text NOT NULL,`task_id` text NOT NULL,PRIMARY KEY(`tag_id`, `task_id`),FOREIGN KEY (`tag_id`) REFERENCES `tags`(`id`) ON UPDATE no action ON DELETE cascade,FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON UPDATE no action ON DELETE cascade);",
-      "CREATE TABLE `tags` (`id` text PRIMARY KEY NOT NULL,`label` text NOT NULL,`created_at` integer DEFAULT (strftime('%f', 'now') * 1000) NOT NULL,`updated_at` integer DEFAULT (strftime('%f', 'now') * 1000) NOT NULL,`deleted_at` integer);",
-      "CREATE TABLE `tasks` (`id` text PRIMARY KEY NOT NULL,`title` text NOT NULL,`summary` text DEFAULT '' NOT NULL,`created_at` integer DEFAULT (strftime('%f', 'now') * 1000) NOT NULL,`updated_at` integer DEFAULT (strftime('%f', 'now') * 1000) NOT NULL,`deleted_at` integer);",
-      "CREATE INDEX `tasks_title_idx` ON `tasks` (`title`);",
-      "CREATE INDEX `tasks_summary_idx` ON `tasks` (`summary`);"
-    ]
-  },
-  {
-    "idx": 1,
-    "when": 1730638810191,
-    "tag": "0001_curvy_bedlam",
-    "hash": "9be4f3a692ad0fc0004eaca94a8b59c4056487a5a19874223c12d1e7a8c60607",
-    "sql": [
-      "PRAGMA foreign_keys=OFF;",
-      "CREATE TABLE `__new_tags` (`id` text PRIMARY KEY NOT NULL,`label` text NOT NULL,`created_at` integer DEFAULT (round(strftime('%f', 'now') * 1000)) NOT NULL,`updated_at` integer DEFAULT (round(strftime('%f', 'now') * 1000)) NOT NULL,`deleted_at` integer);",
-      "INSERT INTO `__new_tags`(\"id\", \"label\", \"created_at\", \"updated_at\", \"deleted_at\") SELECT \"id\", \"label\", \"created_at\", \"updated_at\", \"deleted_at\" FROM `tags`;",
-      "DROP TABLE `tags`;",
-      "ALTER TABLE `__new_tags` RENAME TO `tags`;",
-      "PRAGMA foreign_keys=ON;",
-      "CREATE TABLE `__new_tasks` (`id` text PRIMARY KEY NOT NULL,`title` text NOT NULL,`summary` text DEFAULT '' NOT NULL,`created_at` integer DEFAULT (round(strftime('%f', 'now') * 1000)) NOT NULL,`updated_at` integer DEFAULT (round(strftime('%f', 'now') * 1000)) NOT NULL,`deleted_at` integer);",
-      "INSERT INTO `__new_tasks`(\"id\", \"title\", \"summary\", \"created_at\", \"updated_at\", \"deleted_at\") SELECT \"id\", \"title\", \"summary\", \"created_at\", \"updated_at\", \"deleted_at\" FROM `tasks`;",
-      "DROP TABLE `tasks`;",
-      "ALTER TABLE `__new_tasks` RENAME TO `tasks`;",
-      "CREATE INDEX `tasks_title_idx` ON `tasks` (`title`);",
-      "CREATE INDEX `tasks_summary_idx` ON `tasks` (`summary`);"
-    ]
-  },
-  {
-    "idx": 2,
-    "when": 1730640452968,
-    "tag": "0002_fair_spot",
-    "hash": "ced63754ee24de6ba45e5f8508409738a7d9d6e4dd063ef1582242adb3802047",
-    "sql": [
-      "PRAGMA foreign_keys=OFF;",
-      "CREATE TABLE `__new_tags` (`id` text PRIMARY KEY NOT NULL,`label` text NOT NULL,`created_at` integer DEFAULT ((strftime('%s', 'now') * 1000) + (strftime('%f', 'now') % 1 * 1000)) NOT NULL,`updated_at` integer DEFAULT ((strftime('%s', 'now') * 1000) + (strftime('%f', 'now') % 1 * 1000)) NOT NULL,`deleted_at` integer);",
-      "INSERT INTO `__new_tags`(\"id\", \"label\", \"created_at\", \"updated_at\", \"deleted_at\") SELECT \"id\", \"label\", \"created_at\", \"updated_at\", \"deleted_at\" FROM `tags`;",
-      "DROP TABLE `tags`;",
-      "ALTER TABLE `__new_tags` RENAME TO `tags`;",
-      "PRAGMA foreign_keys=ON;",
-      "CREATE TABLE `__new_tasks` (`id` text PRIMARY KEY NOT NULL,`title` text NOT NULL,`summary` text DEFAULT '' NOT NULL,`created_at` integer DEFAULT ((strftime('%s', 'now') * 1000) + (strftime('%f', 'now') % 1 * 1000)) NOT NULL,`updated_at` integer DEFAULT ((strftime('%s', 'now') * 1000) + (strftime('%f', 'now') % 1 * 1000)) NOT NULL,`deleted_at` integer);",
-      "INSERT INTO `__new_tasks`(\"id\", \"title\", \"summary\", \"created_at\", \"updated_at\", \"deleted_at\") SELECT \"id\", \"title\", \"summary\", \"created_at\", \"updated_at\", \"deleted_at\" FROM `tasks`;",
-      "DROP TABLE `tasks`;",
-      "ALTER TABLE `__new_tasks` RENAME TO `tasks`;",
+      "CREATE TABLE `tags` (`id` text PRIMARY KEY NOT NULL,`label` text NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,`deleted_at` integer);",
+      "CREATE TABLE `tasks` (`id` text PRIMARY KEY NOT NULL,`title` text NOT NULL,`summary` text DEFAULT '' NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,`deleted_at` integer);",
       "CREATE INDEX `tasks_title_idx` ON `tasks` (`title`);",
       "CREATE INDEX `tasks_summary_idx` ON `tasks` (`summary`);"
     ]

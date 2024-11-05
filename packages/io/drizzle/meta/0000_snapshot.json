@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "ebae4d06-8c12-4e5f-8837-f56dfb1f17b2",
+  "id": "5625329a-3b5b-45fa-8ac4-3eb938dfd7f2",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "tags_to_tasks": {
@@ -86,7 +86,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(strftime('%f', 'now') * 1000)"
+          "default": "(strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3)"
         },
         "updated_at": {
           "name": "updated_at",
@@ -94,7 +94,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(strftime('%f', 'now') * 1000)"
+          "default": "(strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3)"
         },
         "deleted_at": {
           "name": "deleted_at",
@@ -141,7 +141,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(strftime('%f', 'now') * 1000)"
+          "default": "(strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3)"
         },
         "updated_at": {
           "name": "updated_at",
@@ -149,7 +149,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(strftime('%f', 'now') * 1000)"
+          "default": "(strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3)"
         },
         "deleted_at": {
           "name": "deleted_at",
