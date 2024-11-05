@@ -9,8 +9,8 @@ CREATE TABLE `tags_to_tasks` (
 CREATE TABLE `tags` (
 	`id` text PRIMARY KEY NOT NULL,
 	`label` text NOT NULL,
-	`created_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,
-	`updated_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,
+	`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,
+	`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,
 	`deleted_at` integer
 );
 --> statement-breakpoint
@@ -18,8 +18,8 @@ CREATE TABLE `tasks` (
 	`id` text PRIMARY KEY NOT NULL,
 	`title` text NOT NULL,
 	`summary` text DEFAULT '' NOT NULL,
-	`created_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,
-	`updated_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,
+	`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,
+	`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,
 	`deleted_at` integer
 );
 --> statement-breakpoint

@@ -1,13 +1,13 @@
 [
   {
     "idx": 0,
-    "when": 1730841320931,
-    "tag": "0000_ambitious_kat_farrell",
-    "hash": "d828c8d291dae4d7a4a7e6f5c63923e691951b78d18dd13c5e837814b1f52116",
+    "when": 1730843246327,
+    "tag": "0000_jittery_mantis",
+    "hash": "543852cb27907e8d515d2f2afda16e01edd1a09087e0e3d2c1e5e49a336b333f",
     "sql": [
       "CREATE TABLE `tags_to_tasks` (`tag_id` text NOT NULL,`task_id` text NOT NULL,PRIMARY KEY(`tag_id`, `task_id`),FOREIGN KEY (`tag_id`) REFERENCES `tags`(`id`) ON UPDATE no action ON DELETE cascade,FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON UPDATE no action ON DELETE cascade);",
-      "CREATE TABLE `tags` (`id` text PRIMARY KEY NOT NULL,`label` text NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,`deleted_at` integer);",
-      "CREATE TABLE `tasks` (`id` text PRIMARY KEY NOT NULL,`title` text NOT NULL,`summary` text DEFAULT '' NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') * 1000) + substr(strftime('%f', 'now'), -3) NOT NULL,`deleted_at` integer);",
+      "CREATE TABLE `tags` (`id` text PRIMARY KEY NOT NULL,`label` text NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer);",
+      "CREATE TABLE `tasks` (`id` text PRIMARY KEY NOT NULL,`title` text NOT NULL,`summary` text DEFAULT '' NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer);",
       "CREATE INDEX `tasks_title_idx` ON `tasks` (`title`);",
       "CREATE INDEX `tasks_summary_idx` ON `tasks` (`summary`);"
     ]
