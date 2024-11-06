@@ -199,7 +199,7 @@ watch(editable, (isEditable) => {
 
 .s-editable-empty::before {
   content: attr(data-placeholder);
-  display: block;
+  display: inline-block;
   font-size: inherit;
   font-weight: inherit;
   font-style: oblique;
