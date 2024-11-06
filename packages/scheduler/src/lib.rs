@@ -2,6 +2,7 @@ mod utils;
 
 pub mod core;
 pub mod queue;
+pub mod traits;
 
 use wasm_bindgen::prelude::*;
 
@@ -63,20 +64,3 @@ pub fn st_const_weekday_from_value(value: u8) -> StConstWeekday {
 pub fn st_ordinals_from_value(value: u8) -> StOrdinals {
     StOrdinals::from_value(&value)
 }
-
-// macro_rules! doc_inherited {
-//     ($name:ident) => {
-//         #[doc = "This function performs some operation."]
-//         pub fn $name() {
-//             println!("{} called", stringify!($name));
-//         }
-//     };
-// }
-
-// doc_inherited!(function_a);
-// doc_inherited!(function_b);
-
-// fn main() {
-//     function_a(); // Output: function_a called
-//     function_b(); // Output: function_b called
-// }
