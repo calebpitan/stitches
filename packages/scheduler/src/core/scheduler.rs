@@ -1,30 +1,12 @@
-use std::marker::PhantomData;
-
 use async_std::task;
 use wasm_bindgen::prelude::*;
 
 use crate::console_log;
-use crate::queue::priority_queue::{Comparator, PriorityQueue};
 use crate::core::schedule::StSchedule;
 use crate::core::time::utc_timestamp;
 use crate::core::time::Timestamp;
-
-pub struct ClosureComparator<F, T>
-where
-    F: Fn(&T, &T) -> bool,
-{
-    func: F,
-    _marker: PhantomData<T>,
-}
-
-impl<F, T> Comparator<T> for ClosureComparator<F, T>
-where
-    F: Fn(&T, &T) -> bool,
-{
-    fn compare(&self, a: &T, b: &T) -> bool {
-        (self.func)(a, b)
-    }
-}
+use crate::queue::priority_queue::PQComparator;
+use crate::queue::priority_queue::PriorityQueue;
 
 #[wasm_bindgen]
 pub struct StScheduler {
@@ -42,10 +24,7 @@ pub struct StSchedulerRunner {
 #[wasm_bindgen]
 impl StScheduler {
     pub fn new() -> StScheduler {
-        let comparator = ClosureComparator {
-            func: |a: &StSchedule, b: &StSchedule| a < b,
-            _marker: PhantomData,
-        };
+        let comparator = PQComparator::new(|a: &StSchedule, b: &StSchedule| a < b);
 
         StScheduler {
             pq: PriorityQueue::new(Box::new(comparator)),
@@ -87,7 +66,7 @@ impl StScheduler {
         self.receiver = Some(receiver)
     }
 
-    pub fn abort(&mut self) {
+    fn abort(&mut self) {
         if self._aborted == false {
             console_log!("scheduler aborted!");
             self._aborted = true;
@@ -107,11 +86,15 @@ impl StScheduler {
 
     pub async fn run(&mut self) {
         self.unabort();
-        let sleep_ts = Timestamp::Millis(1000);
+        let sleep_ts = Timestamp::Millis(900);
 
         console_log!("scheduler running");
 
+        // let arc = Arc::new(Mutex::new(self));
+
         loop {
+            // let self = &mut arc.lock().unwrap();
+
             if self.isaborted() {
                 break;
             }
