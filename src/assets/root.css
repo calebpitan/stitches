@@ -5,6 +5,8 @@
   --s-surface-ground: var(--p-surface-50);
   --s-surface-middle: var(--p-surface-100);
   --s-surface-lower: var(--p-surface-200);
+
+  --s-surface-elevated-rgb: 255 255 255;
   --s-surface-through-rgb: 248 250 252;
   --s-surface-through-alpha: 0.4;
 
@@ -28,6 +30,8 @@
     --s-surface-ground: var(--p-surface-900);
     --s-surface-middle: var(--p-surface-950);
     --s-surface-lower: #000000;
+
+    --s-surface-elevated-rgb: 47 47 53;
     --s-surface-through-rgb: 95 95 95;
     --s-surface-through-alpha: 0.2;
 
