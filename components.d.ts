@@ -38,6 +38,7 @@ declare module 'vue' {
     MgmtScheduleSummary: typeof import('./src/components/management/MgmtScheduleSummary.vue')['default']
     MonthlyScheduler: typeof import('./src/components/repeatables/MonthlyScheduler.vue')['default']
     MultiSelect: typeof import('primevue/multiselect')['default']
+    OverflowBox: typeof import('./src/components/overflow/OverflowBox.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Select: typeof import('primevue/select')['default']

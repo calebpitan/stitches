@@ -5,6 +5,7 @@ import type { TaskListItem, TaskTag } from '@/interfaces/task'
 
 import EditableText from '../editable/EditableText.vue'
 import TagsInput, { type TagsInputProps } from '../editable/TagsInput.vue'
+import OverflowBox from '../overflow/OverflowBox.vue'
 
 interface MgmtPresentationProps extends Pick<TagsInputProps, 'onCreateTag'> {
   task: TaskListItem
@@ -13,6 +14,7 @@ interface MgmtPresentationProps extends Pick<TagsInputProps, 'onCreateTag'> {
 }
 
 const props = withDefaults(defineProps<MgmtPresentationProps>(), {})
+
 const suggestions = computed(() => props.tags)
 const taskTags = computed(() => {
   return props.tags.filter((t) => props.task.tagIds?.includes(t.id))
@@ -57,14 +59,16 @@ function handleTagsChange(tags: TaskTag[]) {
       </template>
 
       <template #content>
-        <EditableText
-          class="s-management-summary"
-          placeholder="summary..."
-          :key="task.summary"
-          :text="task.summary"
-          :multiline="true"
-          @modify="handleSummaryModification"
-        />
+        <OverflowBox>
+          <EditableText
+            class="s-management-summary"
+            placeholder="summary..."
+            :key="task.summary"
+            :text="task.summary"
+            :multiline="true"
+            @modify="handleSummaryModification"
+          />
+        </OverflowBox>
       </template>
       <template #footer>
         <div class="s-management-extras"></div>
