@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { type StyleValue, computed, reactive, ref, watch } from 'vue'
 
+import { setCaretToPoint } from '@/utils/dom'
+
 type Point = { x: number; y: number }
 type EditableTextEvent<T extends Event> = {
   [P in keyof T]: T[P] extends EventTarget | null ? HTMLDivElement : T[P]
@@ -123,59 +125,6 @@ function handlePaste(event: ClipboardEvent) {
 function resetPoint() {
   point.x = Number.NEGATIVE_INFINITY
   point.y = Number.NEGATIVE_INFINITY
-}
-
-function setCaretToPoint(element: HTMLElement | null, point: Point) {
-  if (!element) return
-
-  const range = document.createRange()
-  const selection = window.getSelection()
-
-  const caretPositionFromPoint: unknown =
-    'caretPositionFromPoint' in document
-      ? document.caretPositionFromPoint
-      : document.caretRangeFromPoint
-
-  const isCallable = (f: any): f is (x: number, y: number) => Range | null =>
-    typeof f === 'function'
-
-  // ***************************************************************
-  // Calling the function, `caretPositionFromPoint`, directly would
-  // fail becuase assigning it to a variable outside of the document
-  // context changes the function's internal context and must be
-  // bound back using either `bind`, `call` or `apply`.
-  // ***************************************************************
-  const position = isCallable(caretPositionFromPoint)
-    ? caretPositionFromPoint.call(document, point.x, point.y)
-    : null
-
-  const isSafePoint = Object.values(point).some((p) => Number.isFinite(p))
-
-  // ***************************************************************
-  // If the point is not a safe point, then focus was more likely a
-  // keyboard or programmatic focus than other
-  // input-sources-triggered focus.
-  //
-  // A safe point has finite, decimal coordinates
-  // ***************************************************************
-  if (!isSafePoint) {
-    // Move range to the end of the content
-    range.selectNodeContents(element)
-    // range.collapse(false)
-  }
-
-  // ***************************************************************
-  // If the point is a safe point, then focus was more likely one
-  // triggered by other input sources than a keyboard or
-  // programmatic focus.
-  // ***************************************************************
-  if (isSafePoint && position) {
-    range.setStart(position.startContainer, position.startOffset)
-    range.setEnd(position.endContainer, position.endOffset)
-  }
-
-  selection?.removeAllRanges()
-  selection?.addRange(range)
 }
 
 watch(props, (latest) => (hasText.value = !!latest.text))

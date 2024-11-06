@@ -1,15 +1,18 @@
+declare global {
+  type CaretPosition = {
+    offsetNode: Node
+    offset: number
+  }
+
+  interface Document {
+    caretPositionFromPoint?(x: number, y: number): CaretPosition | null
+  }
+}
+
 type Point = { x: number; y: number }
 
-type CaretPosition = { offset: number; offsetNode: Node }
-type CaretRangeFromPoint = (this: Document, x: number, y: number) => Range | null
-type CaretPositionFromPoint = (this: Document, x: number, y: number) => CaretPosition | null
-
-const isCaret____FromPoint = (f: any): f is CaretRangeFromPoint | CaretPositionFromPoint =>
-  typeof f === 'function'
-
-const isCaretPositionFromPoint = (
-  f: CaretRangeFromPoint | CaretPositionFromPoint
-): f is CaretPositionFromPoint => 'caretPositionFromPoint' in document
+const isCaretPositionFromPoint = (f: any): f is Document['caretPositionFromPoint'] =>
+  'caretPositionFromPoint' in document
 
 export function setCaretToPoint<E extends HTMLElement, P extends Point>(
   element: E | null,
@@ -26,10 +29,11 @@ export function setCaretToPoint<E extends HTMLElement, P extends Point>(
   }
 
   const isSafePoint = Number.isFinite(point.x) && Number.isFinite(point.y)
-  const caretPositionOrRangeFromPoint: unknown =
+  const caretPositionOrRangeFromPoint = (
     'caretPositionFromPoint' in document
       ? document.caretPositionFromPoint
       : document.caretRangeFromPoint
+  )!
 
   // ***************************************************************
   // Calling the function, `caretPositionFromPoint`, directly would
@@ -37,12 +41,11 @@ export function setCaretToPoint<E extends HTMLElement, P extends Point>(
   // context changes the function's internal context and must be
   // bound back using either `bind`, `call` or `apply`.
   // ***************************************************************
-  const position =
-    isSafePoint && isCaret____FromPoint(caretPositionOrRangeFromPoint)
-      ? isCaretPositionFromPoint(caretPositionOrRangeFromPoint)
-        ? caretPositionOrRangeFromPoint.call(document, point.x, point.y)
-        : caretPositionOrRangeFromPoint.call(document, point.x, point.y)
-      : null
+  const position = isSafePoint
+    ? isCaretPositionFromPoint(caretPositionOrRangeFromPoint)
+      ? caretPositionOrRangeFromPoint.call(document, point.x, point.y)
+      : caretPositionOrRangeFromPoint.call(document, point.x, point.y)
+    : null
 
   // ***************************************************************
   // If the point is not a safe point, then focus was more likely a
