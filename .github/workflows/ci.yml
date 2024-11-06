@@ -1,0 +1,29 @@
+name: Stitches App Tests
+
+env:
+  YARN_VERSION: 4.1.1
+
+on:
+  push:
+    branches-ignore:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  Test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+      - name: Corepack and Yarn 4 Setup
+        run: |
+          corepack enable
+          corepack prepare yarn@${{ env.YARN_VERSION }}
+      - name: Install Dependencies
+        run: yarn --immutable
+      - name: Run Unit Test Suite
+        run: yarn test:unit
