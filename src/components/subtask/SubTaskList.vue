@@ -10,7 +10,7 @@ import StackingSortList from '../list/StackingSortList.vue'
 import SubTask from './SubTask.vue'
 
 export interface SubTaskListProps {
-  items: { name: string }[]
+  items: { name: string; completed: boolean }[]
   stacked: boolean
   onUnStack: () => void
 }
@@ -50,12 +50,17 @@ function handleUnStack() {
             :items="element.items"
             :item-key="(i) => i.name"
             :stacked="stacked"
-            :reversed="false"
+            :reversed="true"
             :style="{ '--empty-image-url': `url(${emptyTaskList})` }"
             :draggable-options="{ group: 'subtasks', handle: '.s-handle' }"
           >
             <template #content="{ element: item }">
-              <SubTask class="s-subtask-element" :title="item.name" @click="handleUnStack()">
+              <SubTask
+                class="s-subtask-element"
+                :title="item.name"
+                :completed="item.completed"
+                @click="handleUnStack()"
+              >
                 <template #drag-handle>
                   <SortListHandle class="s-handle-horizontal" @discovery="handling = $event" />
                 </template>

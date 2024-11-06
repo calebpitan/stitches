@@ -155,18 +155,21 @@ watch([dragging, handling], ([dragging, handling], _, onCleanup) => {
     }
 
     &.reversed {
-      --alpha: clamp(0.4, calc(var(--n-index) / var(--list-bound)), 0.9);
+      --alpha: clamp(0.1, calc(var(--n-index) / var(--list-bound)), 0.9);
     }
 
     &:not(.reversed) {
-      --alpha: clamp(0.4, calc(var(--s-index) / var(--list-bound)), 0.9);
+      --alpha: clamp(0.1, calc(var(--s-index) / var(--list-bound)), 0.9);
     }
 
     &:not(.reversed):nth-child(1),
     &:nth-last-child(1) {
       --bg: var(--s-surface-elevated);
+      --bg-rgb: var(--s-surface-elevated-rgb);
+
       @media (prefers-color-scheme: dark) {
-        --bg: var(--s-surface-elevated);
+        --bg: #555454;
+        --bg-rgb: 85 84 84; /* #555454; */
       }
     }
 
@@ -174,7 +177,9 @@ watch([dragging, handling], ([dragging, handling], _, onCleanup) => {
     &:nth-last-child(2) {
       --bg: #e2eaf0;
       --bg-rgb: 226 234 240; /* #e2eaf0 */
+
       @media (prefers-color-scheme: dark) {
+        --bg: #191818;
         --bg: #393838;
         --bg-rgb: 57 56 56; /* #393838 */
       }
@@ -182,12 +187,12 @@ watch([dragging, handling], ([dragging, handling], _, onCleanup) => {
 
     &:not(.reversed):nth-child(3),
     &:nth-last-child(3) {
-      --bg: #cfd4da;
       --bg: #d7dee4;
       --bg-rgb: 216 222 228; /* #d7dee4 */
+
       @media (prefers-color-scheme: dark) {
-        --bg: #555454; /* #626262; */
-        --bg-rgb: 85 84 84; /* #555454; */
+        --bg: var(--s-surface-elevated);
+        --bg-rgb: var(--s-surface-elevated-rgb);
       }
     }
   }

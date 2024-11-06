@@ -5,12 +5,12 @@ import SubTaskHeader from './subtask/SubTaskHeader.vue'
 import SubTaskList from './subtask/SubTaskList.vue'
 
 const items = [
-  { name: 'Caleb' },
-  { name: 'David' },
-  { name: 'Patrick' },
-  { name: 'Daniel' },
-  { name: 'Dammy' },
-  { name: 'Yetunde' }
+  { name: 'Caleb', completed: true },
+  { name: 'David', completed: true },
+  { name: 'Daniel', completed: false },
+  { name: 'Patrick', completed: true },
+  { name: 'Dammy', completed: false },
+  { name: 'Yetunde', completed: true }
 ]
 
 const stacked = ref(true)
