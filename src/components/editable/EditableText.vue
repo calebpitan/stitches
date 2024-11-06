@@ -35,6 +35,7 @@ const point = reactive<Point>({ x: Number.NEGATIVE_INFINITY, y: Number.NEGATIVE_
 const style = computed((): StyleValue => {
   const isEditable = editable.value === true
   return {
+    '--lines': props.lines,
     display: isEditable ? undefined : '-webkit-box',
     overflow: isEditable ? 'auto' : 'hidden',
     'user-select': isEditable ? 'text' : 'none',
@@ -187,10 +188,13 @@ watch(editable, (isEditable) => {
 
 <style scoped>
 .s-editable-text {
-  position: relative;
+  --line-height: 1.6;
+  outline: none;
   width: fit-content;
   min-width: 100px;
-  outline: none;
+  position: relative;
+  overflow-y: auto;
+  max-height: calc(1rem * var(--line-height) * var(--lines, 20));
 
   &[contenteditable='true']:focus {
     outline: none;
