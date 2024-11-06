@@ -21,8 +21,7 @@ jobs:
           cache: 'yarn'
       - name: Corepack and Yarn 4 Setup
         run: |
-          corepack enable
-          corepack prepare yarn@${{ env.YARN_VERSION }}
+          corepack enable && corepack prepare yarn@${{ env.YARN_VERSION }}
       - name: Install Dependencies
         run: yarn --immutable
       - name: Run Unit Test Suite
