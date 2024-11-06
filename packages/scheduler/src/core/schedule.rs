@@ -11,6 +11,7 @@ use crate::core::frequency::{StFrequency, StRegularFrequency};
 use crate::core::priority::StPriority;
 use crate::core::time::{parse_cron_expr, utc_timestamp, Timestamp};
 use crate::core::time::{DAY_MILLIS, HOUR_MILLIS, WEEK_MILLIS};
+use crate::traits::ID;
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -19,6 +20,12 @@ pub struct StSchedule {
     timestamp: Timestamp,
     priority: Option<StPriority>,
     frequency: Option<StFrequency>,
+}
+
+impl ID for StSchedule {
+    fn get_id(&self) -> String {
+        self.get_id()
+    }
 }
 
 #[wasm_bindgen]
