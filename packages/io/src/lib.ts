@@ -23,7 +23,7 @@ export interface StitchesIOPort {
   /**
    * The database schema objects
    */
-  schema: typeof schema
+  schema: schema.Schema
   /**
    * A repository of services for working with the database objects
    */
@@ -32,7 +32,7 @@ export interface StitchesIOPort {
    * A direct access to the Object Relational Mapper (ORM) for more
    * advanced control when the repository doesn't suffice
    */
-  mapper: SQLJsDatabase<typeof schema>
+  mapper: SQLJsDatabase<schema.Schema>
   /**
    * A method to use to export the database file from memory as a
    * `Uint8Array` representation in memory.
@@ -87,7 +87,11 @@ export async function open(
 
   const SQLite = await initSqlJs(cfg)
   const sqlite = new SQLite.Database(database)
-  const mapper = drizzle(sqlite, { casing: 'snake_case', schema, logger: config.log })
+  const mapper = drizzle<schema.Schema>(sqlite, {
+    casing: 'snake_case',
+    schema: schema,
+    logger: config.log
+  })
 
   const repo: StitchesIORepos = {
     tasks: new TasksRepository(mapper),
