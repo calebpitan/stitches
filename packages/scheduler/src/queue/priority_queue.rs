@@ -79,14 +79,14 @@ where
     }
 
     pub fn remove(&mut self, id: String) -> Option<T> {
-        let index = self.tracker.get(&id);
+        let index = self.tracker.remove(&id);
 
         match index {
             Some(index) => {
-                let result = Some(self.heap.remove(*index));
+                let result = Some(self.heap.remove(index));
 
-                if index > &mut 0 {
-                    let idx = *index;
+                if index > 0 {
+                    let idx = index;
                     self.siftup(idx);
                     self.siftdown(idx, None);
                 }
@@ -312,5 +312,7 @@ mod test {
         assert_eq!(pq.dequeue(), Some(12));
         assert_eq!(pq.dequeue(), Some(32));
         assert_eq!(pq.dequeue(), Some(47));
+
+        assert_eq!(pq.tracker.is_empty(), true);
     }
 }
