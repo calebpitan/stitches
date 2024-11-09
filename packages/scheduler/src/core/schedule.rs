@@ -5,13 +5,13 @@ use chrono::prelude::*;
 use wasm_bindgen::prelude::*;
 
 use crate::core::frequency::StConstWeekday;
+use crate::core::frequency::StCustomFrequency;
 use crate::core::frequency::StFrequencyExpression;
-use crate::core::frequency::{Repeating, StCustomFrequency};
 use crate::core::frequency::{StFrequency, StRegularFrequency};
 use crate::core::priority::StPriority;
 use crate::core::time::{parse_cron_expr, utc_timestamp, Timestamp};
 use crate::core::time::{DAY_MILLIS, HOUR_MILLIS, WEEK_MILLIS};
-use crate::traits::ID;
+use crate::traits::{ID, Repeating};
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]

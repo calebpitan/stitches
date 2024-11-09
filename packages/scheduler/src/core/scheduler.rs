@@ -279,9 +279,7 @@ impl StSchedulerRunner {
                         scheduler.subscriber.as_ref().map(|r| {
                             r.call1(&JsValue::NULL, &JsValue::from_str(result.get_id_as_str()))
                         });
-
-                        // Push back
-                        scheduler.add_schedule(result);
+                        scheduler.add_schedule(result); // Push back
                     }
                 };
             }

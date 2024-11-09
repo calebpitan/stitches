@@ -3,6 +3,8 @@ use std::cmp::Ordering;
 
 use wasm_bindgen::prelude::*;
 
+use crate::traits::Repeating;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StFrequency {
     Regular(StRegularFrequency),
@@ -184,10 +186,6 @@ pub struct StCustomFrequency {
     cron_expressions: Vec<String>,
 }
 
-pub trait Repeating {
-    fn every(&self) -> u64;
-}
-
 impl StOrdinals {
     /// Gets the value, from 0-4 and 255, of the given enum variant
     #[rustfmt::skip]
@@ -216,7 +214,7 @@ impl StOrdinals {
             0x04 => Self::Fifth,
             0xFF => Self::Last,
             _ => panic!(
-                "Unknown value \"{}\". Allowed values are 0x00...0x04 and 0xFF",
+                "Unknown value '{}': allowed values are 0x00...0x04 and 0xFF",
                 value
             ),
         }
@@ -228,7 +226,7 @@ impl fmt::Display for StOrdinals {
         f.write_str(match self {
             StOrdinals::First => "First",
             StOrdinals::Second => "Second",
-            StOrdinals::Third => "Thitd",
+            StOrdinals::Third => "Third",
             StOrdinals::Fourth => "Fourth",
             StOrdinals::Fifth => "Fifth",
             StOrdinals::Last => "Last",
@@ -281,7 +279,7 @@ impl StConstWeekday {
             5 => StConstWeekday::Fri,
             6 => StConstWeekday::Sat,
             _ => panic!(
-                "Weekday \"{}\" out of bounds. Allowed values are 0...6",
+                "Weekday '{}' out of bounds: allowed values are 0...6",
                 value
             ),
         }
@@ -379,10 +377,7 @@ impl StMonth {
             9 => Self::Oct,
             10 => Self::Nov,
             11 => Self::Dec,
-            _ => panic!(
-                "Month \"{}\" out of bounds. Allowed values are 0...11",
-                value
-            ),
+            _ => panic!("Month '{}' out of bounds: allowed values are 0...11", value),
         }
     }
 
