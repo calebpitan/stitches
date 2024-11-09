@@ -8,7 +8,7 @@ use wasm_bindgen::prelude::*;
 
 use core::{
     frequency::{StConstWeekday, StOrdinals},
-    scheduler::StScheduler,
+    scheduler::{StScheduler, StSchedulerRunner},
 };
 
 #[wasm_bindgen]
@@ -39,7 +39,12 @@ macro_rules! console_error {
 #[wasm_bindgen]
 pub fn get_scheduler() -> StScheduler {
     let scheduler = StScheduler::new();
+    scheduler
+}
 
+#[wasm_bindgen]
+pub fn get_scheduler_runner() -> StSchedulerRunner {
+    let scheduler = StSchedulerRunner::new();
     scheduler
 }
 
