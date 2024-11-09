@@ -10,14 +10,14 @@ pub const WEEK_MILLIS: u64 = DAY_MILLIS * 7;
 
 #[derive(Debug, Clone, Copy)]
 pub enum Timestamp {
-    Millis(u64),
+    Millis(i64),
     #[allow(dead_code)]
-    Second(u64),
+    Second(i64),
 }
 
 impl Timestamp {
     /// Convert the timestamp to number of milliseconds if it is in seconds
-    pub fn as_ms(&self) -> u64 {
+    pub fn as_ms(&self) -> i64 {
         match &self {
             Timestamp::Second(seconds) => seconds * 1_000,
             Timestamp::Millis(milliseconds) => *milliseconds,
@@ -29,7 +29,7 @@ impl Timestamp {
     }
 
     /// Convert the timestamp to number of seconds if it is in milliseconds
-    pub fn as_sec(&self) -> u64 {
+    pub fn as_sec(&self) -> i64 {
         match &self {
             Timestamp::Second(seconds) => *seconds,
             Timestamp::Millis(milliseconds) => milliseconds / 1_000,
@@ -47,7 +47,7 @@ impl Timestamp {
 
     /// Converts `Timestamp` to a `std::time::Duration` in milliseconds
     pub fn to_std_duration(&self) -> std::time::Duration {
-        std::time::Duration::from_millis(self.as_ms())
+        std::time::Duration::from_millis(self.as_ms().abs() as u64)
     }
 
     /// Converts `Timestamp` to a `chrono::DateTime<UTC>` with millisecond precision
@@ -56,12 +56,12 @@ impl Timestamp {
     ///
     /// Panics if the given timestamp has an out-of-range number of milliseconds
     pub fn to_datetime(&self) -> DateTime<Utc> {
-        DateTime::from_timestamp_millis(self.as_ms() as i64).expect("Invalid timestamp")
+        DateTime::from_timestamp_millis(self.as_ms()).expect("Invalid timestamp")
     }
 
     /// Generates a `Timestamp` from a `chrono::DateTime<Utc>`
     pub fn from_datetime(&self, dt: DateTime<Utc>) -> Timestamp {
-        Timestamp::Millis(dt.timestamp_millis() as u64)
+        Timestamp::Millis(dt.timestamp_millis())
     }
 }
 
@@ -132,7 +132,7 @@ pub fn _utc_now() -> u128 {
 }
 
 pub fn utc_timestamp() -> Timestamp {
-    Timestamp::Millis(Utc::now().timestamp_millis() as u64)
+    Timestamp::Millis(Utc::now().timestamp_millis())
 }
 
 /// Parse a cron expression into a UTC DateTime

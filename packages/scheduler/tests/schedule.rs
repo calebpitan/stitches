@@ -16,7 +16,7 @@ use scheduler::core::{
 wasm_bindgen_test_configure!(run_in_browser);
 
 // static ISO_DATE_STRING: &str = "2024-10-28T21:05:55.025Z";
-static TIMESTAMP_MILLIS: u64 = 1730149555025;
+static TIMESTAMP_MILLIS: i64 = 1730149555025;
 
 /// Should sucessfilly create a bare minimum schedule with the given data
 #[wasm_bindgen_test]
