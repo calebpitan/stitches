@@ -11,7 +11,7 @@ use crate::core::frequency::{StFrequency, StRegularFrequency};
 use crate::core::priority::StPriority;
 use crate::core::time::{parse_cron_expr, utc_timestamp, Timestamp};
 use crate::core::time::{DAY_MILLIS, HOUR_MILLIS, WEEK_MILLIS};
-use crate::traits::{ID, Repeating};
+use crate::traits::{Repeating, ID};
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -236,6 +236,10 @@ impl StSchedule {
         if !self.is_passed() {
             return None;
         }
+
+        // TODO!: do not overwrite original timestamp, it should always serve as ref point
+        // for generating every subsequent schedule instead keep track of a `next_schedule`
+        // field on `StSchedule` that is originally the same as `timestamp`.
 
         match &self.frequency {
             Some(freq) => match freq {
