@@ -122,39 +122,46 @@ function subDataFactory(id: string): MasterMessageEventData {
 }
 
 async function main() {
+  const runner = sch.get_scheduler_runner()
   const scheduler = sch.get_scheduler()
 
   self.addEventListener('message', async (msg: MessageEvent<WorkerMessageEventData>) => {
     switch (msg.data.command) {
-      case 'add':
-        if (Array.isArray(msg.data.data)) {
-          msg.data.data.forEach((item) => {
-            !item.timestamp ? void 0 : scheduler.add_schedule(create_st_schedule(item))
-          })
+      case 'add': {
+        const data = Array.isArray(msg.data.data) ? msg.data.data : [msg.data.data]
+        data
+          .filter((v) => !!v.timestamp)
+          .map((v) => create_st_schedule(v))
+          .forEach((v) => scheduler.add_schedule(v))
+        break
+      }
 
-          break
-        }
+      case 'subscribe':
+        scheduler.subscribe((id: string) => self.postMessage(subDataFactory(id)))
+        break
 
-        if (!msg.data.data.timestamp) break
-        scheduler.add_schedule(create_st_schedule(msg.data.data))
+      case 'run':
+        await runner.run(scheduler)
         break
 
       case 'update':
-      case 'drop':
+        if (msg.data.data.timestamp === null) break
+        await runner.update_scheduler_with(create_st_schedule(msg.data.data))
+        break
+
+      case 'drop': {
+        const data = Array.isArray(msg.data.data) ? msg.data.data : [msg.data.data]
+        await Promise.all(data.map(async (v) => runner.remove_from_scheduler(v)))
+        break
+      }
+
       case 'drop_all':
         break
 
       case 'abort':
-        scheduler.abort()
+        await runner.quit()
         break
-      case 'run':
-        await scheduler.run()
-        break
-      case 'subscribe':
-        scheduler.subscribe((st_schedule_id: string) =>
-          self.postMessage(subDataFactory(st_schedule_id))
-        )
-        break
+
       default:
       // no default
     }
