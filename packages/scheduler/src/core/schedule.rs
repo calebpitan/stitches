@@ -248,9 +248,9 @@ impl StSchedule {
                     let timestamp = crons
                         .iter()
                         .take(3)
-                        .map(|c| {
+                        .map(|cron| {
                             let result = parse_cron_expr(
-                                c.as_str(),
+                                cron.as_str(),
                                 cstm_freq.tz_offset,
                                 Some(max(&self.timestamp, &utc_timestamp())),
                             );
@@ -372,7 +372,7 @@ mod tests {
 
     static TIMESTAMP: Timestamp = Timestamp::Millis(1729520340000);
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     pub fn test_next_hourly_schedule() {
         {
@@ -396,7 +396,7 @@ mod tests {
         }
     }
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     pub fn test_next_weekly_schedule() {
         {

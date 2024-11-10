@@ -19,7 +19,7 @@ enum Poll<P, R> {
 
 #[derive(Debug, Clone)]
 enum XMessage {
-    Abort,
+    Suspend,
     Remove(String),
     Update(StSchedule),
 }
@@ -87,12 +87,10 @@ impl StScheduler {
     }
 
     fn update_schedule(&mut self, schedule: StSchedule) -> bool {
-        if let Some(_) = self.remove_schedule(schedule.get_id()) {
-            self.add_schedule(schedule);
+        self.remove_schedule(schedule.get_id()).map_or(false, |s| {
+            self.add_schedule(s);
             true
-        } else {
-            false
-        }
+        })
     }
 
     fn suspend(&mut self) {
@@ -193,7 +191,7 @@ impl StSchedulerRunner {
     async fn stop(&self) -> bool {
         console_log!("Suspending scheduler:");
         let tx = self.get_sender();
-        match tx.send(XMessage::Abort).await {
+        match tx.send(XMessage::Suspend).await {
             Ok(_) => true,
             Err(error) => {
                 console_error!("Failed to suspend scheduler: {}", error);
@@ -229,7 +227,7 @@ impl StSchedulerRunner {
             while let Ok(msg) = rx.recv().await {
                 console_log!("Received {:#?} message", msg);
                 match msg {
-                    XMessage::Abort => {
+                    XMessage::Suspend => {
                         let mut scheduler_lock = scheduler_clone.lock().await;
                         console_log!("Lock acquired on scheduler");
                         scheduler_lock.suspend();
@@ -272,8 +270,8 @@ impl StSchedulerRunner {
                 };
 
                 match result {
-                    Poll::Empty => Self::idle(Some(Timestamp::Millis(1000))).await,
-                    Poll::Pending(until) => Self::idle(Some(until)).await,
+                    Poll::Empty => Self::idle(None).await,
+                    Poll::Pending(_) => Self::idle(None).await,
                     Poll::Ready(result) => {
                         let mut scheduler = scheduler.lock().await;
                         scheduler.subscriber.as_ref().map(|r| {
