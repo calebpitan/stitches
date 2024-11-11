@@ -3,7 +3,20 @@
 A stitch in time saves nine!
 
 Stitches is a task scheduling app for managing tasks as well as scheduling them. It is a
-productivity app that helps with time management
+productivity app that helps with time management and runs entirely in your browser, both frontend
+and backend.
+
+The management and scheduling frontend is developed using Vue 3, while the scheduling backend is
+developed using Rust and WebAssembly.
+
+Data is saved and persisted using browsers' storage, local storage, etc, although an SQLite 3 layer,
+over WebAssembly, is currently being integrated, allowing for a more ideal, optimal, and
+conventional storage of data.
+
+User's get to choose where to store their data once the SQLite 3 integrations are completely rolled
+out: they may choose to store in the browser, Google Drive (recommended), Dropbox, etc, for a more
+cordinated access of their data as there is mostly no server-side infrastructure developed for the
+application.
 
 <!--
 ## Recommended IDE Setup
