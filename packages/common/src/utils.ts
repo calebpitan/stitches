@@ -76,3 +76,22 @@ export function* range(stopOrStart: number, stop?: number, step?: number) {
     yield i
   }
 }
+
+/**
+ * Removes duplicates from a list of items using a function to
+ * compute which of the items keys should be used to index the item
+ *
+ * @param items The items from which to filter out duplicates
+ * @param indexer A function used for indexing the items
+ * @returns The items with all duplicates removed
+ */
+export function unique<T extends Record<string, unknown>, K>(items: T[], indexer: (item: T) => K) {
+  const map = new Map<K, T>()
+
+  items.forEach((item) => {
+    const key = indexer(item)
+    return void (map.has(key) ? void 0 : map.set(key, item))
+  })
+
+  return Array.from(map.values())
+}

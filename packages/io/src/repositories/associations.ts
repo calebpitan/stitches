@@ -1,4 +1,4 @@
-import { never } from '@stitches/common'
+import { never, unique } from '@stitches/common'
 
 import { and, eq, or } from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
@@ -46,12 +46,14 @@ export class TagsToTaskAssociation<R extends Relation = undefined> {
     switch (type) {
       case undefined: {
         const result = await query
-          .innerJoin(schema.tasks, eq(schema.tagsToTasks.taskId, schema.tasks.id))
+          .innerJoin(schema.tasks, or(eq(schema.tagsToTasks.taskId, schema.tasks.id)))
           .innerJoin(schema.tags, eq(schema.tagsToTasks.tagId, schema.tags.id))
           .then((result) => {
+            const tags = result.map((v) => v.tags)
+            const tasks = result.map((v) => v.tasks)
             const data: Association<undefined> = {
-              tags: result.map((v) => v.tags),
-              tasks: result.map((v) => v.tasks),
+              tags: unique(tags, (i) => i.id),
+              tasks: unique(tasks, (i) => i.id),
             }
             return data as Association<T>
           })
@@ -93,7 +95,7 @@ export class TagsToTaskAssociation<R extends Relation = undefined> {
    * @param task The ID of the task to associate with a tag specifed as ID as `tag`
    * @returns A promise that resolves when successful, otherwise rejects
    */
-  async associate(tag: string, task: string) {
+  async associate(task: string, tag: string) {
     return await this.db.insert(schema.tagsToTasks).values({ tagId: tag, taskId: task }).execute()
   }
 
@@ -104,7 +106,7 @@ export class TagsToTaskAssociation<R extends Relation = undefined> {
    * @param task The ID of the task to associate with a tag specifed as ID as `tag`
    * @returns A promise that resolves when successful, otherwise rejects
    */
-  async unassociate(tag: string, task: string) {
+  async unassociate(task: string, tag: string) {
     return await this.db
       .delete(schema.tagsToTasks)
       .where(and(eq(schema.tagsToTasks.tagId, tag), eq(schema.tagsToTasks.taskId, task)))
