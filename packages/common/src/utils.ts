@@ -2,6 +2,22 @@ import camelCase from 'lodash.camelcase'
 import startCase from 'lodash.startcase'
 
 /**
+ * A function that never returns and terminates execution by
+ * throwing an error when something unexpected, especially
+ * an unexpected value is received
+ *
+ * @param _ The unexpected value
+ */
+export function never(_: never): never {
+  never.never = null as never
+  throw new Error(`Unimplemented for ${_}`)
+}
+
+export namespace never {
+  export declare let never: never
+}
+
+/**
  * Turn on a specific bit at `index` amongst other bits.
  *
  * @param bits The bits to perform bit masking operations on
