@@ -3,14 +3,24 @@ import { SQLJsDatabase } from 'drizzle-orm/sql-js'
 
 import * as schema from '../schema'
 import { fragments } from '../utils'
+import { TagsToTaskAssociation } from './associations'
 import { withRedacted, withUnredacted } from './utils'
 
-type TagPayload = typeof schema.tags.$inferInsert
-type TagCreatePayload = Omit<TagPayload, 'updatedAt'>
-type TagUpdatePayload = Omit<TagPayload, 'id' | 'createdAt'>
+type TagsPayload = typeof schema.tags.$inferInsert
+type TagsCreatePayload = Omit<TagsPayload, 'updatedAt'>
+type TagsUpdatePayload = Omit<TagsPayload, 'id' | 'createdAt'>
+type TagsSelectResult = typeof schema.tags.$inferSelect
 
 export class TagsRepository {
-  constructor(private readonly db: SQLJsDatabase<schema.Schema>) {}
+  /**
+   * An association object for managing tags-to-tasks associations and can be
+   * used for retrieving tasks associations on this repository by default
+   */
+  public readonly tasks: TagsToTaskAssociation<'tasks'>
+
+  constructor(private readonly db: SQLJsDatabase<schema.Schema>) {
+    this.tasks = new TagsToTaskAssociation(db)
+  }
 
   /**
    * Create a new `Tag` record in the database
@@ -18,13 +28,13 @@ export class TagsRepository {
    * @param payload The data to create on the database
    * @returns The newly created `Tag`
    */
-  create(payload: TagCreatePayload[]): Promise<(typeof schema.tags.$inferSelect)[]>
-  create(payload: TagCreatePayload): Promise<typeof schema.tags.$inferSelect>
-  async create(payload: TagCreatePayload | TagCreatePayload[]) {
-    const toData = (payload: TagCreatePayload) => ({
+  create(payload: TagsCreatePayload[]): Promise<TagsSelectResult[]>
+  create(payload: TagsCreatePayload): Promise<TagsSelectResult>
+  async create(payload: TagsCreatePayload | TagsCreatePayload[]) {
+    const toData = (payload: TagsCreatePayload) => ({
       id: payload.id,
       label: payload.label,
-      createdAt: payload.createdAt
+      createdAt: payload.createdAt,
     })
 
     const data = Array.isArray(payload) ? payload.map(toData) : toData(payload)
@@ -113,8 +123,8 @@ export class TagsRepository {
    * @param patch The patch to apply to the `Tag`
    * @returns The updated `Tag`, with the patch applied
    */
-  async update(id: string, patch: Partial<TagUpdatePayload>) {
-    const filters = withUnredacted(schema.tags, [eq(schema.tasks.id, id)])
+  async update(id: string, patch: Partial<TagsUpdatePayload>) {
+    const filters = withUnredacted(schema.tags, [eq(schema.tags.id, id)])
     const result = await this.db
       .update(schema.tags)
       .set({ label: patch.label })

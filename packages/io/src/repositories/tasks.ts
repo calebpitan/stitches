@@ -3,6 +3,7 @@ import { SQLJsDatabase } from 'drizzle-orm/sql-js'
 
 import * as schema from '../schema'
 import { fragments } from '../utils'
+import { TagsToTaskAssociation } from './associations'
 import { withRedacted, withUnredacted } from './utils'
 
 export type TaskPayload = typeof schema.tasks.$inferInsert
@@ -10,7 +11,15 @@ export type TaskCreatePayload = Omit<TaskPayload, 'updatedAt'>
 export type TaskUpdatePayload = Omit<TaskPayload, 'id' | 'createdAt'>
 
 export class TasksRepository {
-  constructor(private readonly db: SQLJsDatabase<schema.Schema>) {}
+  /**
+   * An association object for managing tags-to-tasks associations and can be
+   * used for retrieving tags associations on this repository by default
+   */
+  public readonly tags: TagsToTaskAssociation<'tags'>
+
+  constructor(private readonly db: SQLJsDatabase<schema.Schema>) {
+    this.tags = new TagsToTaskAssociation(db)
+  }
 
   /**
    * Create a new `Task` record in the database
@@ -49,10 +58,11 @@ export class TasksRepository {
    * @returns The `Task` matching the provided ID, otherwise `undefined`
    */
   async findById(id: string) {
+    const filters = withUnredacted(schema.tasks, [eq(schema.tasks.id, id)])
     const result = await this.db
       .select()
       .from(schema.tasks)
-      .where(and(...withUnredacted(schema.tasks, [eq(schema.tasks.id, id)])))
+      .where(and(...filters))
     const task = result.at(0)
 
     return task
@@ -64,10 +74,11 @@ export class TasksRepository {
    * @returns A list of `Task`s
    */
   async findMany() {
+    const filters = withUnredacted(schema.tasks, [])
     const tasks = await this.db
       .select()
       .from(schema.tasks)
-      .where(and(...withUnredacted(schema.tasks, [])))
+      .where(and(...filters))
 
     return tasks
   }
@@ -80,10 +91,11 @@ export class TasksRepository {
    * @returns The **redacted** `Task` matching the provided ID, otherwise `undefined`
    */
   async findRedactedById(id: string) {
+    const filters = withRedacted(schema.tasks, [eq(schema.tasks.id, id)])
     const result = await this.db
       .select()
       .from(schema.tasks)
-      .where(and(...withRedacted(schema.tasks, [eq(schema.tasks.id, id)])))
+      .where(and(...filters))
     const tasks = result.at(0)
 
     return tasks
@@ -95,10 +107,11 @@ export class TasksRepository {
    * @returns A list of previously **redacted** `Task`s
    */
   async findRedacted() {
+    const filters = withRedacted(schema.tasks, [])
     const tasks = await this.db
       .select()
       .from(schema.tasks)
-      .where(and(...withRedacted(schema.tasks, [])))
+      .where(and(...filters))
 
     return tasks
   }
@@ -111,10 +124,11 @@ export class TasksRepository {
    * @returns The updated `Task`, with the patch applied
    */
   async update(id: string, patch: Partial<TaskUpdatePayload>) {
+    const filters = withUnredacted(schema.tasks, [eq(schema.tasks.id, id)])
     const result = await this.db
       .update(schema.tasks)
       .set({ title: patch.title, summary: patch.summary })
-      .where(and(...withUnredacted(schema.tasks, [eq(schema.tasks.id, id)])))
+      .where(and(...filters))
       .returning()
 
     const task = result.at(0)
@@ -130,10 +144,11 @@ export class TasksRepository {
    * @returns The redacted `Task`
    */
   async redact(id: string) {
+    const filters = [eq(schema.tasks.id, id), isNull(schema.tasks.deletedAt)]
     const result = await this.db
       .update(schema.tasks)
       .set({ deletedAt: fragments.now })
-      .where(and(eq(schema.tasks.id, id), isNull(schema.tasks.deletedAt)))
+      .where(and(...filters))
       .returning()
 
     const redacted = result.at(0)
@@ -149,10 +164,11 @@ export class TasksRepository {
    * @returns The restored `Task`
    */
   async restore(id: string) {
+    const filters = [eq(schema.tasks.id, id), isNotNull(schema.tasks.deletedAt)]
     const result = await this.db
       .update(schema.tasks)
       .set({ deletedAt: null })
-      .where(and(eq(schema.tasks.id, id), isNotNull(schema.tasks.deletedAt)))
+      .where(and(...filters))
       .returning()
 
     const restored = result.at(0)
@@ -170,7 +186,11 @@ export class TasksRepository {
    * @returns The deleted `Task`
    */
   async delete(id: string) {
-    const result = await this.db.delete(schema.tasks).where(eq(schema.tasks.id, id)).returning()
+    const filters = [eq(schema.tasks.id, id)]
+    const result = await this.db
+      .delete(schema.tasks)
+      .where(and(...filters))
+      .returning()
     const deleted = result.at(0)
 
     return deleted
