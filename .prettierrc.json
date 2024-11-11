@@ -4,7 +4,7 @@
   "tabWidth": 2,
   "singleQuote": true,
   "printWidth": 100,
-  "trailingComma": "none",
+  "trailingComma": "all",
   "importOrder": [
     "^reflect-metadata$",
     "^node:(.*)$",

@@ -12,6 +12,9 @@
     },
     {
       "path": "./packages/io/tsconfig.json"
+    },
+    {
+      "path": "./packages/common/tsconfig.json"
     }
   ],
   "compilerOptions": {
