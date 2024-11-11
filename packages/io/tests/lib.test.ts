@@ -10,7 +10,7 @@ describe('#open', () => {
   const database = new Uint8Array()
 
   beforeEach(async () => {
-    port = await open(database, { wasm: false, log: true })
+    port = await open(database, { wasm: false, log: false })
   })
 
   afterEach(() => port.close())
