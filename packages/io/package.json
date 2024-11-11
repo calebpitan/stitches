@@ -19,6 +19,7 @@
   },
   "packageManager": "yarn@4.1.1",
   "dependencies": {
+    "@stitches/common": "workspaces:*",
     "drizzle-orm": "^0.36.0",
     "ulidx": "^2.4.1"
   },
