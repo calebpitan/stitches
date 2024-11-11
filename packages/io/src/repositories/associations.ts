@@ -1,3 +1,5 @@
+import { never } from '@stitches/common'
+
 import { and, eq, or } from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
 
@@ -12,13 +14,21 @@ type Association<T extends Relation> = T extends undefined
   ? Associations
   : Record<Exclude<T, undefined>, Associations[Exclude<T, undefined>]>
 
-export function never(_: never): never {
-  throw new Error(`Unimplemented for ${_}`)
-}
-
 export class TagsToTaskAssociation<R extends Relation = undefined> {
   constructor(private readonly db: SQLJsDatabase<schema.Schema>) {}
 
+  /**
+   * Retrieves all associations of an entity identified by the specified ID.
+   *
+   * For example in an occasion where task associations (tags) wants to be
+   * retrieved, the task ID is passed as `id` and type is specified as `tags`
+   *
+   * Omitting the association type would retieve all the associations.
+   *
+   * @param id The ID of the entity whose associations should be fetched
+   * @param args The type of association
+   * @returns The list of associations based on the specified type
+   */
   async associations<T extends R | undefined = R>(
     id: string,
     ...args: T extends undefined ? [type?: undefined] : [type: T & R]
@@ -26,7 +36,7 @@ export class TagsToTaskAssociation<R extends Relation = undefined> {
     const [[type], tagIdEqId, taskIdEqId] = [
       args,
       eq(schema.tagsToTasks.tagId, id),
-      eq(schema.tagsToTasks.taskId, id)
+      eq(schema.tagsToTasks.taskId, id),
     ] as const
 
     const filters =
@@ -41,7 +51,7 @@ export class TagsToTaskAssociation<R extends Relation = undefined> {
           .then((result) => {
             const data: Association<undefined> = {
               tags: result.map((v) => v.tags),
-              tasks: result.map((v) => v.tasks)
+              tasks: result.map((v) => v.tasks),
             }
             return data as Association<T>
           })
@@ -76,10 +86,24 @@ export class TagsToTaskAssociation<R extends Relation = undefined> {
     }
   }
 
+  /**
+   * Associate a task with a tag and a tag with a task (as a many-to-many relationship)
+   *
+   * @param tag The ID of the tag to associate with a task specified as ID as `task`
+   * @param task The ID of the task to associate with a tag specifed as ID as `tag`
+   * @returns A promise that resolves when successful, otherwise rejects
+   */
   async associate(tag: string, task: string) {
     return await this.db.insert(schema.tagsToTasks).values({ tagId: tag, taskId: task }).execute()
   }
 
+  /**
+   * Unassociate a task with a tag and a tag with a task (dropping the many-to-many relationship)
+   *
+   * @param tag The ID of the tag to unassociate with a task specified as ID as `task`
+   * @param task The ID of the task to associate with a tag specifed as ID as `tag`
+   * @returns A promise that resolves when successful, otherwise rejects
+   */
   async unassociate(tag: string, task: string) {
     return await this.db
       .delete(schema.tagsToTasks)
