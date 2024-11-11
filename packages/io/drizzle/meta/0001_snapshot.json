@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "40451eb9-8369-488e-99f7-a45a255bdbfa",
+  "id": "fc4f447b-277d-45cb-b93a-003c491ec30a",
   "prevId": "2357a61f-629f-4cd4-b46e-2908bc1191d4",
   "tables": {
     "custom_frequencies": {
@@ -28,7 +28,7 @@
           "notNull": true,
           "autoincrement": false,
           "generated": {
-            "as": "(custom)",
+            "as": "('custom')",
             "type": "virtual"
           }
         },

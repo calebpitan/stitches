@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
 import { withDefaults } from './common'
@@ -122,7 +123,7 @@ export const customFrequencies = sqliteTable(
      */
     type: text({ enum: ['custom'] })
       .notNull()
-      .generatedAlwaysAs('custom'),
+      .generatedAlwaysAs(sql.raw(`'custom'`)),
 
     /**
      * The cron expressions, about 3 or less, for this schedule

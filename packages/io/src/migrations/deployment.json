@@ -14,11 +14,11 @@
   },
   {
     "idx": 1,
-    "when": 1731323500543,
-    "tag": "0001_chemical_zuras",
-    "hash": "447369c5b8e4f2ef0864a738b592a9f0c4edfbb2b1de4848d280f6dfdb5bdc2e",
+    "when": 1731331713157,
+    "tag": "0001_fixed_secret_warriors",
+    "hash": "44ba53773a2821fb15d94f8aae7f0f183eb3d36621919657be91c776e1de0df6",
     "sql": [
-      "CREATE TABLE `custom_frequencies` (`id` text PRIMARY KEY NOT NULL,`schedule_id` text NOT NULL,`type` text GENERATED ALWAYS AS (custom) VIRTUAL NOT NULL,`crons` text NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`schedule_id`) REFERENCES `schedules`(`id`) ON UPDATE no action ON DELETE cascade);",
+      "CREATE TABLE `custom_frequencies` (`id` text PRIMARY KEY NOT NULL,`schedule_id` text NOT NULL,`type` text GENERATED ALWAYS AS ('custom') VIRTUAL NOT NULL,`crons` text NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`schedule_id`) REFERENCES `schedules`(`id`) ON UPDATE no action ON DELETE cascade);",
       "CREATE UNIQUE INDEX `custom_frequencies_scheduleId_unique` ON `custom_frequencies` (`schedule_id`);",
       "CREATE TABLE `regular_frequencies` (`id` text PRIMARY KEY NOT NULL,`schedule_id` text NOT NULL,`type` text NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`schedule_id`) REFERENCES `schedules`(`id`) ON UPDATE no action ON DELETE cascade);",
       "CREATE UNIQUE INDEX `regular_frequencies_scheduleId_unique` ON `regular_frequencies` (`schedule_id`);",

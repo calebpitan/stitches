@@ -1,7 +1,7 @@
 CREATE TABLE `custom_frequencies` (
 	`id` text PRIMARY KEY NOT NULL,
 	`schedule_id` text NOT NULL,
-	`type` text GENERATED ALWAYS AS (custom) VIRTUAL NOT NULL,
+	`type` text GENERATED ALWAYS AS ('custom') VIRTUAL NOT NULL,
 	`crons` text NOT NULL,
 	`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,
 	`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,
