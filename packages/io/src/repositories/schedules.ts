@@ -4,13 +4,15 @@ import { RepositoryFactory } from './factory'
 /**
  * Schedules repository for working with, and managing, schedules
  */
-export class SchedulesRepository extends RepositoryFactory({ table: schema.schedules }) {}
+export class SchedulesRepository extends RepositoryFactory('schedules', {
+  table: schema.schedules,
+}) {}
 
 /**
  * CustomFrequencies repository for working with, and managing,
  * cron-scheduled frequencies
  */
-export class CustomFrequenciesRepository extends RepositoryFactory({
+export class CustomFrequenciesRepository extends RepositoryFactory('customFrequencies', {
   table: schema.customFrequencies,
 }) {}
 
@@ -18,7 +20,7 @@ export class CustomFrequenciesRepository extends RepositoryFactory({
  * RegularFrequencies repository for working with, and managing, conventional,
  * calendar scheduling
  */
-export class RegularFrequenciesRepository extends RepositoryFactory({
+export class RegularFrequenciesRepository extends RepositoryFactory('regularFrequencies', {
   table: schema.regularFrequencies,
 }) {}
 
@@ -26,7 +28,7 @@ export class RegularFrequenciesRepository extends RepositoryFactory({
  * RegularFrequencyExpressions repository for expressing repeat strategies
  * of all sorts for a schedule—hourly, daily, weekly, monthly, yearly.
  */
-export class RegFreqExpressionsRepository extends RepositoryFactory({
+export class RegFreqExpressionsRepository extends RepositoryFactory('regularFrequencyExprs', {
   table: schema.regularFrequencyExprs,
 }) {}
 
@@ -36,7 +38,7 @@ export class RegFreqExpressionsRepository extends RepositoryFactory({
  * by adding conditionals or filtering to more accurate and precise
  * schedules.
  */
-export class RegFreqSubExprsRepository extends RepositoryFactory({
+export class RegFreqSubExprsRepository extends RepositoryFactory('regularFrequencySubExprs', {
   table: schema.regularFrequencySubExprs,
 }) {}
 
@@ -45,18 +47,24 @@ export class RegFreqSubExprsRepository extends RepositoryFactory({
  * and filtering original expressions down to specific days of the week
  * hence modifying and/or qualifying original repeat strategies.
  */
-export class RegFreqWeeklySubExprsRepository extends RepositoryFactory({
-  table: schema.regularFrequencyWeeklySubExprs,
-}) {}
+export class RegFreqWeeklySubExprsRepository extends RepositoryFactory(
+  'regularFrequencyWeeklySubExprs',
+  {
+    table: schema.regularFrequencyWeeklySubExprs,
+  },
+) {}
 
 /**
  * RegularFrequencyMonthlySubExpressions repository for adding conditionals
  * and filtering original expressions down to specific days of the month or
  * even dynamically evaluated days of the month using ordinals and weekdays.
  */
-export class RegFreqMonthlySubExprsRepository extends RepositoryFactory({
-  table: schema.regularFrequencyMonthlySubExprs,
-}) {}
+export class RegFreqMonthlySubExprsRepository extends RepositoryFactory(
+  'regularFrequencyMonthlySubExprs',
+  {
+    table: schema.regularFrequencyMonthlySubExprs,
+  },
+) {}
 
 /**
  * RegularFrequencyMonthlyOrdinalSubExpressions repository for adding conditionals
@@ -64,27 +72,36 @@ export class RegFreqMonthlySubExprsRepository extends RepositoryFactory({
  * dynamically evaluating days of the month using the specified ordinals and
  * weekdays.
  */
-export class RegFreqMonthlyOrdinalSubExprsRepository extends RepositoryFactory({
-  table: schema.regularFrequencyMonthlyOrdinalSubExpr,
-}) {}
+export class RegFreqMonthlyOrdinalSubExprsRepository extends RepositoryFactory(
+  'regularFrequencyMonthlyOrdinalSubExpr',
+  {
+    table: schema.regularFrequencyMonthlyOrdinalSubExpr,
+  },
+) {}
 
 /**
  * RegularFrequencyMonthlyDaysSubExpressions repository for adding conditionals
  * and filtering original expressions down to specific days of the month by
  * specifying applicable days of the month only
  */
-export class RegFreqMonthlyDaysSubExprsRepository extends RepositoryFactory({
-  table: schema.regularFrequencyMonthlyDaysSubExpr,
-}) {}
+export class RegFreqMonthlyDaysSubExprsRepository extends RepositoryFactory(
+  'regularFrequencyMonthlyDaysSubExpr',
+  {
+    table: schema.regularFrequencyMonthlyDaysSubExpr,
+  },
+) {}
 
 /**
  * RegularFrequencyYearlyInSubExpressions repository for adding conditionals
  * and filtering original expressions down to specific months of the year by
  * specifying applicable months of the year only.
  */
-export class RegFreqYearlyInSubExprsRepository extends RepositoryFactory({
-  table: schema.regularFrequencyYearlyInSubExprs,
-}) {}
+export class RegFreqYearlyInSubExprsRepository extends RepositoryFactory(
+  'regularFrequencyYearlyInSubExprs',
+  {
+    table: schema.regularFrequencyYearlyInSubExprs,
+  },
+) {}
 
 /**
  * RegularFrequencyYearlyOnSubExpressions repository for modifying conditionals
@@ -92,6 +109,9 @@ export class RegFreqYearlyInSubExprsRepository extends RepositoryFactory({
  * the month by dynamically evaluating days of the month using the specified
  * ordinals and weekdays.
  */
-export class RegFreqYearlyOnSubExprsRepository extends RepositoryFactory({
-  table: schema.regularFrequencyYearlyOnSubExprs,
-}) {}
+export class RegFreqYearlyOnSubExprsRepository extends RepositoryFactory(
+  'regularFrequencyYearlyOnSubExprs',
+  {
+    table: schema.regularFrequencyYearlyOnSubExprs,
+  },
+) {}

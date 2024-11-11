@@ -18,7 +18,7 @@ describe('#TaskRepository', () => {
     const payloads: TaskCreatePayload[] = Array.from({ length: seedSize }).map((_, i) => ({
       id: `${i + 1}`,
       title: `Task ${i + 1}`,
-      summary: `This makes ${i + 1} task(s)`
+      summary: `This makes ${i + 1} task(s)`,
     }))
 
     await taskRepository.create(payloads)
@@ -53,13 +53,13 @@ describe('#TaskRepository', () => {
       expect(result).toMatchObject({
         id: '676',
         title: 'Task 676',
-        summary: 'This makes 676 task(s)'
+        summary: 'This makes 676 task(s)',
       })
     })
 
     it('should omit redacted tasks', async () => {
       const redacted = await taskRepository.redact('676')
-      const result = await taskRepository.findById(redacted!.id)
+      const result = await taskRepository.findById(redacted.id)
 
       expect(result).toBeUndefined()
     })
@@ -77,7 +77,7 @@ describe('#TaskRepository', () => {
       await Promise.all([
         taskRepository.redact(readactedIds[0]),
         taskRepository.redact(readactedIds[1]),
-        taskRepository.redact(readactedIds[2])
+        taskRepository.redact(readactedIds[2]),
       ])
 
       const result = await taskRepository.findRedacted()
@@ -95,7 +95,7 @@ describe('#TaskRepository', () => {
       await Promise.all([
         taskRepository.redact(readactedIds[0]),
         taskRepository.redact(readactedIds[1]),
-        taskRepository.redact(readactedIds[2])
+        taskRepository.redact(readactedIds[2]),
       ])
 
       const result = await taskRepository.findRedactedById('256')
@@ -103,7 +103,7 @@ describe('#TaskRepository', () => {
       expect(result).toMatchObject({
         id: '256',
         title: 'Task 256',
-        summary: 'This makes 256 task(s)'
+        summary: 'This makes 256 task(s)',
       })
     })
 
@@ -113,7 +113,7 @@ describe('#TaskRepository', () => {
       await Promise.all([
         taskRepository.redact(readactedIds[0]),
         taskRepository.redact(readactedIds[1]),
-        taskRepository.redact(readactedIds[2])
+        taskRepository.redact(readactedIds[2]),
       ])
 
       const result = await taskRepository.findRedactedById('676')
@@ -172,7 +172,7 @@ describe('#TaskRepository', () => {
         id: redacted!.id,
         title: redacted!.title,
         summary: redacted!.summary,
-        deletedAt: null
+        deletedAt: null,
       })
     })
 
@@ -195,7 +195,7 @@ describe('#TaskRepository', () => {
         id: deleted!.id,
         title: deleted!.title,
         summary: deleted!.summary,
-        deletedAt: null
+        deletedAt: null,
       })
     })
 

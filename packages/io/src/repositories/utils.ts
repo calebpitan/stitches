@@ -1,24 +1,27 @@
 import { SQLWrapper, type UpdateTableConfig, isNotNull, isNull } from 'drizzle-orm'
 import type { SQLiteColumn, SQLiteTableWithColumns, TableConfig } from 'drizzle-orm/sqlite-core'
 
-export type Table = SQLiteTableWithColumns<
-  UpdateTableConfig<
-    TableConfig,
-    {
-      columns: {
-        id: SQLiteColumn
-        createdAt: SQLiteColumn
-        deletedAt: SQLiteColumn
-        updatedAt: SQLiteColumn
-      }
-    }
-  >
+type BaseColumns = {
+  id: SQLiteColumn
+  createdAt: SQLiteColumn
+  deletedAt: SQLiteColumn
+  updatedAt: SQLiteColumn
+}
+
+export type Table<C extends Record<string, SQLiteColumn> = BaseColumns> = SQLiteTableWithColumns<
+  UpdateTableConfig<TableConfig, { columns: C }>
 >
 
-export function withUnredacted<T extends Table>(t: T, filters: SQLWrapper[]) {
+export function withUnredacted<C extends Record<string, SQLiteColumn>, T extends Table<C>>(
+  t: T,
+  filters: SQLWrapper[],
+) {
   return [...filters, isNull(t.deletedAt)]
 }
 
-export function withRedacted<T extends Table>(t: T, filters: SQLWrapper[]) {
+export function withRedacted<C extends Record<string, SQLiteColumn>, T extends Table<C>>(
+  t: T,
+  filters: SQLWrapper[],
+) {
   return [...filters, isNotNull(t.deletedAt)]
 }

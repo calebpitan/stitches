@@ -1,21 +1,35 @@
-import { pascalCase } from '@stitches/common'
+import { never, pascalCase } from '@stitches/common'
 
-import {
-  InferInsertModel,
-  InferSelectModel,
-  and,
-  eq,
-  getTableName,
-  isNotNull,
-  isNull,
-} from 'drizzle-orm'
+import { InferInsertModel, and, eq, getTableName, isNotNull, isNull } from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
+import { SQLiteColumn, SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 
 import * as schema from '../schema'
 import { fragments } from '../utils'
 import { Table, withRedacted, withUnredacted } from './utils'
 
-export type RepositoryFactoryOptions<T extends Table> = {
+/**
+ * Omits the relations schema keys
+ */
+type A<K extends keyof schema.Schema> = K extends `${string}Relations` ? never : K
+/**
+ * Infers the inner type of an `SQLiteTableWithColumns` so the columns type can be
+ * reached
+ */
+type B<S extends schema.Schema, K extends A<keyof schema.Schema>> =
+  S[K] extends SQLiteTableWithColumns<infer T> ? T : never
+/**
+ * Cleans up the return type for operations other than `SELECT` that are expected
+ * to return a single entity
+ */
+type C<T extends Record<string, any>> = {
+  [P in keyof T]: P extends keyof SQLiteColumn ? never : T[P]
+}
+
+export type RepositoryFactoryOptions<
+  K extends A<keyof schema.Schema>,
+  T extends Table<B<schema.Schema, K>['columns']>,
+> = {
   /**
    * The drizzle-orm table schema
    */
@@ -46,14 +60,15 @@ export type RepositoryFactoryOptions<T extends Table> = {
   }
 }
 
-export function RepositoryFactory<S extends schema.Schema, T extends Table>(
-  options: RepositoryFactoryOptions<T>,
-) {
-  type Model = InferSelectModel<T>
-  type ModelPayload = InferInsertModel<T>
+export function RepositoryFactory<
+  K extends A<keyof schema.Schema>,
+  T extends Table<B<schema.Schema, K>['columns']>,
+  P extends InferInsertModel<T>,
+>(_: K, options: RepositoryFactoryOptions<K, T>) {
+  const identifier = pascalCase(getTableName(options.table)).concat('AbstractRepository')
 
-  class Repository {
-    constructor(public readonly db: SQLJsDatabase<S>) {}
+  abstract class Repository {
+    constructor(public readonly db: SQLJsDatabase<schema.Schema>) {}
 
     /**
      * Create a new `Entity` record in the database
@@ -61,25 +76,51 @@ export function RepositoryFactory<S extends schema.Schema, T extends Table>(
      * @param payload The data to create on the database
      * @returns The newly created `Entity`
      */
-    create<C extends ModelPayload>(payload: Omit<C, 'updatedAt'>[]): Promise<Model[]>
-    create<C extends ModelPayload>(payload: Omit<C, 'updatedAt'>): Promise<Model>
-    async create<C extends ModelPayload>(payload: C | C[]) {
-      const transformer = options.transforms?.create
-      const data =
-        typeof transformer !== 'undefined'
-          ? Array.isArray(payload)
-            ? payload.map(transformer)
-            : transformer(payload)
-          : payload
-
-      if (Array.isArray(data)) {
-        const result = this.db.insert(options.table).values(data)
-        return (await result.returning()) as Model[]
+    create<C extends P>(payload: Omit<C, 'updatedAt'>[]): ReturnType<Repository['createMany']>
+    create<C extends P>(payload: Omit<C, 'updatedAt'>): ReturnType<Repository['createOne']>
+    async create(payload: P | P[]) {
+      if (Array.isArray(payload)) {
+        return await this.createMany(payload)
       }
 
-      const result = this.db.insert(options.table).values(data)
+      return await this.createOne(payload)
+    }
 
-      return (await result.returning()).at(0)! as Model
+    /**
+     * Create a single new `Entity` record in the database
+     *
+     * @param payload The data to create on the database
+     * @returns The newly created `Entity`
+     */
+    async createOne(payload: P) {
+      const transformer = options.transforms?.create
+      const data = typeof transformer !== 'undefined' ? transformer(payload) : payload
+
+      const result = await this.db
+        .insert(options.table)
+        .values(data as any)
+        .returning()
+
+      const entity = result ? result.at(0)! : never(never.never)
+      return entity as C<typeof entity>
+    }
+
+    /**
+     * Create multiple of a new `Entity` record in the database
+     *
+     * @param payload The data to create on the database
+     * @returns The newly created `Entity`
+     */
+    async createMany(payload: P[]) {
+      const transformer = options.transforms?.create
+      const data = typeof transformer !== 'undefined' ? payload.map(transformer) : payload
+
+      const result = await this.db
+        .insert(options.table)
+        .values(data as any)
+        .returning()
+
+      return result ? result : never(never.never)
     }
 
     /**
@@ -141,12 +182,12 @@ export function RepositoryFactory<S extends schema.Schema, T extends Table>(
      */
     async findRedacted() {
       const filters = withRedacted(options.table, [])
-      const entity = await this.db
+      const result = await this.db
         .select()
         .from(options.table)
         .where(and(...filters))
 
-      return entity
+      return result
     }
 
     /**
@@ -156,8 +197,7 @@ export function RepositoryFactory<S extends schema.Schema, T extends Table>(
      * @param patch The patch to apply to the `Entity`
      * @returns The updated `Entity`, with the patch applied
      */
-    update<U extends ModelPayload>(id: string, patch: Partial<Omit<U, 'updatedAt'>>): Promise<Model>
-    async update<U extends ModelPayload>(id: string, patch: Partial<U>) {
+    async update<U extends P>(id: string, patch: Partial<U>) {
       const transformer = options.transforms?.update
       const data = typeof transformer !== 'undefined' ? transformer(patch) : patch
 
@@ -168,10 +208,11 @@ export function RepositoryFactory<S extends schema.Schema, T extends Table>(
         .set(data as {})
         .where(and(...filters))
         .returning()
+      // .get()
+      // return result
 
-      const entity = result.at(0)
-
-      return entity
+      const entity = result ? result.at(0)! : never(never.never)
+      return entity as C<typeof entity>
     }
 
     /**
@@ -185,13 +226,14 @@ export function RepositoryFactory<S extends schema.Schema, T extends Table>(
       const filters = [eq(options.table.id, id), isNull(options.table.deletedAt)]
       const result = await this.db
         .update(options.table)
-        .set({ deletedAt: fragments.now } as any)
+        .set({ deletedAt: fragments.now } as {})
         .where(and(...filters))
         .returning()
+      // .get()
+      // return result
 
-      const redacted = result.at(0)
-
-      return redacted
+      const entity = result ? result.at(0)! : never(never.never)
+      return entity as C<typeof entity>
     }
 
     /**
@@ -208,10 +250,11 @@ export function RepositoryFactory<S extends schema.Schema, T extends Table>(
         .set({ deletedAt: null } as any)
         .where(and(...filters))
         .returning()
+      // .get()
+      // return result
 
-      const restored = result.at(0)
-
-      return restored
+      const entity = result ? result.at(0)! : never(never.never)
+      return entity as C<typeof entity>
     }
 
     /**
@@ -224,18 +267,18 @@ export function RepositoryFactory<S extends schema.Schema, T extends Table>(
      * @returns The deleted `Entity`
      */
     async delete(id: string) {
-      const result = await this.db.delete(options.table).where(eq(options.table.id, id)).returning()
-      const deleted = result.at(0)
+      const filters = [eq(options.table.id, id)]
+      const result = await this.db
+        .delete(options.table)
+        .where(and(...filters))
+        .returning()
+      // .get()
+      // return result
 
-      return deleted
+      const entity = result ? result.at(0)! : never(never.never)
+      return entity as C<typeof entity>
     }
   }
 
-  return Object.defineProperty(Repository, 'name', {
-    value: pascalCase(getTableName(options.table)).concat('Repo'),
-  })
+  return Object.defineProperty(Repository, 'name', { value: identifier })
 }
-
-// export class YamRepo extends RepositoryFactory({ table: schema.tasks }) {}
-
-// const a = new YamRepo({} as SQLJsDatabase<schema.Schema>)
