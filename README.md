@@ -1,7 +1,11 @@
-# stitches
+# Stitches
 
-This template should help get you started developing with Vue 3 in Vite.
+A stitch in time saves nine!
 
+Stitches is a task scheduling app for managing tasks as well as scheduling them. It is a
+productivity app that helps with time management
+
+<!--
 ## Recommended IDE Setup
 
 [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
@@ -58,4 +62,4 @@ yarn test:e2e
 
 ```sh
 yarn lint
-```
+``` -->
