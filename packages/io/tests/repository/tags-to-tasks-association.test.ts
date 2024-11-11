@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { StitchesIOPort, open } from '../../src/lib'
+import { TagsToTaskAssociation } from '../../src/repositories/associations'
 import { TagsCreatePayload, TagsRepository } from '../../src/repositories/tags'
 import { TaskCreatePayload, TasksRepository } from '../../src/repositories/tasks'
 
@@ -33,13 +34,40 @@ describe('#TagsToTaskAssociation', () => {
 
   afterEach(() => port.close())
 
+  describe('#associations', () => {
+    it('should find all associations between tags and tasks', async () => {
+      await Promise.all([
+        tasksRepository.tags.associate('1', '20'),
+        tasksRepository.tags.associate('1', '300'),
+        tasksRepository.tags.associate('9', '1000'),
+        tasksRepository.tags.associate('1', '1'),
+        tasksRepository.tags.associate('20', '1'),
+        tasksRepository.tags.associate('300', '1'),
+        tasksRepository.tags.associate('1000', '2'),
+      ])
+
+      const tagsToTasks = new TagsToTaskAssociation(port.mapper)
+
+      const tagsAssociations = await tasksRepository.tags.associations('1', 'tags')
+      const tasksAssociations = await tagsRepository.tasks.associations('1', 'tasks')
+      const allAssociations = await tagsToTasks.associations('1')
+
+      console.log('Tags', tagsAssociations)
+      console.log('Tasks', tasksAssociations)
+      console.log('All', allAssociations)
+
+      expect(tagsAssociations.tags).toMatchObject(allAssociations.tags)
+      expect(tasksAssociations.tasks).toMatchObject(allAssociations.tasks)
+    })
+  })
+
   describe('#associate', () => {
     it('should associate tasks with tags', async () => {
       const taskId = '1'
       const promises: Promise<void>[] = new Array(seedSize)
 
       for (let i = 1; i < seedSize + 1; i++) {
-        promises.push(tasksRepository.tags.associate(i.toString(), taskId))
+        promises.push(tasksRepository.tags.associate(taskId, i.toString()))
       }
 
       await expect(Promise.all(promises)).resolves.toBeInstanceOf(Array)
@@ -54,7 +82,7 @@ describe('#TagsToTaskAssociation', () => {
       const promises: Promise<void>[] = new Array(seedSize)
 
       for (let i = 1; i < seedSize + 1; i++) {
-        promises.push(tagsRepository.tasks.associate(tagId, i.toString()))
+        promises.push(tagsRepository.tasks.associate(i.toString(), tagId))
       }
 
       await expect(Promise.all(promises)).resolves.toBeInstanceOf(Array)
@@ -72,7 +100,7 @@ describe('#TagsToTaskAssociation', () => {
         const promises: Promise<void>[] = new Array(seedSize)
 
         for (let i = 1; i < seedSize + 1; i++) {
-          promises.push(tasksRepository.tags.associate(i.toString(), taskId))
+          promises.push(tasksRepository.tags.associate(taskId, i.toString()))
         }
 
         await expect(Promise.all(promises)).resolves.toBeInstanceOf(Array)
@@ -86,7 +114,7 @@ describe('#TagsToTaskAssociation', () => {
         const promises: Promise<void>[] = new Array(seedSize)
 
         for (let i = 0; i < seedSize + 1; i++) {
-          promises.push(tasksRepository.tags.unassociate(i.toString(), taskId))
+          promises.push(tasksRepository.tags.unassociate(taskId, i.toString()))
         }
 
         await expect(Promise.all(promises)).resolves.toBeInstanceOf(Array)
@@ -97,14 +125,14 @@ describe('#TagsToTaskAssociation', () => {
       }
     })
 
-    it('should associate tags with tasks', async () => {
+    it('should unassociate tags with tasks', async () => {
       const tagId = '1'
 
       {
         const promises: Promise<void>[] = new Array(seedSize)
 
         for (let i = 1; i < seedSize + 1; i++) {
-          promises.push(tagsRepository.tasks.associate(tagId, i.toString()))
+          promises.push(tagsRepository.tasks.associate(i.toString(), tagId))
         }
 
         await expect(Promise.all(promises)).resolves.toBeInstanceOf(Array)
@@ -118,7 +146,7 @@ describe('#TagsToTaskAssociation', () => {
         const promises: Promise<void>[] = new Array(seedSize)
 
         for (let i = 1; i < seedSize + 1; i++) {
-          promises.push(tagsRepository.tasks.unassociate(tagId, i.toString()))
+          promises.push(tagsRepository.tasks.unassociate(i.toString(), tagId))
         }
 
         await expect(Promise.all(promises)).resolves.toBeInstanceOf(Array)
