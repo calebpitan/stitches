@@ -18,22 +18,6 @@ export function plural<S extends string, P extends string>(count: number, s: S, 
   return count > 1 ? p : s
 }
 
-export function range(stop: number): Generator<number>
-export function range(start: number, stop: number, step?: number): Generator<number>
-export function* range(stopOrStart: number, stop?: number, step?: number) {
-  // TODO: make range work with integers only due to issue with float arithmetic
-  let start = 0
-  ;({ start, stop, step } =
-    stop === undefined
-      ? { start, stop: stopOrStart, step: 1 }
-      : { start: stopOrStart, stop: stop, step: Math.sign(stop - stopOrStart) })
-
-  const order = ((a: number, b: number) => (i: number) => (a < b ? i < b : i > b))(start, stop)
-  for (let i = start; order(i); i += step) {
-    yield i
-  }
-}
-
 export function sleep(ms: number): AsyncSleep {
   const controller = new AbortController()
   const future = new Promise<number>((resolve, reject) => {
@@ -59,7 +43,7 @@ export function sleep(ms: number): AsyncSleep {
     },
     cancel(msg: string = 'Sleep aborted') {
       controller.abort(new Error(msg))
-    }
+    },
   }
 }
 
@@ -90,7 +74,7 @@ export function createReadGuard<M extends string>(model: M) {
   function guard<I extends string, D extends Record<string, any>>(id: I, data: D | null): D | never
   function guard<I extends string | number, D extends Record<string, any> | boolean>(
     idOrIdx: I,
-    dataOrThrows: D | null
+    dataOrThrows: D | null,
   ) {
     const { id, schedule, index, throws, discriminator } =
       typeof idOrIdx === 'string' && typeof dataOrThrows === 'object'
@@ -99,14 +83,14 @@ export function createReadGuard<M extends string>(model: M) {
             schedule: dataOrThrows,
             index: undefined,
             throws: undefined,
-            discriminator: 'id'
+            discriminator: 'id',
           } as const)
         : ({
             id: undefined,
             schedule: undefined,
             index: idOrIdx as number,
             throws: dataOrThrows,
-            discriminator: 'idx'
+            discriminator: 'idx',
           } as const)
 
     switch (discriminator) {

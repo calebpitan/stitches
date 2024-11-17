@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
 
-import type { WeeklyExpr } from '@/interfaces/schedule'
-import { WEEKDAY_OPTIONS, plural } from '@/utils'
+import type { WeeklyExpr } from '@stitches/common'
+import { WEEKDAY_OPTIONS, plural } from '@stitches/common'
 
 import Stack from '../stack/Stack.vue'
 

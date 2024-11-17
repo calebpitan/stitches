@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
 
+import type { FrequencyType } from '@stitches/common'
+import type { CronSchedule } from '@stitches/common'
 import { CronCore } from '@vue-js-cron/core'
 
 import cronstrue from 'cronstrue'
 
-import type { CronSchedule } from '@/interfaces/schedule'
 import { timeToParts } from '@/utils'
-import type { FrequencyType } from '@/utils/scheduling'
 
 import HStack from '../stack/HStack.vue'
 
@@ -31,7 +31,7 @@ const config = computed(() => {
     week: [time.minute, time.hour, '*', '*', time.weekday],
     day: [time.minute, time.hour, '*', '*', '*'],
     hour: [time.minute, '*', '*', '*', '*'],
-    minute: ['*', '*', '*', '*', '*']
+    minute: ['*', '*', '*', '*', '*'],
   } as const
 })
 
@@ -82,7 +82,7 @@ watch(schedules, (s) => props.onChange?.(s), { deep: true })
                 @change="
                   ([schedule.frequency, schedule.expression] = [
                     $event.value,
-                    config[$event.value as Exclude<FrequencyType, 'custom' | 'never'>].join(' ')
+                    config[$event.value as Exclude<FrequencyType, 'custom' | 'never'>].join(' '),
                   ]),
                     period.events['update:model-value']($event.value)
                 "
