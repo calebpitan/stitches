@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "fc4f447b-277d-45cb-b93a-003c491ec30a",
+  "id": "d2ea7920-6632-4776-a32a-55f5148fbb79",
   "prevId": "2357a61f-629f-4cd4-b46e-2908bc1191d4",
   "tables": {
     "custom_frequencies": {
@@ -25,15 +25,11 @@
           "name": "type",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "generated": {
-            "as": "('custom')",
-            "type": "virtual"
-          }
+          "notNull": false,
+          "autoincrement": false
         },
-        "crons": {
-          "name": "crons",
+        "expression": {
+          "name": "expression",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -64,10 +60,11 @@
         }
       },
       "indexes": {
-        "custom_frequencies_scheduleId_unique": {
-          "name": "custom_frequencies_scheduleId_unique",
+        "custom_frequencies_scheduleId_expression_unique": {
+          "name": "custom_frequencies_scheduleId_expression_unique",
           "columns": [
-            "schedule_id"
+            "schedule_id",
+            "expression"
           ],
           "isUnique": true
         }
@@ -111,6 +108,13 @@
         "type": {
           "name": "type",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "every": {
+          "name": "every",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -167,82 +171,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "regular_frequency_exprs": {
-      "name": "regular_frequency_exprs",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "regular_frequency_id": {
-          "name": "regular_frequency_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "every": {
-          "name": "every",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now') || substr(strftime('%f', 'now'), -3))"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now') || substr(strftime('%f', 'now'), -3))"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "regular_frequency_exprs_regularFrequencyId_unique": {
-          "name": "regular_frequency_exprs_regularFrequencyId_unique",
-          "columns": [
-            "regular_frequency_id"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "regular_frequency_exprs_regular_frequency_id_regular_frequencies_id_fk": {
-          "name": "regular_frequency_exprs_regular_frequency_id_regular_frequencies_id_fk",
-          "tableFrom": "regular_frequency_exprs",
-          "tableTo": "regular_frequencies",
-          "columnsFrom": [
-            "regular_frequency_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "regular_frequency_monthly_days_subexprs": {
       "name": "regular_frequency_monthly_days_subexprs",
       "columns": {
@@ -253,8 +181,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "regular_frequency_monthly_subexpr_id": {
-          "name": "regular_frequency_monthly_subexpr_id",
+        "regular_frequency_monthly_expr_id": {
+          "name": "regular_frequency_monthly_expr_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -292,21 +220,21 @@
         }
       },
       "indexes": {
-        "regular_frequency_monthly_days_subexprs_regularFrequencyMonthlySubexprId_unique": {
-          "name": "regular_frequency_monthly_days_subexprs_regularFrequencyMonthlySubexprId_unique",
+        "regular_frequency_monthly_days_subexprs_regularFrequencyMonthlyExprId_unique": {
+          "name": "regular_frequency_monthly_days_subexprs_regularFrequencyMonthlyExprId_unique",
           "columns": [
-            "regular_frequency_monthly_subexpr_id"
+            "regular_frequency_monthly_expr_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "regular_frequency_monthly_days_subexprs_regular_frequency_monthly_subexpr_id_regular_frequency_monthly_subexprs_id_fk": {
-          "name": "regular_frequency_monthly_days_subexprs_regular_frequency_monthly_subexpr_id_regular_frequency_monthly_subexprs_id_fk",
+        "regular_frequency_monthly_days_subexprs_regular_frequency_monthly_expr_id_regular_frequency_monthly_exprs_id_fk": {
+          "name": "regular_frequency_monthly_days_subexprs_regular_frequency_monthly_expr_id_regular_frequency_monthly_exprs_id_fk",
           "tableFrom": "regular_frequency_monthly_days_subexprs",
-          "tableTo": "regular_frequency_monthly_subexprs",
+          "tableTo": "regular_frequency_monthly_exprs",
           "columnsFrom": [
-            "regular_frequency_monthly_subexpr_id"
+            "regular_frequency_monthly_expr_id"
           ],
           "columnsTo": [
             "id"
@@ -319,8 +247,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "regular_frequency_monthly_ordinal_subexprs": {
-      "name": "regular_frequency_monthly_ordinal_subexprs",
+    "regular_frequency_monthly_exprs": {
+      "name": "regular_frequency_monthly_exprs",
       "columns": {
         "id": {
           "name": "id",
@@ -329,91 +257,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "regular_frequency_monthly_subexpr_id": {
-          "name": "regular_frequency_monthly_subexpr_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "weekday": {
-          "name": "weekday",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ordinal": {
-          "name": "ordinal",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now') || substr(strftime('%f', 'now'), -3))"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now') || substr(strftime('%f', 'now'), -3))"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "regular_frequency_monthly_ordinal_subexprs_regularFrequencyMonthlySubexprId_unique": {
-          "name": "regular_frequency_monthly_ordinal_subexprs_regularFrequencyMonthlySubexprId_unique",
-          "columns": [
-            "regular_frequency_monthly_subexpr_id"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "regular_frequency_monthly_ordinal_subexprs_regular_frequency_monthly_subexpr_id_regular_frequency_monthly_subexprs_id_fk": {
-          "name": "regular_frequency_monthly_ordinal_subexprs_regular_frequency_monthly_subexpr_id_regular_frequency_monthly_subexprs_id_fk",
-          "tableFrom": "regular_frequency_monthly_ordinal_subexprs",
-          "tableTo": "regular_frequency_monthly_subexprs",
-          "columnsFrom": [
-            "regular_frequency_monthly_subexpr_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "regular_frequency_monthly_subexprs": {
-      "name": "regular_frequency_monthly_subexprs",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "regular_frequency_subexpr_id": {
-          "name": "regular_frequency_subexpr_id",
+        "regular_frequency_id": {
+          "name": "regular_frequency_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -451,21 +296,21 @@
         }
       },
       "indexes": {
-        "regular_frequency_monthly_subexprs_regularFrequencySubexprId_unique": {
-          "name": "regular_frequency_monthly_subexprs_regularFrequencySubexprId_unique",
+        "regular_frequency_monthly_exprs_regularFrequencyId_unique": {
+          "name": "regular_frequency_monthly_exprs_regularFrequencyId_unique",
           "columns": [
-            "regular_frequency_subexpr_id"
+            "regular_frequency_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "regular_frequency_monthly_subexprs_regular_frequency_subexpr_id_regular_frequency_subexprs_id_fk": {
-          "name": "regular_frequency_monthly_subexprs_regular_frequency_subexpr_id_regular_frequency_subexprs_id_fk",
-          "tableFrom": "regular_frequency_monthly_subexprs",
-          "tableTo": "regular_frequency_subexprs",
+        "regular_frequency_monthly_exprs_regular_frequency_id_regular_frequencies_id_fk": {
+          "name": "regular_frequency_monthly_exprs_regular_frequency_id_regular_frequencies_id_fk",
+          "tableFrom": "regular_frequency_monthly_exprs",
+          "tableTo": "regular_frequencies",
           "columnsFrom": [
-            "regular_frequency_subexpr_id"
+            "regular_frequency_id"
           ],
           "columnsTo": [
             "id"
@@ -478,8 +323,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "regular_frequency_subexprs": {
-      "name": "regular_frequency_subexprs",
+    "regular_frequency_monthly_ordinal_subexprs": {
+      "name": "regular_frequency_monthly_ordinal_subexprs",
       "columns": {
         "id": {
           "name": "id",
@@ -488,9 +333,23 @@
           "notNull": true,
           "autoincrement": false
         },
-        "regular_frequency_expr_id": {
-          "name": "regular_frequency_expr_id",
+        "regular_frequency_monthly_expr_id": {
+          "name": "regular_frequency_monthly_expr_id",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ordinal": {
+          "name": "ordinal",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "weekday": {
+          "name": "weekday",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -520,21 +379,21 @@
         }
       },
       "indexes": {
-        "regular_frequency_subexprs_regularFrequencyExprId_unique": {
-          "name": "regular_frequency_subexprs_regularFrequencyExprId_unique",
+        "regular_frequency_monthly_ordinal_subexprs_regularFrequencyMonthlyExprId_unique": {
+          "name": "regular_frequency_monthly_ordinal_subexprs_regularFrequencyMonthlyExprId_unique",
           "columns": [
-            "regular_frequency_expr_id"
+            "regular_frequency_monthly_expr_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "regular_frequency_subexprs_regular_frequency_expr_id_regular_frequencies_id_fk": {
-          "name": "regular_frequency_subexprs_regular_frequency_expr_id_regular_frequencies_id_fk",
-          "tableFrom": "regular_frequency_subexprs",
-          "tableTo": "regular_frequencies",
+        "regular_frequency_monthly_ordinal_subexprs_regular_frequency_monthly_expr_id_regular_frequency_monthly_exprs_id_fk": {
+          "name": "regular_frequency_monthly_ordinal_subexprs_regular_frequency_monthly_expr_id_regular_frequency_monthly_exprs_id_fk",
+          "tableFrom": "regular_frequency_monthly_ordinal_subexprs",
+          "tableTo": "regular_frequency_monthly_exprs",
           "columnsFrom": [
-            "regular_frequency_expr_id"
+            "regular_frequency_monthly_expr_id"
           ],
           "columnsTo": [
             "id"
@@ -547,8 +406,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "regular_frequency_weekly_subexprs": {
-      "name": "regular_frequency_weekly_subexprs",
+    "regular_frequency_weekly_exprs": {
+      "name": "regular_frequency_weekly_exprs",
       "columns": {
         "id": {
           "name": "id",
@@ -557,8 +416,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "regular_frequency_subexpr_id": {
-          "name": "regular_frequency_subexpr_id",
+        "regular_frequency_id": {
+          "name": "regular_frequency_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -596,21 +455,21 @@
         }
       },
       "indexes": {
-        "regular_frequency_weekly_subexprs_regularFrequencySubexprId_unique": {
-          "name": "regular_frequency_weekly_subexprs_regularFrequencySubexprId_unique",
+        "regular_frequency_weekly_exprs_regularFrequencyId_unique": {
+          "name": "regular_frequency_weekly_exprs_regularFrequencyId_unique",
           "columns": [
-            "regular_frequency_subexpr_id"
+            "regular_frequency_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "regular_frequency_weekly_subexprs_regular_frequency_subexpr_id_regular_frequency_subexprs_id_fk": {
-          "name": "regular_frequency_weekly_subexprs_regular_frequency_subexpr_id_regular_frequency_subexprs_id_fk",
-          "tableFrom": "regular_frequency_weekly_subexprs",
-          "tableTo": "regular_frequency_subexprs",
+        "regular_frequency_weekly_exprs_regular_frequency_id_regular_frequencies_id_fk": {
+          "name": "regular_frequency_weekly_exprs_regular_frequency_id_regular_frequencies_id_fk",
+          "tableFrom": "regular_frequency_weekly_exprs",
+          "tableTo": "regular_frequencies",
           "columnsFrom": [
-            "regular_frequency_subexpr_id"
+            "regular_frequency_id"
           ],
           "columnsTo": [
             "id"
@@ -623,8 +482,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "regular_frequency_yearly_in_subexprs": {
-      "name": "regular_frequency_yearly_in_subexprs",
+    "regular_frequency_yearly_exprs": {
+      "name": "regular_frequency_yearly_exprs",
       "columns": {
         "id": {
           "name": "id",
@@ -633,8 +492,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "regular_frequency_subexpr_id": {
-          "name": "regular_frequency_subexpr_id",
+        "regular_frequency_id": {
+          "name": "regular_frequency_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -647,73 +506,11 @@
           "notNull": true,
           "autoincrement": false
         },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now') || substr(strftime('%f', 'now'), -3))"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%s', 'now') || substr(strftime('%f', 'now'), -3))"
-        },
-        "deleted_at": {
-          "name": "deleted_at",
-          "type": "integer",
+        "ordinal": {
+          "name": "ordinal",
+          "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "regular_frequency_yearly_in_subexprs_regularFrequencySubexprId_unique": {
-          "name": "regular_frequency_yearly_in_subexprs_regularFrequencySubexprId_unique",
-          "columns": [
-            "regular_frequency_subexpr_id"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "regular_frequency_yearly_in_subexprs_regular_frequency_subexpr_id_regular_frequency_subexprs_id_fk": {
-          "name": "regular_frequency_yearly_in_subexprs_regular_frequency_subexpr_id_regular_frequency_subexprs_id_fk",
-          "tableFrom": "regular_frequency_yearly_in_subexprs",
-          "tableTo": "regular_frequency_subexprs",
-          "columnsFrom": [
-            "regular_frequency_subexpr_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "regular_frequency_yearly_on_subexprs": {
-      "name": "regular_frequency_yearly_on_subexprs",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "regular_frequency_subexpr_id": {
-          "name": "regular_frequency_subexpr_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
           "autoincrement": false
         },
         "variable_weekday": {
@@ -730,13 +527,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "ordinal": {
-          "name": "ordinal",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "integer",
@@ -762,21 +552,21 @@
         }
       },
       "indexes": {
-        "regular_frequency_yearly_on_subexprs_regularFrequencySubexprId_unique": {
-          "name": "regular_frequency_yearly_on_subexprs_regularFrequencySubexprId_unique",
+        "regular_frequency_yearly_exprs_regularFrequencyId_unique": {
+          "name": "regular_frequency_yearly_exprs_regularFrequencyId_unique",
           "columns": [
-            "regular_frequency_subexpr_id"
+            "regular_frequency_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "regular_frequency_yearly_on_subexprs_regular_frequency_subexpr_id_regular_frequency_subexprs_id_fk": {
-          "name": "regular_frequency_yearly_on_subexprs_regular_frequency_subexpr_id_regular_frequency_subexprs_id_fk",
-          "tableFrom": "regular_frequency_yearly_on_subexprs",
-          "tableTo": "regular_frequency_subexprs",
+        "regular_frequency_yearly_exprs_regular_frequency_id_regular_frequencies_id_fk": {
+          "name": "regular_frequency_yearly_exprs_regular_frequency_id_regular_frequencies_id_fk",
+          "tableFrom": "regular_frequency_yearly_exprs",
+          "tableTo": "regular_frequencies",
           "columnsFrom": [
-            "regular_frequency_subexpr_id"
+            "regular_frequency_id"
           ],
           "columnsTo": [
             "id"
@@ -787,7 +577,12 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "mutually_exclusive_inclusive": {
+          "name": "mutually_exclusive_inclusive",
+          "value": "\n          (\n            (\"regular_frequency_yearly_exprs\".\"ordinal\" IS NULL)\n              AND \n            (\"regular_frequency_yearly_exprs\".\"constant_weekday\" IS NULL)\n              AND \n            (\"regular_frequency_yearly_exprs\".\"variable_weekday\" IS NULL)\n          ) OR (\n            ((\"regular_frequency_yearly_exprs\".\"ordinal\" IS NOT NULL) AND (\"regular_frequency_yearly_exprs\".\"constant_weekday\" IS NOT NULL))\n              OR \n            ((\"regular_frequency_yearly_exprs\".\"ordinal\" IS NOT NULL) AND (\"regular_frequency_yearly_exprs\".\"variable_weekday\" IS NOT NULL))\n          )\n        "
+        }
+      }
     },
     "schedules": {
       "name": "schedules",
@@ -823,6 +618,13 @@
         "frequency_type": {
           "name": "frequency_type",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "until": {
+          "name": "until",
+          "type": "integer",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -877,7 +679,12 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "no_until_without_frequency_type": {
+          "name": "no_until_without_frequency_type",
+          "value": "\n          ((\"schedules\".\"frequency_type\" IS NULL) AND (\"schedules\".\"until\" IS NULL)) OR (\"schedules\".\"frequency_type\" IS NOT NULL)\n        "
+        }
+      }
     },
     "tags_to_tasks": {
       "name": "tags_to_tasks",
