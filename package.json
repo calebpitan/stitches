@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@primevue/themes": "^4.0.7",
+    "@stitches/common": "workspaces:*",
     "@stitches/io": "workspaces:*",
     "@stitches/scheduler": "workspaces:*",
     "@svgdotjs/svg.js": "^3.2.4",
