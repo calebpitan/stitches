@@ -14,6 +14,7 @@ import config from './migrations/deployment.json'
 export const TABLE_NAME = sql.identifier('__drizzle_migrations')
 
 export function migrate<TSchema extends Record<string, unknown>>(db: SQLJsDatabase<TSchema>) {
+  db.run(sql`PRAGMA foreign_keys = ON;`)
   db.run(
     sql`
       CREATE TABLE IF NOT EXISTS ${TABLE_NAME} (
