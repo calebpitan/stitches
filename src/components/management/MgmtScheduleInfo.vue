@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TaskSchedule } from '@/interfaces/schedule'
+import type { TaskSchedule } from '@stitches/common'
 
 import MgmtScheduleSummary from './MgmtScheduleSummary.vue'
 
