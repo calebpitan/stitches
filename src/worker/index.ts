@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs'
 
-import type { TaskSchedule } from '@/interfaces/schedule'
+import type { TaskSchedule } from '@stitches/common'
 
 import type { MasterMessageEventData, WorkerMessageEventData } from './types'
 
