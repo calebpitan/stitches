@@ -8729,6 +8729,7 @@ __metadata:
     "@primevue/auto-import-resolver": "npm:^4.0.7"
     "@primevue/themes": "npm:^4.0.7"
     "@rushstack/eslint-patch": "npm:^1.8.0"
+    "@stitches/common": "workspaces:*"
     "@stitches/io": "workspaces:*"
     "@stitches/scheduler": "workspaces:*"
     "@svgdotjs/svg.js": "npm:^3.2.4"
