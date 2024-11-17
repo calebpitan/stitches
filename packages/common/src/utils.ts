@@ -95,3 +95,27 @@ export function unique<T extends Record<string, unknown>, K>(items: T[], indexer
 
   return Array.from(map.values())
 }
+
+/**
+ * Potentially pluralize an item by deciding to go with either the
+ * singular or plural value based on a provided count
+ * @param count The count of the item to possibly pluralize
+ * @param s The singluar value to use
+ * @param p The plural value to use
+ * @returns A string that is either `s` or `p`
+ */
+export function plural<S extends string, P extends string>(count: number, s: S, p: P) {
+  return count > 1 ? p : s
+}
+
+/**
+ * Typed {@link Object.entries}:
+ * 
+ * Returns an array of key/values of the enumerable own properties of an object
+ *
+ * @param o — Object that contains the properties and methods. This can be an object that you created or an existing Document Object Model (DOM) object.
+ * @returns
+ */
+export function entries<O extends Record<string, any>>(o: O): [keyof O, O[keyof O]][] {
+  return Object.entries(o)
+}
