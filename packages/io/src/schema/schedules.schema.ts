@@ -1,10 +1,8 @@
 import { sql } from 'drizzle-orm'
-import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import { check, integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'
 
 import { withDefaults } from './common'
 import { tasks } from './tasks.schema'
-
-type Cron = { expression: string; frequency: 'hour' | 'day' | 'week' | 'month' | 'year' }
 
 const Shared = {
   withOrdinal<S extends Record<string, any>>(schema: S) {
@@ -24,18 +22,18 @@ const Shared = {
 
       /**
        * The weekday from Sun-Sat represented by a number which could also serve
-       * as a bit mask for the week as described in {@link regularFrequencyWeeklySubExprs.weekdays}
+       * as a bit mask for the week as described in {@link regularFrequencyWeeklyExprs.weekdays}
        *
        * ## Bit Mask Patterns
        *
        * ```
-       * // 0x40 (Sun)
-       * // 0x20 (Sat)
-       * // 0x10 (Fri)
-       * // 0x08 (Thu)
-       * // 0x04 (Wed)
-       * // 0x02 (Tue)
-       * // 0x01 (Mon)
+       * // 0x40 (Sat)
+       * // 0x20 (Fri)
+       * // 0x10 (Thu)
+       * // 0x08 (Wed)
+       * // 0x04 (Tue)
+       * // 0x02 (Mon)
+       * // 0x01 (Sun)
        * ```
        */
       weekday: integer().notNull(),
@@ -47,18 +45,18 @@ const Shared = {
       ...schema,
       /**
        * The weekday from Sun-Sat represented by a number which could also serve
-       * as a bit mask for the week as described in {@link regularFrequencyWeeklySubExprs.weekdays}
+       * as a bit mask for the week as described in {@link regularFrequencyWeeklyExprs.weekdays}
        *
        * ## Bit Mask Patterns
        *
        * ```
-       * // 0x40 (Sun)
-       * // 0x20 (Sat)
-       * // 0x10 (Fri)
-       * // 0x08 (Thu)
-       * // 0x04 (Wed)
-       * // 0x02 (Tue)
-       * // 0x01 (Mon)
+       * // 0x40 (Sat)
+       * // 0x20 (Fri)
+       * // 0x10 (Thu)
+       * // 0x08 (Wed)
+       * // 0x04 (Tue)
+       * // 0x02 (Mon)
+       * // 0x01 (Sun)
        * ```
        */
       constantWeekday: integer(),
@@ -100,7 +98,29 @@ export const schedules = sqliteTable(
      * `custom|regular`
      */
     frequencyType: text({ enum: ['custom', 'regular'] }),
+
+    /**
+     * The period of time `T` when this frequency schedule becomes invalidated
+     *
+     * That is: the given schedule frequency should run until time `T`
+     *
+     * ## Note
+     *
+     * `until` cannot be non-nullable without `frequency_type` being non-nullable either
+     * so we check that both are null or `frequency_type` is not null
+     */
+    until: integer({ mode: 'timestamp_ms' }),
   }),
+  (t) => {
+    return {
+      check: check(
+        'no_until_without_frequency_type',
+        sql`
+          ((${t.frequencyType} IS NULL) AND (${t.until} IS NULL)) OR (${t.frequencyType} IS NOT NULL)
+        `,
+      ),
+    }
+  },
 )
 
 /**
@@ -111,25 +131,30 @@ export const customFrequencies = sqliteTable(
   withDefaults({
     /**
      * The ID of the "schedule" this "custom frequency" belongs to
+     *
+     * Up to three custom frequencies can belong to a single schedule,
+     * if more, they'll be ignored.
      */
     scheduleId: text()
-      .unique()
       .notNull()
       .references(() => schedules.id, { onDelete: 'cascade' }),
 
     /**
-     * The type of "custom frequency" which is a string enum of
-     * `custom`
+     * The base unit of expression which is a string enum of
+     * `hour|day|week|month|year`
      */
-    type: text({ enum: ['custom'] })
-      .notNull()
-      .generatedAlwaysAs(sql.raw(`'custom'`)),
+    type: text({ enum: ['hour', 'day', 'week', 'month', 'year'] }),
 
     /**
-     * The cron expressions, about 3 or less, for this schedule
+     * The cron expression for expressing the repeat schedule frequency
      */
-    crons: text({ mode: 'json' }).notNull().$type<Array<Cron>>(),
+    expression: text().notNull(),
   }),
+  (table) => {
+    return {
+      unq: unique().on(table.scheduleId, table.expression),
+    }
+  },
 )
 
 /**
@@ -145,28 +170,12 @@ export const regularFrequencies = sqliteTable(
       .unique()
       .notNull()
       .references(() => schedules.id, { onDelete: 'cascade' }),
+
     /**
-     * The type of "regular frequency" which is a string enum of
+     * The base unit of expression which is a string enum of
      * `hour|day|week|month|year`
      */
     type: text({ enum: ['hour', 'day', 'week', 'month', 'year'] }).notNull(),
-  }),
-)
-
-/**
- * RegularFrequqencyExpressions for RegularFrequency
- */
-export const regularFrequencyExprs = sqliteTable(
-  'regular_frequency_exprs',
-  withDefaults({
-    /**
-     * The ID of the "regular frequency" this "regular frequency expression"
-     * belongs to.
-     */
-    regularFrequencyId: text()
-      .unique()
-      .notNull()
-      .references(() => regularFrequencies.id, { onDelete: 'cascade' }),
 
     /**
      * The repetition frequency expression
@@ -176,36 +185,20 @@ export const regularFrequencyExprs = sqliteTable(
 )
 
 /**
- * RegularFrequencySubExpressions for RegularFrequencyExpressions
+ * RegularFrequencyWeeklyExpressions for RegularFrequencies
  */
-export const regularFrequencySubExprs = sqliteTable(
-  'regular_frequency_subexprs',
+export const regularFrequencyWeeklyExprs = sqliteTable(
+  'regular_frequency_weekly_exprs',
   withDefaults({
     /**
-     * The ID of the "regular frequency" this "regular frequency expression"
-     * belongs to.
+     * The ID of the "regular frequency" this "regular frequency weekly exprs"
+     * belongs to
      */
-    regularFrequencyExprId: text()
+    regularFrequencyId: text()
       .unique()
       .notNull()
       .references(() => regularFrequencies.id, { onDelete: 'cascade' }),
-  }),
-)
 
-/**
- * RegularFrequencyWeeklySubExpressions for RegularFrequencySubExpressions
- */
-export const regularFrequencyWeeklySubExprs = sqliteTable(
-  'regular_frequency_weekly_subexprs',
-  withDefaults({
-    /**
-     * The ID of the "regular frequency subexpr" this "regular frequency weekly subexprs"
-     * belongs to
-     */
-    regularFrequencySubexprId: text()
-      .unique()
-      .notNull()
-      .references(() => regularFrequencySubExprs.id, { onDelete: 'cascade' }),
     /**
      * A bit mask of selected weekdays.
      *
@@ -238,19 +231,19 @@ export const regularFrequencyWeeklySubExprs = sqliteTable(
 )
 
 /**
- * RegularFrequencyMonthlySubExpressions for RegularFrequencySubExpressions
+ * RegularFrequencyMonthlyExpressions for RegularFrequencies
  */
-export const regularFrequencyMonthlySubExprs = sqliteTable(
-  'regular_frequency_monthly_subexprs',
+export const regularFrequencyMonthlyExprs = sqliteTable(
+  'regular_frequency_monthly_exprs',
   withDefaults({
     /**
-     * The ID of the "regular frequency subexpr" this "regular frequency monthly subexprs"
+     * The ID of the "regular frequency" this "regular frequency monthly exprs"
      * belongs to
      */
-    regularFrequencySubexprId: text()
+    regularFrequencyId: text()
       .unique()
       .notNull()
-      .references(() => regularFrequencySubExprs.id, { onDelete: 'cascade' }),
+      .references(() => regularFrequencies.id, { onDelete: 'cascade' }),
 
     /**
      * The type of monthly sub-expression which is a string enum of `onthe|ondays`,
@@ -264,38 +257,42 @@ export const regularFrequencyMonthlySubExprs = sqliteTable(
 /**
  * RegularFrequencyMonthlyOrdinalSubExpression for RegularFrequencyMonthlySubExpressions
  */
-export const regularFrequencyMonthlyOrdinalSubExpr = sqliteTable(
+export const regularFrequencyMonthlyOrdinalSubExprs = sqliteTable(
   'regular_frequency_monthly_ordinal_subexprs',
   withDefaults(
-    Shared.withOrdinal(
-      Shared.withWeekday({
-        /**
-         * The ID of the "regular frequency monthly subexpr" this
-         * "regular frequency monthly ordinal subexprs" belongs to
-         */
-        regularFrequencyMonthlySubexprId: text()
-          .unique()
-          .notNull()
-          .references(() => regularFrequencyMonthlySubExprs.id, { onDelete: 'cascade' }),
-      }),
-    ),
+    Shared.withWeekday({
+      /**
+       * The ID of the "regular frequency monthly subexpr" this
+       * "regular frequency monthly ordinal subexprs" belongs to
+       */
+      regularFrequencyMonthlyExprId: text()
+        .unique()
+        .notNull()
+        .references(() => regularFrequencyMonthlyExprs.id, { onDelete: 'cascade' }),
+
+      /**
+       * The ordinal qualifier for the weekday which is a string enum of
+       * `first|second|third|fourth|fifth|last`
+       */
+      ordinal: text({ enum: ['first', 'second', 'third', 'fourth', 'fifth', 'last'] }).notNull(),
+    }),
   ),
 )
 
 /**
- * RegularFrequencyMonthlyDaysSubExpression for RegularFrequencyMonthlySubExpressions
+ * RegularFrequencyMonthlyDaysSubExpression for RegularFrequencyMonthlyExpressions
  */
-export const regularFrequencyMonthlyDaysSubExpr = sqliteTable(
+export const regularFrequencyMonthlyDaysSubExprs = sqliteTable(
   'regular_frequency_monthly_days_subexprs',
   withDefaults({
     /**
      * The ID of the "regular frequency monthly subexpr" this
      * "regular frequency monthly days subexprs" belongs to
      */
-    regularFrequencyMonthlySubexprId: text()
+    regularFrequencyMonthlyExprId: text()
       .unique()
       .notNull()
-      .references(() => regularFrequencyMonthlySubExprs.id, { onDelete: 'cascade' }),
+      .references(() => regularFrequencyMonthlyExprs.id, { onDelete: 'cascade' }),
 
     /**
      * A bit mask of selected days of the month.
@@ -357,88 +354,95 @@ export const regularFrequencyMonthlyDaysSubExpr = sqliteTable(
 )
 
 /**
- * RegularFrequencyYearlyInSubExpression for RegularFrequencySubExpressions
+ * RegularFrequencyYearlyExpression for RegularFrequency
  */
-export const regularFrequencyYearlyInSubExprs = sqliteTable(
-  'regular_frequency_yearly_in_subexprs',
-  withDefaults({
-    /**
-     * The ID of the "regular frequency subexpr" this "regular frequency yearly-in subexprs"
-     * belongs to
-     */
-    regularFrequencySubexprId: text()
-      .unique()
-      .notNull()
-      .references(() => regularFrequencySubExprs.id, { onDelete: 'cascade' }),
-
-    /**
-     * A bit mask of selected months of the year.
-     *
-     * Since there are 12 months in a year the least this can be is a 12-bit integer,
-     * where each bit represents each month and `1` at any individual bit marks
-     * the rrepresented month as selected while `0` marks it as unselected.
-     *
-     * ## Bit Representation
-     *
-     * ```
-     *          0x000               to              0xFFF
-     * [0_0_0_0_0_0_0_0_0_0_0_0]    to    [1_1_1_1_1_1_1_1_1_1_1_1]
-     *            0                 to               4095
-     * ```
-     *
-     * ## Bit Mask Patterns
-     *
-     * ```
-     * // 0x800 (Dec)
-     * // 0x400 (Nov)
-     * // 0x200 (Oct)
-     * // 0x100 (Sep)
-     * // 0x080 (Aug)
-     * // 0x040 (Jul)
-     * // 0x020 (Jun)
-     * // 0x010 (May)
-     * // 0x008 (Apr)
-     * // 0x004 (Mar)
-     * // 0x002 (Feb)
-     * // 0x001 (Jan)
-     * ```
-     */
-    months: integer().notNull(),
-  }),
-)
-
-/**
- * RegularFrequencyYearlyOnSubExpression for RegularFrequencySubExpressions
- */
-export const regularFrequencyYearlyOnSubExprs = sqliteTable(
-  'regular_frequency_yearly_on_subexprs',
+export const regularFrequencyYearlyExprs = sqliteTable(
+  'regular_frequency_yearly_exprs',
   withDefaults(
-    Shared.withOrdinal(
-      Shared.withConstWeekday({
-        /**
-         * The ID of the "regular frequency subexpr" this "regular frequency yearly-in subexprs"
-         * belongs to
-         */
-        regularFrequencySubexprId: text()
-          .unique()
-          .notNull()
-          .references(() => regularFrequencySubExprs.id, { onDelete: 'cascade' }),
+    Shared.withConstWeekday({
+      /**
+       * The ID of the "regular frequency" this "regular frequency yearly exprs"
+       * belongs to
+       */
+      regularFrequencyId: text()
+        .unique()
+        .notNull()
+        .references(() => regularFrequencies.id, { onDelete: 'cascade' }),
 
-        /**
-         * A weekday, unlike `const_weekday`, that is dynamically computed and dependent on the
-         * set ordinal value.
-         *
-         * Type is a string enum of `day|weekday|weekend-day` where:
-         *
-         * 1. `day` can be very flexible and computed as any regular day of the week, `Sun-Sat`,
-         * 2. `weekday` is more constrained and computed to only weekday days of the week, `Mon-Fri`,
-         * contrary to weekend days of the week,
-         * 3. `weekend-day` is even more constrained and computed to only weekend days of the week, `Sat-Sun`.
-         *
-         *
-         */
-        variableWeekday: text({ enum: ['day', 'weekday', 'weekend-day'] }),
-      }),
-    ),
+      /**
+       * A bit mask of selected months of the year.
+       *
+       * Since there are 12 months in a year the least this can be is a 12-bit integer,
+       * where each bit represents each month and `1` at any individual bit marks
+       * the rrepresented month as selected while `0` marks it as unselected.
+       *
+       * ## Bit Representation
+       *
+       * ```
+       *          0x000               to              0xFFF
+       * [0_0_0_0_0_0_0_0_0_0_0_0]    to    [1_1_1_1_1_1_1_1_1_1_1_1]
+       *            0                 to               4095
+       * ```
+       *
+       * ## Bit Mask Patterns
+       *
+       * ```
+       * // 0x800 (Dec)
+       * // 0x400 (Nov)
+       * // 0x200 (Oct)
+       * // 0x100 (Sep)
+       * // 0x080 (Aug)
+       * // 0x040 (Jul)
+       * // 0x020 (Jun)
+       * // 0x010 (May)
+       * // 0x008 (Apr)
+       * // 0x004 (Mar)
+       * // 0x002 (Feb)
+       * // 0x001 (Jan)
+       * ```
+       */
+      months: integer().notNull(),
+
+      /**
+       * The ordinal qualifier for the weekday which is a string enum of
+       * `first|second|third|fourth|fifth|last`
+       */
+      ordinal: text({ enum: ['first', 'second', 'third', 'fourth', 'fifth', 'last'] }),
+
+      /**
+       * A weekday, unlike `const_weekday`, that is dynamically computed and dependent on the
+       * set ordinal value.
+       *
+       * Type is a string enum of `day|weekday|weekend-day` where:
+       *
+       * 1. `day` can be very flexible and computed as any regular day of the week, `Sun-Sat`,
+       * 2. `weekday` is more constrained and computed to only weekday days of the week, `Mon-Fri`,
+       * contrary to weekend days of the week,
+       * 3. `weekend-day` is even more constrained and computed to only weekend days of the week, `Sat-Sun`.
+       *
+       *
+       */
+      variableWeekday: text({ enum: ['day', 'weekday', 'weekend-day'] }),
+    }),
   ),
+  (t) => {
+    return {
+      check: check(
+        'mutually_exclusive_inclusive',
+        sql`
+          (
+            (${t.ordinal} IS NULL)
+              AND 
+            (${t.constantWeekday} IS NULL)
+              AND 
+            (${t.variableWeekday} IS NULL)
+          ) OR (
+            ((${t.ordinal} IS NOT NULL) AND (${t.constantWeekday} IS NOT NULL))
+              OR 
+            ((${t.ordinal} IS NOT NULL) AND (${t.variableWeekday} IS NOT NULL))
+          )
+        `,
+      ),
+    }
+  },
 )
