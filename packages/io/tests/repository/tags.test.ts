@@ -1,6 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { sql } from 'drizzle-orm'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { StitchesIOPort, open } from '../../src/lib'
+import { CollectionError } from '../../src/repositories/factory'
 import { TagsCreatePayload, TagsRepository } from '../../src/repositories/tags'
 
 describe('#TagsRepository', () => {
@@ -10,9 +12,13 @@ describe('#TagsRepository', () => {
   const seedSize = 1000 // 10922: after which `Error: too many SQL variables`
   const database = new Uint8Array()
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     port = await open(database, { wasm: false, log: false }).then((port) => (port.migrate(), port))
+  })
 
+  afterAll(() => port.close())
+
+  beforeEach(async () => {
     tagsRepository = new TagsRepository(port.mapper)
 
     const payloads: TagsCreatePayload[] = Array.from({ length: seedSize }).map((_, i) => ({
@@ -23,11 +29,27 @@ describe('#TagsRepository', () => {
     await tagsRepository.create(payloads)
   })
 
-  afterEach(() => port.close())
+  afterEach(() => {
+    port.mapper.run(sql`
+      DELETE FROM ${port.schema.tags};
+    `)
+  })
 
   it('should construct a new `TagsRepository` object', () => {
     expect(new TagsRepository(port.mapper)).toBeDefined()
   })
+
+  // describe('#withSession', () => {
+  //   it('should create a new repository with the given session', () => {
+  //     port.mapper.transaction((tx) => {
+  //       const newTagsRepository = tagsRepository.withSession(tx)
+
+  //       expect(newTagsRepository).toBeInstanceOf(TagsRepository)
+  //       expect(newTagsRepository.db).toStrictEqual(tx)
+  //       expect(tagsRepository.db).not.toStrictEqual(tx)
+  //     })
+  //   })
+  // })
 
   describe('#findMany', () => {
     it('should find as many tags', async () => {
@@ -57,14 +79,14 @@ describe('#TagsRepository', () => {
 
     it('should omit redacted tags', async () => {
       const redacted = await tagsRepository.redact('676')
-      const result = await tagsRepository.findById(redacted!.id)
+      const resultPromise = tagsRepository.findById(redacted!.id)
 
-      expect(result).toBeUndefined()
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
 
-    it('should return `undefined` when no tags is found by the ID', async () => {
-      const result = await tagsRepository.findById('2000')
-      expect(result).toBeUndefined()
+    it('should throw an error when no tags is found by the ID', async () => {
+      const resultPromise = tagsRepository.findById('2000')
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
   })
 
@@ -113,14 +135,14 @@ describe('#TagsRepository', () => {
         tagsRepository.redact(readactedIds[2]),
       ])
 
-      const result = await tagsRepository.findRedactedById('676')
+      const result = tagsRepository.findRedactedById('676')
 
-      expect(result).toBeUndefined()
+      await expect(result).rejects.toThrowError(CollectionError)
     })
 
-    it('should return `undefined` when no tag is found by the ID', async () => {
-      const result = await tagsRepository.findRedactedById('2000')
-      expect(result).toBeUndefined()
+    it('should throw an error when no tag is found by the ID', async () => {
+      const resultPromise = tagsRepository.findRedactedById('2000')
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
   })
 
@@ -132,35 +154,35 @@ describe('#TagsRepository', () => {
       expect(updated).toStrictEqual(result)
     })
 
-    it('should return `undefined` when no tag is found by the ID', async () => {
-      const updated = await tagsRepository.update('2000', { label: 'Tag six-seven-oops!' })
-      expect(updated).toBeUndefined()
+    it('should throw an error when no tag is found by the ID', async () => {
+      const updatedPromise = tagsRepository.update('2000', { label: 'Tag six-seven-oops!' })
+      await expect(updatedPromise).rejects.toThrowError(CollectionError)
     })
   })
 
   describe('#redact', () => {
     it('should redact a tag by the given ID', async () => {
       const redacted = await tagsRepository.redact('676')
-      const result = await tagsRepository.findById('676')
+      const resultPromise = tagsRepository.findById('676')
 
       expect(redacted).toBeDefined()
-      expect(result).toBeUndefined()
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
 
-    it('should return `undefined` when no tag is found by the ID', async () => {
-      const redacted = await tagsRepository.redact('2000')
-      expect(redacted).toBeUndefined()
+    it('should throw an error when no tag is found by the ID', async () => {
+      const redactedPromise = tagsRepository.redact('2000')
+      await expect(redactedPromise).rejects.toThrowError(CollectionError)
     })
   })
 
   describe('#restore', () => {
     it('should restore a redacted tag by the given ID', async () => {
       const redacted = await tagsRepository.redact('676')
-      const result = await tagsRepository.findById('676')
+      const resultPromise = tagsRepository.findById('676')
 
       expect(redacted).toBeDefined()
       expect(redacted!.deletedAt).toBeDefined()
-      expect(result).toBeUndefined()
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
 
       const restored = await tagsRepository.restore('676')
 
@@ -172,34 +194,34 @@ describe('#TagsRepository', () => {
       })
     })
 
-    it('should return `undefined` when no tag is found by the ID', async () => {
-      const redacted = await tagsRepository.redact('2000')
-      expect(redacted).toBeUndefined()
+    it('should throw an error when no tag is found by the ID', async () => {
+      const redactedPromise = tagsRepository.redact('2000')
+      await expect(redactedPromise).rejects.toThrowError(CollectionError)
     })
   })
 
   describe('#delete', () => {
     it('should delete a tag by the given ID', async () => {
       const deleted = await tagsRepository.delete('676')
-      const result = await tagsRepository.findById('676')
+      const resultPromise = tagsRepository.findById('676')
 
       expect(deleted).toBeDefined()
-      expect(deleted!.deletedAt).toBe(null)
-      expect(result).toBeUndefined()
+      expect(deleted.deletedAt).toBe(null)
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
 
       expect(deleted).toMatchObject({
-        id: deleted!.id,
-        label: deleted!.label,
+        id: deleted.id,
+        label: deleted.label,
         deletedAt: null,
       })
     })
 
     it('should be impossible to resore a deleted tag', async () => {
       const deleted = await tagsRepository.delete('676')
-      const restored = await tagsRepository.restore('676')
+      const restoredPromise = tagsRepository.restore('676')
 
       expect(deleted).toBeDefined()
-      expect(restored).toBeUndefined()
+      await expect(restoredPromise).rejects.toThrowError(CollectionError)
     })
 
     it('should return `undefined` when no tag is found by the ID', async () => {

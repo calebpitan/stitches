@@ -52,9 +52,9 @@ describe('#TagsToTaskAssociation', () => {
       const tasksAssociations = await tagsRepository.tasks.associations('1', 'tasks')
       const allAssociations = await tagsToTasks.associations('1')
 
-      console.log('Tags', tagsAssociations)
-      console.log('Tasks', tasksAssociations)
-      console.log('All', allAssociations)
+      // console.log('Tags', tagsAssociations)
+      // console.log('Tasks', tasksAssociations)
+      // console.log('All', allAssociations)
 
       expect(tagsAssociations.tags).toMatchObject(allAssociations.tags)
       expect(tasksAssociations.tasks).toMatchObject(allAssociations.tasks)

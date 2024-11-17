@@ -1,19 +1,25 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { sql } from 'drizzle-orm'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 
 import { StitchesIOPort, open } from '../../src/lib'
+import { CollectionError } from '../../src/repositories/factory'
 import { TaskCreatePayload, TasksRepository } from '../../src/repositories/tasks'
 
 describe('#TaskRepository', () => {
   let port: StitchesIOPort
-  let taskRepository: TasksRepository
+  let tasksRepository: TasksRepository
 
   const seedSize = 1000 // 10922: after which `Error: too many SQL variables`
   const database = new Uint8Array()
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     port = await open(database, { wasm: false, log: false }).then((port) => (port.migrate(), port))
+  })
 
-    taskRepository = new TasksRepository(port.mapper)
+  afterAll(() => port.close())
+
+  beforeEach(async () => {
+    tasksRepository = new TasksRepository(port.mapper)
 
     const payloads: TaskCreatePayload[] = Array.from({ length: seedSize }).map((_, i) => ({
       id: `${i + 1}`,
@@ -21,25 +27,41 @@ describe('#TaskRepository', () => {
       summary: `This makes ${i + 1} task(s)`,
     }))
 
-    await taskRepository.create(payloads)
+    await tasksRepository.create(payloads)
   })
 
-  afterEach(() => port.close())
+  afterEach(async () => {
+    port.mapper.run(sql`
+      DELETE FROM ${port.schema.tasks};
+    `)
+  })
 
   it('should construct a new `TaskRepository` object', () => {
     expect(new TasksRepository(port.mapper)).toBeDefined()
   })
 
+  // describe('#withSession', () => {
+  //   it('should create a new repository with the given session', () => {
+  //     port.mapper.transaction((tx) => {
+  //       const newTasksRepository = tasksRepository.withSession(tx)
+
+  //       expect(newTasksRepository).toBeInstanceOf(TasksRepository)
+  //       expect(newTasksRepository.db).toStrictEqual(tx)
+  //       expect(tasksRepository.db).not.toStrictEqual(tx)
+  //     })
+  //   })
+  // })
+
   describe('#findMany', () => {
     it('should find as many tasks', async () => {
-      const result = await taskRepository.findMany()
+      const result = await tasksRepository.findMany()
 
       expect(result.length).toBe(seedSize)
     })
 
     it('should omit redacted tasks', async () => {
-      const redacted = await taskRepository.redact('676')
-      const result = await taskRepository.findMany()
+      const redacted = await tasksRepository.redact('676')
+      const result = await tasksRepository.findMany()
 
       expect(result.find((t) => t.id === redacted!.id)).toBeUndefined()
       expect(result.length).toBe(seedSize - 1)
@@ -48,7 +70,7 @@ describe('#TaskRepository', () => {
 
   describe('#findById', () => {
     it('should find a task by ID', async () => {
-      const result = await taskRepository.findById('676')
+      const result = await tasksRepository.findById('676')
 
       expect(result).toMatchObject({
         id: '676',
@@ -58,15 +80,15 @@ describe('#TaskRepository', () => {
     })
 
     it('should omit redacted tasks', async () => {
-      const redacted = await taskRepository.redact('676')
-      const result = await taskRepository.findById(redacted.id)
+      const redacted = await tasksRepository.redact('676')
+      const resultPromise = tasksRepository.findById(redacted.id)
 
-      expect(result).toBeUndefined()
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
 
-    it('should return `undefined` when no task is found by the ID', async () => {
-      const result = await taskRepository.findById('2000')
-      expect(result).toBeUndefined()
+    it('should throw an error when no task is found by the ID', async () => {
+      const resultPromise = tasksRepository.findById('2000')
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
   })
 
@@ -75,12 +97,12 @@ describe('#TaskRepository', () => {
       const readactedIds = ['512', '256', '128']
 
       await Promise.all([
-        taskRepository.redact(readactedIds[0]),
-        taskRepository.redact(readactedIds[1]),
-        taskRepository.redact(readactedIds[2]),
+        tasksRepository.redact(readactedIds[0]),
+        tasksRepository.redact(readactedIds[1]),
+        tasksRepository.redact(readactedIds[2]),
       ])
 
-      const result = await taskRepository.findRedacted()
+      const result = await tasksRepository.findRedacted()
       const resultSet = new Set(result.map((r) => r.id))
 
       expect(result.length).toBe(readactedIds.length)
@@ -93,12 +115,12 @@ describe('#TaskRepository', () => {
       const readactedIds = ['512', '256', '128']
 
       await Promise.all([
-        taskRepository.redact(readactedIds[0]),
-        taskRepository.redact(readactedIds[1]),
-        taskRepository.redact(readactedIds[2]),
+        tasksRepository.redact(readactedIds[0]),
+        tasksRepository.redact(readactedIds[1]),
+        tasksRepository.redact(readactedIds[2]),
       ])
 
-      const result = await taskRepository.findRedactedById('256')
+      const result = await tasksRepository.findRedactedById('256')
 
       expect(result).toMatchObject({
         id: '256',
@@ -111,61 +133,61 @@ describe('#TaskRepository', () => {
       const readactedIds = ['512', '256', '128']
 
       await Promise.all([
-        taskRepository.redact(readactedIds[0]),
-        taskRepository.redact(readactedIds[1]),
-        taskRepository.redact(readactedIds[2]),
+        tasksRepository.redact(readactedIds[0]),
+        tasksRepository.redact(readactedIds[1]),
+        tasksRepository.redact(readactedIds[2]),
       ])
 
-      const result = await taskRepository.findRedactedById('676')
+      const result = tasksRepository.findRedactedById('676')
 
-      expect(result).toBeUndefined()
+      await expect(result).rejects.toThrowError(CollectionError)
     })
 
-    it('should return `undefined` when no task is found by the ID', async () => {
-      const result = await taskRepository.findRedactedById('2000')
-      expect(result).toBeUndefined()
+    it('should throw an error when no task is found by the ID', async () => {
+      const resultPromise = tasksRepository.findRedactedById('2000')
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
   })
 
   describe('#update', () => {
     it('should update a task by a given ID', async () => {
-      const updated = await taskRepository.update('676', { title: 'Task six-seven-six' })
-      const result = await taskRepository.findById('676')
+      const updated = await tasksRepository.update('676', { title: 'Task six-seven-six' })
+      const result = await tasksRepository.findById('676')
 
       expect(updated).toStrictEqual(result)
     })
 
-    it('should return `undefined` when no task is found by the ID', async () => {
-      const updated = await taskRepository.update('2000', { title: 'Task six-seven-oops!' })
-      expect(updated).toBeUndefined()
+    it('should throw an error when no task is found by the ID', async () => {
+      const updatedPromise = tasksRepository.update('2000', { title: 'Task six-seven-oops!' })
+      await expect(updatedPromise).rejects.toThrowError(CollectionError)
     })
   })
 
   describe('#redact', () => {
     it('should redact a task by the given ID', async () => {
-      const redacted = await taskRepository.redact('676')
-      const result = await taskRepository.findById('676')
+      const redacted = await tasksRepository.redact('676')
+      const resultPromise = tasksRepository.findById('676')
 
       expect(redacted).toBeDefined()
-      expect(result).toBeUndefined()
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
 
-    it('should return `undefined` when no task is found by the ID', async () => {
-      const redacted = await taskRepository.redact('2000')
-      expect(redacted).toBeUndefined()
+    it('should throw an error when no task is found by the ID', async () => {
+      const redactedPromise = tasksRepository.redact('2000')
+      await expect(redactedPromise).rejects.toThrowError(CollectionError)
     })
   })
 
   describe('#restore', () => {
     it('should restore a redacted task by the given ID', async () => {
-      const redacted = await taskRepository.redact('676')
-      const result = await taskRepository.findById('676')
+      const redacted = await tasksRepository.redact('676')
+      const resultPromise = tasksRepository.findById('676')
 
       expect(redacted).toBeDefined()
       expect(redacted!.deletedAt).toBeDefined()
-      expect(result).toBeUndefined()
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
 
-      const restored = await taskRepository.restore('676')
+      const restored = await tasksRepository.restore('676')
 
       expect(restored).toBeDefined()
       expect(restored).toMatchObject({
@@ -176,39 +198,39 @@ describe('#TaskRepository', () => {
       })
     })
 
-    it('should return `undefined` when no task is found by the ID', async () => {
-      const redacted = await taskRepository.redact('2000')
-      expect(redacted).toBeUndefined()
+    it('should throw an error when no task is found by the ID', async () => {
+      const redactedPromise = tasksRepository.redact('2000')
+      await expect(redactedPromise).rejects.toThrowError(CollectionError)
     })
   })
 
   describe('#delete', () => {
     it('should delete a task by the given ID', async () => {
-      const deleted = await taskRepository.delete('676')
-      const result = await taskRepository.findById('676')
+      const deleted = await tasksRepository.delete('676')
+      const resultPromise = tasksRepository.findById('676')
 
       expect(deleted).toBeDefined()
-      expect(deleted!.deletedAt).toBe(null)
-      expect(result).toBeUndefined()
+      expect(deleted.deletedAt).toBe(null)
+      await expect(resultPromise).rejects.toThrowError(CollectionError)
 
       expect(deleted).toMatchObject({
-        id: deleted!.id,
-        title: deleted!.title,
-        summary: deleted!.summary,
+        id: deleted.id,
+        title: deleted.title,
+        summary: deleted.summary,
         deletedAt: null,
       })
     })
 
     it('should be impossible to resore a deleted task', async () => {
-      const deleted = await taskRepository.delete('676')
-      const restored = await taskRepository.restore('676')
+      const deleted = await tasksRepository.delete('676')
+      const restoredPromise = tasksRepository.restore('676')
 
       expect(deleted).toBeDefined()
-      expect(restored).toBeUndefined()
+      await expect(restoredPromise).rejects.toThrowError(CollectionError)
     })
 
     it('should return `undefined` when no task is found by the ID', async () => {
-      const deleted = await taskRepository.delete('2000')
+      const deleted = await tasksRepository.delete('2000')
       expect(deleted).toBeUndefined()
     })
   })
