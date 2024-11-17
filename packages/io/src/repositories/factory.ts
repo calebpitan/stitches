@@ -1,12 +1,29 @@
-import { never, pascalCase } from '@stitches/common'
+import { entries, never, pascalCase } from '@stitches/common'
 
 import { InferInsertModel, and, eq, getTableName, isNotNull, isNull } from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
-import { SQLiteColumn, SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
+import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 
 import * as schema from '../schema'
 import { fragments } from '../utils'
 import { Table, withRedacted, withUnredacted } from './utils'
+
+export enum CollectionErrno {
+  NOT_FOUND = 14233221,
+  PRECONDITION,
+}
+
+export class CollectionError extends Error {
+  public readonly code: CollectionErrno
+  public readonly text: keyof typeof CollectionErrno
+
+  constructor(code: CollectionErrno, message?: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = CollectionError.name
+    this.code = code
+    ;[this.text] = entries(CollectionErrno).find(([, c]) => c === code)!
+  }
+}
 
 /**
  * Omits the relations schema keys
@@ -18,13 +35,6 @@ type A<K extends keyof schema.Schema> = K extends `${string}Relations` ? never :
  */
 type B<S extends schema.Schema, K extends A<keyof schema.Schema>> =
   S[K] extends SQLiteTableWithColumns<infer T> ? T : never
-/**
- * Cleans up the return type for operations other than `SELECT` that are expected
- * to return a single entity
- */
-type C<T extends Record<string, any>> = {
-  [P in keyof T]: P extends keyof SQLiteColumn ? never : T[P]
-}
 
 export type RepositoryFactoryOptions<
   K extends A<keyof schema.Schema>,
@@ -60,7 +70,20 @@ export type RepositoryFactoryOptions<
   }
 }
 
-export function RepositoryFactory<
+export interface AbstractRepository<
+  K extends A<keyof schema.Schema>,
+  T extends Table<B<schema.Schema, K>['columns']>,
+  P extends InferInsertModel<T>,
+> extends InstanceType<ReturnType<typeof RepositoryAbstractFactory<K, T, P>>> {}
+
+/**
+ * Generate an `AbstractRepository` sepcific to the given table schema `T`
+ *
+ * @param _ The schema key which is a phantom value (different from the table name)
+ * @param options The abstract repository generation options
+ * @returns An abstract repository class specific to the given table schema and generation options
+ */
+export function RepositoryAbstractFactory<
   K extends A<keyof schema.Schema>,
   T extends Table<B<schema.Schema, K>['columns']>,
   P extends InferInsertModel<T>,
@@ -71,12 +94,23 @@ export function RepositoryFactory<
     constructor(public readonly db: SQLJsDatabase<schema.Schema>) {}
 
     /**
+     * Create a new repository with the given database session
+     *
+     * @param session The database session to use to create a new repository
+     * @returns A new repository created with the given database session
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    withSession(session: SQLJsDatabase<schema.Schema>): AbstractRepository<K, T, P> {
+      throw new Error('Unimplemented method')
+    }
+
+    /**
      * Create a new `Entity` record in the database
      *
      * @param payload The data to create on the database
      * @returns The newly created `Entity`
      */
-    create<C extends P>(payload: Omit<C, 'updatedAt'>[]): ReturnType<Repository['createMany']>
+    create<C extends P[]>(payload: Omit<C, 'updatedAt'>): ReturnType<Repository['createMany']>
     create<C extends P>(payload: Omit<C, 'updatedAt'>): ReturnType<Repository['createOne']>
     async create(payload: P | P[]) {
       if (Array.isArray(payload)) {
@@ -101,8 +135,8 @@ export function RepositoryFactory<
         .values(data as any)
         .returning()
 
-      const entity = result ? result.at(0)! : never(never.never)
-      return entity as C<typeof entity>
+      const entity = result ? result[0] : never(never.never)
+      return entity as T['$inferSelect']
     }
 
     /**
@@ -126,10 +160,12 @@ export function RepositoryFactory<
     /**
      * Find an `Entity` by a given ID.
      *
-     * If the entity is not found, return `undefined`
+     * If the entity is not found, throw a {@link CollectionError} with
+     * {@link CollectionErrno.NOT_FOUND}
      *
      * @param id The ID of the `Entity` to find
-     * @returns The `Entity` matching the provided ID, otherwise `undefined`
+     * @throws {CollectionError} When the entity with the given ID is not found
+     * @returns The `Entity` matching the provided ID, otherwise throws
      */
     async findById(id: string) {
       const filters = withUnredacted(options.table, [eq(options.table.id, id)])
@@ -138,6 +174,8 @@ export function RepositoryFactory<
         .from(options.table)
         .where(and(...filters))
       const entity = result.at(0)
+
+      if (!entity) throw new CollectionError(CollectionErrno.NOT_FOUND)
 
       return entity
     }
@@ -160,9 +198,12 @@ export function RepositoryFactory<
     /**
      * Find a previously redacted `Entity` by a given ID
      *
-     * If the entity is not found, return `undefined`
+     * If the entity is not found, throw a {@link CollectionError} with
+     * {@link CollectionErrno.NOT_FOUND}
      *
-     * @returns The **redacted** `Entity` matching the provided ID, otherwise `undefined`
+     * @param id The ID of the redacted `Entity` to find
+     * @throws {CollectionError} When the entity with the given ID is not be found
+     * @returns The **redacted** `Entity` matching the provided ID, otherwise throws
      */
     async findRedactedById(id: string) {
       const filters = withRedacted(options.table, [eq(options.table.id, id)])
@@ -171,6 +212,8 @@ export function RepositoryFactory<
         .from(options.table)
         .where(and(...filters))
       const entity = result.at(0)
+
+      if (!entity) throw new CollectionError(CollectionErrno.NOT_FOUND)
 
       return entity
     }
@@ -193,8 +236,12 @@ export function RepositoryFactory<
     /**
      * Update a `Entity` by a given ID, applying a patch to it
      *
+     * If the precodition required to update returns no matching records,
+     * throw a {@link CollectionError} with {@link CollectionErrno.PRECONDITION}
+     *
      * @param id The ID of the `Entity` to update
      * @param patch The patch to apply to the `Entity`
+     * @throws {CollectionError} When the entity with the given ID is not be found
      * @returns The updated `Entity`, with the patch applied
      */
     async update<U extends P>(id: string, patch: Partial<U>) {
@@ -211,36 +258,50 @@ export function RepositoryFactory<
       // .get()
       // return result
 
-      const entity = result ? result.at(0)! : never(never.never)
-      return entity as C<typeof entity>
+      const entity = result ? result[0] : never(never.never)
+
+      if (!entity) throw new CollectionError(CollectionErrno.PRECONDITION)
+
+      return entity as T['$inferSelect']
     }
 
     /**
      * Redact an `Entity` by a given ID, setting the deleted marker for it
      * to a non-nullable value, if it has not been set.
      *
+     * If the precodition required to redact returns no matching records,
+     * throw a {@link CollectionError} with {@link CollectionErrno.PRECONDITION}
+     *
      * @param id The ID of the `Entity` to redact
+     * @throws {CollectionError} When the entity with the given ID is not be found
      * @returns The redacted `Entity`
      */
     async redact(id: string) {
       const filters = [eq(options.table.id, id), isNull(options.table.deletedAt)]
       const result = await this.db
         .update(options.table)
-        .set({ deletedAt: fragments.now } as {})
+        .set({ deletedAt: fragments.now } as any)
         .where(and(...filters))
         .returning()
       // .get()
       // return result
 
       const entity = result ? result.at(0)! : never(never.never)
-      return entity as C<typeof entity>
+
+      if (!entity) throw new CollectionError(CollectionErrno.PRECONDITION)
+
+      return entity as T['$inferSelect']
     }
 
     /**
      * Restore a previously redacted `Entity` by a given ID, unsetting the
      * deleted marker for it with a nullable value, if it has not been unset.
      *
+     * If the precodition required to restore returns no matching records,
+     * throw a {@link CollectionError} with {@link CollectionErrno.PRECONDITION}
+     *
      * @param id The ID of the `Entity` to restore
+     * @throws {CollectionError} When the entity with the given ID is not be found
      * @returns The restored `Entity`
      */
     async restore(id: string) {
@@ -254,7 +315,10 @@ export function RepositoryFactory<
       // return result
 
       const entity = result ? result.at(0)! : never(never.never)
-      return entity as C<typeof entity>
+
+      if (!entity) throw new CollectionError(CollectionErrno.PRECONDITION)
+
+      return entity as T['$inferSelect']
     }
 
     /**
@@ -276,7 +340,7 @@ export function RepositoryFactory<
       // return result
 
       const entity = result ? result.at(0)! : never(never.never)
-      return entity as C<typeof entity>
+      return entity as T['$inferSelect']
     }
   }
 
