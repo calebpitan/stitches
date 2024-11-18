@@ -1,12 +1,19 @@
 import { entries, never, pascalCase } from '@stitches/common'
 
-import { InferInsertModel, and, eq, getTableName, isNotNull, isNull } from 'drizzle-orm'
+import {
+  ExtractTablesWithRelations,
+  InferInsertModel,
+  and,
+  eq,
+  getTableName,
+  isNotNull,
+  isNull,
+} from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
-import { SQLiteTableWithColumns } from 'drizzle-orm/sqlite-core'
 
 import * as schema from '../schema'
 import { fragments } from '../utils'
-import { Table, withRedacted, withUnredacted } from './utils'
+import { BaseColumns, Table, withRedacted, withUnredacted } from './utils'
 
 export enum CollectionErrno {
   NOT_FOUND = 14233221,
@@ -26,19 +33,28 @@ export class CollectionError extends Error {
 }
 
 /**
- * Omits the relations schema keys
+ * Compute all the table keys from the given schema
  */
-type A<K extends keyof schema.Schema> = K extends `${string}Relations` ? never : K
+export type TKeys<S extends schema.Schema> = keyof ExtractTablesWithRelations<S>
+
 /**
- * Infers the inner type of an `SQLiteTableWithColumns` so the columns type can be
- * reached
+ * Retrieve the columns of a table given by `S[K]` and ensure that the columns conform
+ * to {@link BaseColumns} either as a superset or as an identity set
  */
-type B<S extends schema.Schema, K extends A<keyof schema.Schema>> =
-  S[K] extends SQLiteTableWithColumns<infer T> ? T : never
+export type TCols<S extends schema.Schema, K extends TKeys<S>> = Bound<
+  ExtractTablesWithRelations<S>[K]['columns'],
+  BaseColumns
+>
+
+/**
+ * Bind a type `T` to an interface `I` contractually to ensure `T` conforms to `I`
+ * either as a superset or as an identity set
+ */
+export type Bound<T, I> = T extends I ? T : never
 
 export type RepositoryFactoryOptions<
-  K extends A<keyof schema.Schema>,
-  T extends Table<B<schema.Schema, K>['columns']>,
+  K extends TKeys<schema.Schema>,
+  T extends Table<TCols<schema.Schema, K>>,
 > = {
   /**
    * The drizzle-orm table schema
@@ -71,8 +87,8 @@ export type RepositoryFactoryOptions<
 }
 
 export interface AbstractRepository<
-  K extends A<keyof schema.Schema>,
-  T extends Table<B<schema.Schema, K>['columns']>,
+  K extends TKeys<schema.Schema>,
+  T extends Table<TCols<schema.Schema, K>>,
   P extends InferInsertModel<T>,
 > extends InstanceType<ReturnType<typeof RepositoryAbstractFactory<K, T, P>>> {}
 
@@ -84,8 +100,8 @@ export interface AbstractRepository<
  * @returns An abstract repository class specific to the given table schema and generation options
  */
 export function RepositoryAbstractFactory<
-  K extends A<keyof schema.Schema>,
-  T extends Table<B<schema.Schema, K>['columns']>,
+  K extends TKeys<schema.Schema>,
+  T extends Table<TCols<schema.Schema, K>>,
   P extends InferInsertModel<T>,
 >(_: K, options: RepositoryFactoryOptions<K, T>) {
   const identifier = pascalCase(getTableName(options.table)).concat('AbstractRepository')
@@ -136,7 +152,7 @@ export function RepositoryAbstractFactory<
         .returning()
 
       const entity = result ? result[0] : never(never.never)
-      return entity as T['$inferSelect']
+      return entity // as T['$inferSelect']
     }
 
     /**
@@ -262,7 +278,7 @@ export function RepositoryAbstractFactory<
 
       if (!entity) throw new CollectionError(CollectionErrno.PRECONDITION)
 
-      return entity as T['$inferSelect']
+      return entity //as T['$inferSelect']
     }
 
     /**
@@ -290,7 +306,7 @@ export function RepositoryAbstractFactory<
 
       if (!entity) throw new CollectionError(CollectionErrno.PRECONDITION)
 
-      return entity as T['$inferSelect']
+      return entity // as T['$inferSelect']
     }
 
     /**
@@ -318,7 +334,7 @@ export function RepositoryAbstractFactory<
 
       if (!entity) throw new CollectionError(CollectionErrno.PRECONDITION)
 
-      return entity as T['$inferSelect']
+      return entity // as T['$inferSelect']
     }
 
     /**
@@ -340,7 +356,7 @@ export function RepositoryAbstractFactory<
       // return result
 
       const entity = result ? result.at(0)! : never(never.never)
-      return entity as T['$inferSelect']
+      return entity // as T['$inferSelect']
     }
   }
 
