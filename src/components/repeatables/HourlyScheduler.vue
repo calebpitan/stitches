@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref, useId, watch } from 'vue'
 
-import type { HourlyExpr } from '@/interfaces/schedule'
-import { plural } from '@/utils'
+import { plural } from '@stitches/common'
+
+import type { HourlyExpr } from '@stitches/common'
 
 import Stack from '../stack/Stack.vue'
 
@@ -14,9 +15,9 @@ export interface HourlySchedulerProps {
 const props = withDefaults(defineProps<HourlySchedulerProps>(), {
   expression: () => {
     return {
-      every: 1
+      every: 1,
     }
-  }
+  },
 })
 
 const ids = { hours: useId() }

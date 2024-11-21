@@ -1,4 +1,4 @@
-import type { TaskSchedule } from '@/interfaces/schedule'
+import type { TaskSchedule } from '@stitches/common'
 
 export type SchedulerWorkerActions = 'abort' | 'run' | 'subscribe'
 export type SchedulerWorkerCommamds =

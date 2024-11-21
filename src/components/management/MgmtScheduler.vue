@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useId, watch, watchEffect } from 'vue'
 
+import { FREQUENCY_OPTIONS_GROUP } from '@stitches/common'
+import type { BaseTaskSchedule, Frequency, TaskSchedule } from '@stitches/common'
 import { SVG } from '@svgdotjs/svg.js'
 
 import type { SelectChangeEvent } from 'primevue/select'
 
 import { useLocale } from '@/composables/useLocale'
 import { usePrimaryColor } from '@/composables/usePrimaryColor'
-import type { BaseTaskSchedule, Frequency, TaskSchedule } from '@/interfaces/schedule'
 import { evaluate } from '@/utils'
-import { FREQUENCY_OPTIONS_GROUP } from '@/utils/scheduling'
 
 import IconClearAll from '../icons/IconClearAll.vue'
 import CronScheduler from '../repeatables/CronScheduler.vue'
@@ -85,7 +85,7 @@ const frequency = ref<Frequency>(
       default:
         return Object.assign({}, f)
     }
-  })
+  }),
 )
 
 const frequencyOptionsGroup = computed(() => FREQUENCY_OPTIONS_GROUP.slice())
@@ -99,10 +99,10 @@ const tooltip = computed(() => {
   return {
     toggle: {
       pt,
-      value: isExpanded.value === false ? 'Open scheduler' : 'Close scheduler'
+      value: isExpanded.value === false ? 'Open scheduler' : 'Close scheduler',
     },
     edit: { pt, value: 'Edit schedule', showDelay: 1000 },
-    clear: { pt, value: 'Clear all schedule', showDelay: 1000 }
+    clear: { pt, value: 'Clear all schedule', showDelay: 1000 },
   }
 })
 
@@ -135,7 +135,7 @@ const thread = computed<ThreadlineConfig>(() => {
           x2: l1x2,
           y2: l1y2,
           stroke: 'currentColor',
-          strokeWidth
+          strokeWidth,
         },
         {
           type: 'line',
@@ -144,7 +144,7 @@ const thread = computed<ThreadlineConfig>(() => {
           x2: cx1,
           y2: cd / 2 + l1y2,
           stroke: 'currentColor',
-          strokeWidth
+          strokeWidth,
         },
         {
           type: 'circle',
@@ -153,7 +153,7 @@ const thread = computed<ThreadlineConfig>(() => {
           d: cd,
           fill: 'none',
           stroke: color,
-          strokeWidth
+          strokeWidth,
         },
         {
           type: 'line',
@@ -162,10 +162,10 @@ const thread = computed<ThreadlineConfig>(() => {
           x2: l2x2,
           y2: l2y2,
           stroke: 'currentColor',
-          strokeWidth
-        }
+          strokeWidth,
+        },
       ]
-    }
+    },
   }
 })
 
@@ -222,7 +222,7 @@ function handleClearSchedule() {
 
 onMounted(() => {
   watch(thread, (t, __, onCleanup) => onCleanup(drawThread(threadline.value!, t)), {
-    immediate: true
+    immediate: true,
   })
 })
 
@@ -254,9 +254,9 @@ function handleFrequencyTypeChange(evt: SelectChangeEvent) {
           every: 1,
           subexpr: {
             type: 'ondays',
-            days: [timestamp.getDate()]
-          }
-        }
+            days: [timestamp.getDate()],
+          },
+        },
       })
       break
     case 'year':
@@ -266,10 +266,10 @@ function handleFrequencyTypeChange(evt: SelectChangeEvent) {
           every: 1,
           subexpr: {
             in: {
-              months: [timestamp.getMonth()]
-            }
-          }
-        }
+              months: [timestamp.getMonth()],
+            },
+          },
+        },
       })
       break
     case 'custom':
@@ -285,9 +285,9 @@ function handleFrequencyTypeChange(evt: SelectChangeEvent) {
               '*', 
               '*'
             ].join(' '),
-            frequency: 'day'
-          }
-        ]
+            frequency: 'day',
+          },
+        ],
       })
       break
     case 'never':
@@ -306,10 +306,10 @@ watch(
       id: props.schedule?.id,
       taskId: props.taskId,
       frequency: freq,
-      timestamp: timestamp
+      timestamp: timestamp,
     })
   },
-  { deep: true }
+  { deep: true },
 )
 </script>
 

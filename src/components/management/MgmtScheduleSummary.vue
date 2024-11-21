@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import type { TaskSchedule } from '@stitches/common'
+
 import { useLocale } from '@/composables/useLocale'
-import type { TaskSchedule } from '@/interfaces/schedule'
 
 import IconLoopOff from '../icons/IconLoopOff.vue'
 import IconLoopOn from '../icons/IconLoopOn.vue'
@@ -22,7 +23,7 @@ const freqTypeMap = {
   custom: 'custom',
   get(key: Exclude<keyof typeof this, 'get'>) {
     return this[key]
-  }
+  },
 }
 </script>
 

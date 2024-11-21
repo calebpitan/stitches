@@ -1,7 +1,9 @@
 import * as sch from '@stitches/scheduler'
+import type { WeekdayVariable } from '@stitches/common'
+import type { TaskSchedule } from '@stitches/common'
+import { never } from '@stitches/common'
 
-import type { TaskSchedule } from '@/interfaces/schedule'
-import { type WeekdayVariable, never, ordinalToUint8 } from '@/utils'
+import { ordToU8 } from '@/utils'
 
 import type { MasterMessageEventData, WorkerMessageEventData } from './types'
 
@@ -11,7 +13,7 @@ const st_var_weekday_map = {
   'weekend-day': sch.StVarWeekday.Weekend,
   get(key: WeekdayVariable) {
     return this[key]
-  }
+  },
 } as const satisfies Record<WeekdayVariable, sch.StVarWeekday> & {
   get(key: WeekdayVariable): sch.StVarWeekday
 }
@@ -76,8 +78,8 @@ function create_st_schedule(data: TaskSchedule) {
       } else {
         expr = sch.StMonthlyExpression.with_ordinal_weekday(
           data.frequency.exprs.every,
-          sch.st_ordinals_from_value(ordinalToUint8(data.frequency.exprs.subexpr.ordinal)),
-          sch.st_const_weekday_from_value(data.frequency.exprs.subexpr.weekday)
+          sch.st_ordinals_from_value(ordToU8(data.frequency.exprs.subexpr.ordinal)),
+          sch.st_const_weekday_from_value(data.frequency.exprs.subexpr.weekday),
         )
       }
 
@@ -93,15 +95,15 @@ function create_st_schedule(data: TaskSchedule) {
         expr = sch.StYearlyExpression.with_months_ordinal_const_weekday(
           data.frequency.exprs.every,
           months,
-          sch.st_ordinals_from_value(ordinalToUint8(data.frequency.exprs.subexpr.on.ordinal)),
-          sch.st_const_weekday_from_value(data.frequency.exprs.subexpr.on.weekday)
+          sch.st_ordinals_from_value(ordToU8(data.frequency.exprs.subexpr.on.ordinal)),
+          sch.st_const_weekday_from_value(data.frequency.exprs.subexpr.on.weekday),
         )
       } else if (data.frequency.exprs.subexpr.on && data.frequency.exprs.subexpr.on.variable) {
         expr = sch.StYearlyExpression.with_months_ordinal_var_weekday(
           data.frequency.exprs.every,
           months,
-          sch.st_ordinals_from_value(ordinalToUint8(data.frequency.exprs.subexpr.on.ordinal)),
-          st_var_weekday_map.get(data.frequency.exprs.subexpr.on.variable)
+          sch.st_ordinals_from_value(ordToU8(data.frequency.exprs.subexpr.on.ordinal)),
+          st_var_weekday_map.get(data.frequency.exprs.subexpr.on.variable),
         )
       } else {
         expr = sch.StYearlyExpression.with_months(data.frequency.exprs.every, months)
@@ -122,39 +124,46 @@ function subDataFactory(id: string): MasterMessageEventData {
 }
 
 async function main() {
+  const runner = sch.get_scheduler_runner()
   const scheduler = sch.get_scheduler()
 
   self.addEventListener('message', async (msg: MessageEvent<WorkerMessageEventData>) => {
     switch (msg.data.command) {
-      case 'add':
-        if (Array.isArray(msg.data.data)) {
-          msg.data.data.forEach((item) => {
-            !item.timestamp ? void 0 : scheduler.add_schedule(create_st_schedule(item))
-          })
+      case 'add': {
+        const data = Array.isArray(msg.data.data) ? msg.data.data : [msg.data.data]
+        data
+          .filter((v) => !!v.timestamp)
+          .map((v) => create_st_schedule(v))
+          .forEach((v) => scheduler.add_schedule(v))
+        break
+      }
 
-          break
-        }
+      case 'subscribe':
+        scheduler.subscribe((id: string) => self.postMessage(subDataFactory(id)))
+        break
 
-        if (!msg.data.data.timestamp) break
-        scheduler.add_schedule(create_st_schedule(msg.data.data))
+      case 'run':
+        await runner.run(scheduler)
         break
 
       case 'update':
-      case 'drop':
+        if (msg.data.data.timestamp === null) break
+        await runner.update_scheduler_with(create_st_schedule(msg.data.data))
+        break
+
+      case 'drop': {
+        const data = Array.isArray(msg.data.data) ? msg.data.data : [msg.data.data]
+        await Promise.all(data.map(async (v) => runner.remove_from_scheduler(v)))
+        break
+      }
+
       case 'drop_all':
         break
 
       case 'abort':
-        scheduler.abort()
+        await runner.quit()
         break
-      case 'run':
-        await scheduler.run()
-        break
-      case 'subscribe':
-        scheduler.subscribe((st_schedule_id: string) =>
-          self.postMessage(subDataFactory(st_schedule_id))
-        )
-        break
+
       default:
       // no default
     }

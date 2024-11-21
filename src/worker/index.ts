@@ -1,12 +1,14 @@
 import { Observable } from 'rxjs'
 
-import type { TaskSchedule } from '@/interfaces/schedule'
+import type { TaskSchedule } from '@stitches/common'
 
 import type { MasterMessageEventData, WorkerMessageEventData } from './types'
 
 export interface SchedulerController {
   add(schedule: TaskSchedule): void
   add(schedule: TaskSchedule[]): void
+  update(schedule: TaskSchedule): void
+  remove(id: string): void
   observer: Observable<MasterMessageEventData>
 }
 
@@ -17,10 +19,18 @@ function msgFactory(msg: WorkerMessageEventData) {
 export function SchedulerWorker(): SchedulerController {
   const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })
 
+  worker.addEventListener('error', (error) => console.error(error))
+
   const controller: SchedulerController = {
     observer: undefined!,
     add(schedule) {
       worker.postMessage(msgFactory({ command: 'add', data: schedule }))
+    },
+    update(schedule) {
+      worker.postMessage(msgFactory({ command: 'update', data: schedule }))
+    },
+    remove(id) {
+      worker.postMessage(msgFactory({ command: 'drop', data: id }))
     }
   }
 

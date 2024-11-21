@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, useId, watch } from 'vue'
 
-import type { DailyExpr } from '@/interfaces/schedule'
-import { plural } from '@/utils'
+import { plural } from '@stitches/common'
+import type { DailyExpr } from '@stitches/common'
 
 import Stack from '../stack/Stack.vue'
 
@@ -14,9 +14,9 @@ export interface DailySchedulerProps {
 const props = withDefaults(defineProps<DailySchedulerProps>(), {
   expression: () => {
     return {
-      every: 1
+      every: 1,
     }
-  }
+  },
 })
 
 const ids = { days: useId() }

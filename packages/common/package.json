@@ -1,0 +1,27 @@
+{
+  "name": "@stitches/common",
+  "type": "module",
+  "version": "0.1.0",
+  "collaborators": [
+    "Caleb Adepitan <calebpitan@gmail.com>"
+  ],
+  "exports": {
+    "types": "./dist/src/index.d.ts",
+    "default": "./dist/src/index.js"
+  },
+  "scripts": {
+    "postinstall": "yarn build",
+    "build:tsc": "tsc",
+    "build": "yarn build:tsc"
+  },
+  "packageManager": "yarn@4.1.1",
+  "devDependencies": {
+    "@types/lodash.camelcase": "^4",
+    "@types/lodash.startcase": "^4",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "lodash.camelcase": "^4.3.0",
+    "lodash.startcase": "^4.4.0"
+  }
+}

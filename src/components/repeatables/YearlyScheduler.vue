@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
 
+import { plural } from '@stitches/common'
+import type { YearlyExpr } from '@stitches/common'
+import type { Ordinals, WeekdayVariable } from '@stitches/common'
+import { MONTH_OPTIONS, ORDINAL_OPTIONS_GROUP, WEEKDAY_OPTIONS_GROUP } from '@stitches/common'
+
 import type { SelectButtonChangeEvent } from 'primevue/selectbutton'
 
-import type { YearlyExpr } from '@/interfaces/schedule'
-import { evaluate, plural } from '@/utils'
-import {
-  MONTH_OPTIONS,
-  ORDINAL_OPTIONS_GROUP,
-  type Ordinals,
-  WEEKDAY_OPTIONS_GROUP,
-  type WeekdayVariable
-} from '@/utils/scheduling'
+import { evaluate } from '@/utils'
 
 import Stack from '../stack/Stack.vue'
 
@@ -35,11 +32,11 @@ const props = withDefaults(defineProps<YearlySchedulerProps>(), {
       every: 1,
       subexpr: {
         in: {
-          months: [(props.timestamp ?? new Date()).getMonth()]
-        }
-      }
+          months: [(props.timestamp ?? new Date()).getMonth()],
+        },
+      },
     }
-  }
+  },
 })
 
 const ids = { year: useId(), months: useId(), rel: useId() }
@@ -50,7 +47,7 @@ const weekday = ref<number | WeekdayVariable>(
   evaluate(() => {
     const { subexpr } = props.expression
     return subexpr.on?.weekday || subexpr.on?.variable || 0
-  })
+  }),
 )
 const ordinal = ref(evaluate(() => props.expression.subexpr.on?.ordinal ?? 'first'))
 const weekdayRelActive = ref(evaluate(() => !!props.expression.subexpr.on))
@@ -74,7 +71,7 @@ function update(data: UpdateData) {
     expr.subexpr.on = {
       ordinal: data.ordinal,
       weekday: typeof data.weekday === 'number' ? data.weekday : undefined,
-      variable: typeof data.weekday === 'string' ? data.weekday : undefined
+      variable: typeof data.weekday === 'string' ? data.weekday : undefined,
     }
   }
 

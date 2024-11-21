@@ -5,3 +5,7 @@ pub trait Comparator<T> {
 pub trait ID {
     fn get_id(&self) -> String;
 }
+
+pub trait Repeating {
+    fn every(&self) -> u64;
+}

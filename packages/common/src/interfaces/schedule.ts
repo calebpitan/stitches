@@ -1,4 +1,4 @@
-import type { FrequencyType, Ordinals, WeekdayVariable } from '@/utils/scheduling'
+import type { FrequencyType, Ordinals, WeekdayVariable } from '../scheduling'
 
 export type Frequency = RegularFrequency | CustomFrequency | { type: 'never' }
 
@@ -55,7 +55,7 @@ export interface YearlyExpr extends BaseRegularExpr {
 
 export type RegularExpression<
   T extends Exclude<FrequencyType, 'custom' | 'never'>,
-  E extends BaseRegularExpr
+  E extends BaseRegularExpr,
 > = { type: T; exprs: E } & BaseFrequency
 
 export interface CronSchedule {

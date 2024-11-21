@@ -1,0 +1,39 @@
+[
+  {
+    "idx": 0,
+    "when": 1730843246327,
+    "tag": "0000_jittery_mantis",
+    "hash": "543852cb27907e8d515d2f2afda16e01edd1a09087e0e3d2c1e5e49a336b333f",
+    "sql": [
+      "CREATE TABLE `tags_to_tasks` (`tag_id` text NOT NULL,`task_id` text NOT NULL,PRIMARY KEY(`tag_id`, `task_id`),FOREIGN KEY (`tag_id`) REFERENCES `tags`(`id`) ON UPDATE no action ON DELETE cascade,FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON UPDATE no action ON DELETE cascade);",
+      "CREATE TABLE `tags` (`id` text PRIMARY KEY NOT NULL,`label` text NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer);",
+      "CREATE TABLE `tasks` (`id` text PRIMARY KEY NOT NULL,`title` text NOT NULL,`summary` text DEFAULT '' NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer);",
+      "CREATE INDEX `tasks_title_idx` ON `tasks` (`title`);",
+      "CREATE INDEX `tasks_summary_idx` ON `tasks` (`summary`);"
+    ]
+  },
+  {
+    "idx": 1,
+    "when": 1731770250481,
+    "tag": "0001_previous_boomer",
+    "hash": "a894d79df04ce8ca6e66a87f3a72fe99ebff239fe4cca14ebccf678de0a4612b",
+    "sql": [
+      "CREATE TABLE `custom_frequencies` (`id` text PRIMARY KEY NOT NULL,`schedule_id` text NOT NULL,`type` text,`expression` text NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`schedule_id`) REFERENCES `schedules`(`id`) ON UPDATE no action ON DELETE cascade);",
+      "CREATE UNIQUE INDEX `custom_frequencies_scheduleId_expression_unique` ON `custom_frequencies` (`schedule_id`,`expression`);",
+      "CREATE TABLE `regular_frequencies` (`id` text PRIMARY KEY NOT NULL,`schedule_id` text NOT NULL,`type` text NOT NULL,`every` integer NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`schedule_id`) REFERENCES `schedules`(`id`) ON UPDATE no action ON DELETE cascade);",
+      "CREATE UNIQUE INDEX `regular_frequencies_scheduleId_unique` ON `regular_frequencies` (`schedule_id`);",
+      "CREATE TABLE `regular_frequency_monthly_days_subexprs` (`id` text PRIMARY KEY NOT NULL,`regular_frequency_monthly_expr_id` text NOT NULL,`days` integer NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`regular_frequency_monthly_expr_id`) REFERENCES `regular_frequency_monthly_exprs`(`id`) ON UPDATE no action ON DELETE cascade);",
+      "CREATE UNIQUE INDEX `regular_frequency_monthly_days_subexprs_regularFrequencyMonthlyExprId_unique` ON `regular_frequency_monthly_days_subexprs` (`regular_frequency_monthly_expr_id`);",
+      "CREATE TABLE `regular_frequency_monthly_exprs` (`id` text PRIMARY KEY NOT NULL,`regular_frequency_id` text NOT NULL,`type` text NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`regular_frequency_id`) REFERENCES `regular_frequencies`(`id`) ON UPDATE no action ON DELETE cascade);",
+      "CREATE UNIQUE INDEX `regular_frequency_monthly_exprs_regularFrequencyId_unique` ON `regular_frequency_monthly_exprs` (`regular_frequency_id`);",
+      "CREATE TABLE `regular_frequency_monthly_ordinal_subexprs` (`id` text PRIMARY KEY NOT NULL,`regular_frequency_monthly_expr_id` text NOT NULL,`ordinal` text NOT NULL,`weekday` integer NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`regular_frequency_monthly_expr_id`) REFERENCES `regular_frequency_monthly_exprs`(`id`) ON UPDATE no action ON DELETE cascade);",
+      "CREATE UNIQUE INDEX `regular_frequency_monthly_ordinal_subexprs_regularFrequencyMonthlyExprId_unique` ON `regular_frequency_monthly_ordinal_subexprs` (`regular_frequency_monthly_expr_id`);",
+      "CREATE TABLE `regular_frequency_weekly_exprs` (`id` text PRIMARY KEY NOT NULL,`regular_frequency_id` text NOT NULL,`weekdays` integer NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`regular_frequency_id`) REFERENCES `regular_frequencies`(`id`) ON UPDATE no action ON DELETE cascade);",
+      "CREATE UNIQUE INDEX `regular_frequency_weekly_exprs_regularFrequencyId_unique` ON `regular_frequency_weekly_exprs` (`regular_frequency_id`);",
+      "CREATE TABLE `regular_frequency_yearly_exprs` (`id` text PRIMARY KEY NOT NULL,`regular_frequency_id` text NOT NULL,`months` integer NOT NULL,`ordinal` text,`variable_weekday` text,`constant_weekday` integer,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`regular_frequency_id`) REFERENCES `regular_frequencies`(`id`) ON UPDATE no action ON DELETE cascade,CONSTRAINT \"mutually_exclusive_inclusive\" CHECK(          (            (\"regular_frequency_yearly_exprs\".\"ordinal\" IS NULL)              AND             (\"regular_frequency_yearly_exprs\".\"constant_weekday\" IS NULL)              AND             (\"regular_frequency_yearly_exprs\".\"variable_weekday\" IS NULL)          ) OR (            ((\"regular_frequency_yearly_exprs\".\"ordinal\" IS NOT NULL) AND (\"regular_frequency_yearly_exprs\".\"constant_weekday\" IS NOT NULL))              OR             ((\"regular_frequency_yearly_exprs\".\"ordinal\" IS NOT NULL) AND (\"regular_frequency_yearly_exprs\".\"variable_weekday\" IS NOT NULL))          )        ));",
+      "CREATE UNIQUE INDEX `regular_frequency_yearly_exprs_regularFrequencyId_unique` ON `regular_frequency_yearly_exprs` (`regular_frequency_id`);",
+      "CREATE TABLE `schedules` (`id` text PRIMARY KEY NOT NULL,`task_id` text NOT NULL,`anchor_timestamp` integer NOT NULL,`timestamp` integer NOT NULL,`frequency_type` text,`until` integer,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON UPDATE no action ON DELETE cascade,CONSTRAINT \"no_until_without_frequency_type\" CHECK(          ((\"schedules\".\"frequency_type\" IS NULL) AND (\"schedules\".\"until\" IS NULL)) OR (\"schedules\".\"frequency_type\" IS NOT NULL)        ));",
+      "CREATE UNIQUE INDEX `schedules_taskId_unique` ON `schedules` (`task_id`);"
+    ]
+  }
+]

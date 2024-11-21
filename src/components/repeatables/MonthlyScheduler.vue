@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
 
-import type { MonthlyExpr } from '@/interfaces/schedule'
-import { evaluate, plural, range } from '@/utils'
-import { ORDINAL_OPTIONS_GROUP, type Ordinals, WEEKDAY_OPTIONS } from '@/utils/scheduling'
+import { ORDINAL_OPTIONS_GROUP, WEEKDAY_OPTIONS } from '@stitches/common'
+import { plural, range } from '@stitches/common'
+import type { Ordinals } from '@stitches/common'
+import type { MonthlyExpr } from '@stitches/common'
+
+import { evaluate } from '@/utils'
 
 import Stack from '../stack/Stack.vue'
 
@@ -22,9 +25,9 @@ const props = withDefaults(defineProps<MonthlySchedulerProps>(), {
   expression: (props) => {
     return {
       every: 1,
-      subexpr: { days: [(props.timestamp ?? new Date()).getDate()], type: 'ondays' }
+      subexpr: { days: [(props.timestamp ?? new Date()).getDate()], type: 'ondays' },
     }
-  }
+  },
 })
 
 const ids = { months: useId() }
@@ -38,7 +41,7 @@ const days = ref<Array<string>>(
       return props.expression.subexpr.days.map((d) => d.toString())
     }
     return []
-  })
+  }),
 )
 
 const weekday = ref(
@@ -46,7 +49,7 @@ const weekday = ref(
     const type = props.expression.subexpr.type
     if (type === 'onthe') return props.expression.subexpr.weekday
     return 0
-  })
+  }),
 )
 
 const ordinal = ref<Lowercase<Ordinals>>(
@@ -54,14 +57,14 @@ const ordinal = ref<Lowercase<Ordinals>>(
     const type = props.expression.subexpr.type
     if (type === 'onthe') return props.expression.subexpr.ordinal
     return 'first'
-  })
+  }),
 )
 
 const rel = ref<Rel>(
   evaluate(() => {
     const type = props.expression.subexpr.type
     return type === 'ondays' ? 'On Days' : 'On The'
-  })
+  }),
 )
 
 const dayOptions = computed(() => Array.from(range(1, 32)).map((d) => d.toString()))

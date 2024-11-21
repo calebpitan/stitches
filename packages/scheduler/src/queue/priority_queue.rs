@@ -79,14 +79,14 @@ where
     }
 
     pub fn remove(&mut self, id: String) -> Option<T> {
-        let index = self.tracker.get(&id);
+        let index = self.tracker.remove(&id);
 
         match index {
             Some(index) => {
-                let result = Some(self.heap.remove(*index));
+                let result = Some(self.heap.remove(index));
 
-                if index > &mut 0 {
-                    let idx = *index;
+                if index > 0 {
+                    let idx = index;
                     self.siftup(idx);
                     self.siftdown(idx, None);
                 }
@@ -210,7 +210,7 @@ mod test {
         pq.enqueue(15);
     }
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     // test that the priority queue can be initialized successfully
     pub fn smoke_test_initialize_priority_queue() {
@@ -219,7 +219,7 @@ mod test {
         assert!(pq.is_empty())
     }
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     // should add items to the heap and distribute them optimally for O(1) retrievals
     // and O(log(n)) redistribution
@@ -231,7 +231,7 @@ mod test {
         assert_eq!(pq.is_empty(), false)
     }
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     // should scan the top of the queue immutably and return the item at the top of the queue in O(1) time
     // the item at the top of the queue is the smallest in the entire queue for a min-heap queue.
@@ -250,7 +250,7 @@ mod test {
         assert_eq!(pq.size(), 5);
     }
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     // should remove an item from the queue from smallest to greatest for a min-heap queue
     // and the reverse case for max-heap queue
@@ -273,7 +273,7 @@ mod test {
         assert_eq!(pq.size(), 0);
     }
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     // should find an item in the queue by its ID in O(1) time
     pub fn test_find() {
@@ -291,7 +291,7 @@ mod test {
         assert_eq!(pq.size(), 5);
     }
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     // should remove an item from the queue by its ID in O(1) time
     pub fn test_remove() {
@@ -312,5 +312,7 @@ mod test {
         assert_eq!(pq.dequeue(), Some(12));
         assert_eq!(pq.dequeue(), Some(32));
         assert_eq!(pq.dequeue(), Some(47));
+
+        assert_eq!(pq.tracker.is_empty(), true);
     }
 }

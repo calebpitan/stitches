@@ -5,13 +5,13 @@ use chrono::prelude::*;
 use wasm_bindgen::prelude::*;
 
 use crate::core::frequency::StConstWeekday;
+use crate::core::frequency::StCustomFrequency;
 use crate::core::frequency::StFrequencyExpression;
-use crate::core::frequency::{Repeating, StCustomFrequency};
 use crate::core::frequency::{StFrequency, StRegularFrequency};
 use crate::core::priority::StPriority;
 use crate::core::time::{parse_cron_expr, utc_timestamp, Timestamp};
 use crate::core::time::{DAY_MILLIS, HOUR_MILLIS, WEEK_MILLIS};
-use crate::traits::ID;
+use crate::traits::{Repeating, ID};
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -41,7 +41,7 @@ impl StSchedule {
     /// * `id` - The identifier for this schedule
     /// * `timestamp` - The timestamp in milliseconds
     /// * `priority` - The priority of schedule used to measure importance
-    pub fn new(id: &str, timestamp: u64, priority: Option<StPriority>) -> StSchedule {
+    pub fn new(id: &str, timestamp: i64, priority: Option<StPriority>) -> StSchedule {
         StSchedule {
             id: String::from(id),
             frequency: None,
@@ -63,7 +63,7 @@ impl StSchedule {
     /// * `priority` - The priority of schedule used to measure importance
     pub fn with_regular(
         id: &str,
-        timestamp: u64,
+        timestamp: i64,
         freq: StRegularFrequency,
         priority: Option<StPriority>,
     ) -> StSchedule {
@@ -88,7 +88,7 @@ impl StSchedule {
     /// * `priority` - The priority of schedule used to measure importance
     pub fn with_custom(
         id: &str,
-        timestamp: u64,
+        timestamp: i64,
         freq: StCustomFrequency,
         priority: Option<StPriority>,
     ) -> StSchedule {
@@ -113,7 +113,7 @@ impl StSchedule {
         let next_hour_factor = elapsed_hours_factor.ceil();
         let next_hour_millis = hour_ms * next_hour_factor;
 
-        timestamp + Timestamp::Millis(next_hour_millis as u64)
+        timestamp + Timestamp::Millis(next_hour_millis as i64)
     }
 
     fn next_daily_timestamp(timestamp: Timestamp, days: u64) -> Timestamp {
@@ -129,7 +129,7 @@ impl StSchedule {
         let next_day_factor = elapsed_days_factor.ceil();
         let next_day_millis = day_ms * next_day_factor;
 
-        timestamp + Timestamp::Millis(next_day_millis as u64)
+        timestamp + Timestamp::Millis(next_day_millis as i64)
     }
 
     fn next_weekly_timestamp(timestamp: Timestamp, weeks: u64) -> Timestamp {
@@ -145,7 +145,7 @@ impl StSchedule {
         let next_week_factor = elapsed_weeks_factor.ceil();
         let next_week_millis = week_ms * next_week_factor;
 
-        timestamp + Timestamp::Millis(next_week_millis as u64)
+        timestamp + Timestamp::Millis(next_week_millis as i64)
     }
 
     /// Compute the correction factor that places a weekly `timestamp` at exactly the weekday,
@@ -161,7 +161,7 @@ impl StSchedule {
     fn next_weekly_correction_factor(
         timestamp: &Timestamp,
         weekdays: &Vec<StConstWeekday>,
-    ) -> (bool, Timestamp) {
+    ) -> Timestamp {
         let minimum = weekdays
             .iter()
             .map(|weekday| {
@@ -178,22 +178,22 @@ impl StSchedule {
             .min()
             .unwrap_or(0);
 
-        if minimum.signum() == -1 {
-            return (true, Timestamp::Millis(minimum as u64));
-        }
+        // if minimum.signum() == -1 {
+        // return Timestamp::Millis(minimum);
+        // }
 
-        return (false, Timestamp::Millis(minimum as u64));
+        Timestamp::Millis(minimum)
     }
 
-    // pub(crate) fn get_id_as_str(&self) -> &str {
-    //     self.id.as_str()
-    // }
+    pub(crate) fn get_id_as_str(&self) -> &str {
+        self.id.as_str()
+    }
 
     pub fn get_id(&self) -> String {
         self.id.clone()
     }
 
-    pub fn get_timestamp(&self) -> u64 {
+    pub fn get_timestamp(&self) -> i64 {
         self.timestamp.as_ms()
     }
 
@@ -237,6 +237,10 @@ impl StSchedule {
             return None;
         }
 
+        // TODO!: do not overwrite original timestamp, it should always serve as ref point
+        // for generating every subsequent schedule instead keep track of a `next_schedule`
+        // field on `StSchedule` that is originally the same as `timestamp`.
+
         match &self.frequency {
             Some(freq) => match freq {
                 StFrequency::Custom(cstm_freq) => {
@@ -244,15 +248,15 @@ impl StSchedule {
                     let timestamp = crons
                         .iter()
                         .take(3)
-                        .map(|c| {
+                        .map(|cron| {
                             let result = parse_cron_expr(
-                                c.as_str(),
+                                cron.as_str(),
                                 cstm_freq.tz_offset,
                                 Some(max(&self.timestamp, &utc_timestamp())),
                             );
 
                             result
-                                .map(|v| Timestamp::Millis(v.timestamp_millis() as u64))
+                                .map(|v| Timestamp::Millis(v.timestamp_millis()))
                                 .unwrap()
                         })
                         .min();
@@ -304,16 +308,12 @@ impl StSchedule {
 
                         let subexpr = expr.get_subexpr();
 
-                        let (neg, correction) = Self::next_weekly_correction_factor(
+                        let correction = Self::next_weekly_correction_factor(
                             &next_timestamp,
                             subexpr.get_weekdays(),
                         );
 
-                        if neg {
-                            next_timestamp -= correction;
-                        } else {
-                            next_timestamp += correction
-                        }
+                        next_timestamp += correction;
 
                         // TODO: Check for specific days of the week and apply correction to either move
                         // the timestamp forward or backward depending on if the specifies weekday(s) is
@@ -372,7 +372,7 @@ mod tests {
 
     static TIMESTAMP: Timestamp = Timestamp::Millis(1729520340000);
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     pub fn test_next_hourly_schedule() {
         {
@@ -380,7 +380,7 @@ mod tests {
             let next_timestamp = StSchedule::next_hourly_timestamp(TIMESTAMP, hours);
 
             assert_eq!(
-                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / HOUR_MILLIS) % hours,
+                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / HOUR_MILLIS as i64) % hours as i64,
                 0,
             )
         }
@@ -390,13 +390,13 @@ mod tests {
             let next_timestamp = StSchedule::next_hourly_timestamp(TIMESTAMP, hours);
 
             assert_eq!(
-                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / HOUR_MILLIS) % hours,
+                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / HOUR_MILLIS as i64) % hours as i64,
                 0,
             )
         }
     }
 
-    #[allow(dead_code)]
+    #[test]
     #[wasm_bindgen_test]
     pub fn test_next_weekly_schedule() {
         {
@@ -404,7 +404,7 @@ mod tests {
             let next_timestamp = StSchedule::next_weekly_timestamp(TIMESTAMP, weeks);
 
             assert_eq!(
-                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / WEEK_MILLIS) % weeks,
+                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / WEEK_MILLIS as i64) % weeks as i64,
                 0,
             )
         }
@@ -414,7 +414,7 @@ mod tests {
             let next_timestamp = StSchedule::next_weekly_timestamp(TIMESTAMP, weeks);
 
             assert_eq!(
-                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / WEEK_MILLIS) % weeks,
+                ((next_timestamp.as_ms() - TIMESTAMP.as_ms()) / WEEK_MILLIS as i64) % weeks as i64,
                 0,
             )
         }

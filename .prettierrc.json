@@ -4,10 +4,12 @@
   "tabWidth": 2,
   "singleQuote": true,
   "printWidth": 100,
-  "trailingComma": "none",
+  "trailingComma": "all",
+  "proseWrap": "always",
   "importOrder": [
+    "^reflect-metadata$",
     "^node:(.*)$",
-    "^vue(.*)$",
+    "^vue$",
     "^[@](?!/)(.*)$",
     "^[^.@]",
     "^@/",
@@ -15,6 +17,7 @@
   ],
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
-  "importOrderParserPlugins": ["typescript", "decorators-legacy"],
+  "importOrderGroupNamespaceSpecifiers": true,
+  "importOrderParserPlugins": ["importAssertions", "typescript", "decorators-legacy"],
   "plugins": ["@trivago/prettier-plugin-sort-imports"]
 }

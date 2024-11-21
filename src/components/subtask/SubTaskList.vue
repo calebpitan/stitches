@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { range } from '@/utils'
+import { range } from '@stitches/common'
+
 import { emptyTaskList } from '@/utils/assets'
 
 import List from '../list/List.vue'

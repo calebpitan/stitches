@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-import type { BaseTaskSchedule } from '@/interfaces/schedule'
+import type { BaseTaskSchedule } from '@stitches/common'
+
 import { useTaskScheduleStore } from '@/stores/schedule'
 import { useTaskTagStore } from '@/stores/tag'
 import { useTaskStore } from '@/stores/task'

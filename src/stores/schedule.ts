@@ -1,9 +1,10 @@
 import { ref } from 'vue'
 
+import type { BaseTaskSchedule, TaskSchedule } from '@stitches/common'
+
 import { plainToInstance } from 'class-transformer'
 import { defineStore } from 'pinia'
 
-import type { BaseTaskSchedule, TaskSchedule } from '@/interfaces/schedule'
 import { ScheduleSerializer } from '@/serializers/schedule'
 import { createDeserializer, createReadGuard, ulid } from '@/utils'
 
@@ -32,7 +33,7 @@ export const useTaskScheduleStore = defineStore(
         id: ulid(),
         taskId: data.taskId,
         frequency: data.frequency,
-        timestamp: data.timestamp
+        timestamp: data.timestamp,
       }
 
       schedules.value.push(schedule)
@@ -65,7 +66,7 @@ export const useTaskScheduleStore = defineStore(
       findSchedule,
       updateSchedule,
       upsertSchedule,
-      deleteSchedule
+      deleteSchedule,
     }
   },
   {
@@ -75,12 +76,12 @@ export const useTaskScheduleStore = defineStore(
         deserialize: createDeserializer<Record<'schedules', TaskSchedule[]>>((data) => {
           const serialized = plainToInstance(ScheduleSerializer, data.schedules, {
             enableImplicitConversion: true,
-            strategy: 'excludeAll'
+            strategy: 'excludeAll',
           })
 
           return { schedules: serialized }
-        })
-      }
-    }
-  }
+        }),
+      },
+    },
+  },
 )
