@@ -5,6 +5,12 @@ import { useScroll } from '@vueuse/core'
 
 type Tracker = 'top' | 'right' | 'bottom' | 'left'
 
+interface OverflowBoxProps {
+  fadeColor?: string
+}
+
+withDefaults(defineProps<OverflowBoxProps>(), {})
+
 const box = ref<HTMLDivElement | null>(null)
 const tracker = ref<Set<Tracker>>(new Set())
 const child = computed(() => box.value?.children.item(0) as HTMLElement | null)
@@ -36,23 +42,28 @@ onMounted(() => {
       arrived.forEach((v) => tracker.value.delete(v))
       unarrived.forEach((v) => tracker.value.add(v))
     },
-    { immediate: true, deep: true }
+    { immediate: true, deep: true },
   )
 })
 </script>
 
 <template>
-  <div v-if="$slots.default" :class="['s-overflowbox', ...tracker]" ref="box">
+  <div
+    v-if="$slots.default"
+    ref="box"
+    :class="['s-overflowbox', ...tracker]"
+    :style="{ '--fade-color': fadeColor }"
+  >
     <slot ref="el" />
   </div>
 </template>
 
 <style scoped>
 .s-overflowbox {
-  --start-color: var(--s-surface-elevated);
+  --start-color: var(--fade-color, var(--s-surface-elevated));
 
   @media (prefers-color-scheme: dark) {
-    --start-color: var(--s-surface-ground);
+    --start-color: var(--fade-color, var(--s-surface-ground));
   }
 
   position: relative;
@@ -74,7 +85,7 @@ onMounted(() => {
   &.top::before,
   &.bottom::after {
     width: 100%;
-    height: 200px;
+    height: 39.0625%;
   }
 
   &.top::before,
