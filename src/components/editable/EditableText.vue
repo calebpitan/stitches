@@ -7,6 +7,15 @@ type Point = { x: number; y: number }
 type EditableTextEvent<T extends Event> = {
   [P in keyof T]: T[P] extends EventTarget | null ? HTMLDivElement : T[P]
 }
+
+type EditableTextEmits = {
+  focus: [event: EditableTextEvent<FocusEvent>]
+  blur: [event: EditableTextEvent<FocusEvent>]
+  input: [event: EditableTextEvent<Event>]
+  click: [event: EditableTextEvent<MouseEvent>]
+  modify: [event: string]
+}
+
 interface EditableTextProps {
   autoFocus?: boolean
   text: string
@@ -14,22 +23,20 @@ interface EditableTextProps {
   lines?: number
   multiline?: boolean
   focusControlEl?: HTMLElement
-  onFocus?: (event: EditableTextEvent<FocusEvent>) => void
-  onBlur?: (event: EditableTextEvent<FocusEvent>) => void
-  onInput?: (event: EditableTextEvent<Event>) => void
-  onClick?: (event: EditableTextEvent<MouseEvent>) => void
-  onModify?: (text: string) => void
 }
 
 const props = withDefaults(defineProps<EditableTextProps>(), {
   autoFocus: false,
   placeholder: 'Enter text...',
-  multiline: false
+  multiline: false,
 })
+
+const emit = defineEmits<EditableTextEmits>()
 
 const editableText = ref<HTMLDivElement | null>(null)
 const editable = ref<boolean>(props.autoFocus)
 const hasText = ref(!!props.text)
+const value = ref(props.text)
 const point = reactive<Point>({ x: Number.NEGATIVE_INFINITY, y: Number.NEGATIVE_INFINITY })
 
 const style = computed((): StyleValue => {
@@ -42,7 +49,7 @@ const style = computed((): StyleValue => {
     'white-space': props.multiline ? 'pre-wrap' : undefined,
     'line-clamp': isEditable ? undefined : props.lines,
     '-webkit-line-clamp': isEditable ? undefined : props.lines,
-    '-webkit-box-orient': isEditable ? undefined : 'vertical'
+    '-webkit-box-orient': isEditable ? undefined : 'vertical',
   }
 })
 
@@ -73,7 +80,7 @@ const handleEditableBlur = (event: FocusEvent) => {
 
   editable.value = false
   editableText.value?.scrollTo({ top: 0 })
-  props.onBlur?.(event as unknown as EditableTextEvent<FocusEvent>)
+  emit('blur', event as unknown as EditableTextEvent<FocusEvent>)
 }
 
 const handleFocus = (event: FocusEvent) => {
@@ -86,7 +93,7 @@ const handleFocus = (event: FocusEvent) => {
   // ***************************************************************
   setTimeout(() => {
     editable.value = true
-    props.onFocus?.(event as unknown as EditableTextEvent<FocusEvent>)
+    emit('focus', event as unknown as EditableTextEvent<FocusEvent>)
   }, 150)
 }
 
@@ -104,12 +111,13 @@ function handleClick(event: MouseEvent) {
   point.x = event.clientX
   point.y = event.clientY
 
-  props.onClick?.(event as unknown as EditableTextEvent<MouseEvent>)
+  emit('click', event as unknown as EditableTextEvent<MouseEvent>)
 }
 
 function handleInput(event: Event) {
-  editableText.value?.textContent ? (hasText.value = true) : (hasText.value = false)
-  props.onInput?.(event as unknown as EditableTextEvent<Event>)
+  value.value = editableText.value?.textContent ?? ''
+  value.value ? (hasText.value = true) : (hasText.value = false)
+  emit('input', event as unknown as EditableTextEvent<Event>)
 }
 
 function handlePaste(event: ClipboardEvent) {
@@ -158,8 +166,7 @@ watch(editable, (isEditable) => {
     // filling out the to-do fields.
     // ***************************************************************
     setTimeout(() => {
-      editableText.value!.textContent = editableText.value!.textContent!.trim()
-      props.onModify?.(editableText.value!.textContent!.trim())
+      emit('modify', value.value.trim())
     }, 200)
   }
 })
@@ -182,7 +189,7 @@ watch(editable, (isEditable) => {
     @keydown.enter="handleEnterKey"
     @dblclick.stop=""
   >
-    {{ text }}
+    {{ value }}
   </div>
 </template>
 
@@ -204,6 +211,7 @@ watch(editable, (isEditable) => {
 .s-editable-empty::before {
   content: attr(data-placeholder);
   display: inline-block;
+  pointer-events: none;
   font-size: inherit;
   font-weight: inherit;
   font-style: oblique;
