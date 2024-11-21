@@ -206,15 +206,15 @@ class _CriteriaBuilder<S extends schema.Schema, T extends Table<TCols<S, TKeys<S
     return this
   }
 
-  and(pipe: (cb: CriteriaBuilder<S, T>) => CriteriaBuilder<S, T>) {
+  and(pipe: (cb: this) => this): this {
     return pipe(this.push(Logical.AND)).pop()
   }
 
-  or(pipe: (cb: CriteriaBuilder<S, T>) => CriteriaBuilder<S, T>) {
+  or(pipe: (cb: this) => this): this {
     return pipe(this.push(Logical.OR)).pop()
   }
 
-  not(pipe: (cb: CriteriaBuilder<S, T>) => CriteriaBuilder<S, T>) {
+  not(pipe: (cb: this) => this): this {
     return pipe(this.push(Logical.NOT)).pop()
   }
 
