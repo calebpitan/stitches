@@ -3,6 +3,7 @@ import initSqlJs from 'sql.js'
 
 import * as schema from './schema'
 import { migrate } from './migrator'
+import { SchedulesRepository, SchedulesRepositoryFacade } from './repositories'
 import { TagsRepository } from './repositories/tags'
 import { TasksRepository } from './repositories/tasks'
 
@@ -17,6 +18,8 @@ export type StitchesIOConfig = {
 export interface StitchesIORepos {
   tasks: TasksRepository
   tags: TagsRepository
+  schedules: SchedulesRepository
+  schedulesFacade: SchedulesRepositoryFacade
 }
 
 export interface StitchesIOPort {
@@ -79,10 +82,10 @@ function getFileLocator(url?: URL) {
  */
 export async function open(
   database: Uint8Array,
-  config: StitchesIOConfig = {}
+  config: StitchesIOConfig = {},
 ): Promise<StitchesIOPort> {
   const cfg: initSqlJs.SqlJsConfig = {
-    locateFile: config.wasm !== false ? getFileLocator(config.wasm) : undefined
+    locateFile: config.wasm !== false ? getFileLocator(config.wasm) : undefined,
   }
 
   const SQLite = await initSqlJs(cfg)
@@ -90,12 +93,14 @@ export async function open(
   const mapper = drizzle<schema.Schema>(sqlite, {
     casing: 'snake_case',
     schema: schema,
-    logger: config.log
+    logger: config.log,
   })
 
   const repo: StitchesIORepos = {
     tasks: new TasksRepository(mapper),
-    tags: new TagsRepository(mapper)
+    tags: new TagsRepository(mapper),
+    schedules: new SchedulesRepository(mapper),
+    schedulesFacade: new SchedulesRepositoryFacade(mapper),
   }
 
   const port: StitchesIOPort = {
@@ -105,7 +110,7 @@ export async function open(
     migrate: () => migrate(mapper),
     export: () => sqlite.export(),
     clone: async (database: Uint8Array) => await open(database, config),
-    close: () => sqlite.close()
+    close: () => sqlite.close(),
   }
 
   return port

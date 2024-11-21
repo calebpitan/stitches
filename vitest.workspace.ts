@@ -1,7 +1,5 @@
 import { configDefaults, defineWorkspace } from 'vitest/config'
 
-global.self ||= {} as typeof global.self
-
 const workspace = defineWorkspace([
   {
     extends: './vitest.config.ts'

@@ -13,6 +13,7 @@ import { SQLJsDatabase } from 'drizzle-orm/sql-js'
 
 import * as schema from '../schema'
 import { fragments } from '../utils'
+import { Criteria, getCriteriaBuilder } from './criteria.builder'
 import { BaseColumns, Table, withRedacted, withUnredacted } from './utils'
 
 export enum CollectionErrno {
@@ -35,7 +36,10 @@ export class CollectionError extends Error {
 /**
  * Compute all the table keys from the given schema
  */
-export type TKeys<S extends schema.Schema> = keyof ExtractTablesWithRelations<S>
+export type TKeys<S extends schema.Schema> = Exclude<
+  keyof ExtractTablesWithRelations<S>,
+  'tagsToTasks'
+>
 
 /**
  * Retrieve the columns of a table given by `S[K]` and ensure that the columns conform
@@ -115,9 +119,15 @@ export function RepositoryAbstractFactory<
      * @param session The database session to use to create a new repository
      * @returns A new repository created with the given database session
      */
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    withSession(session: SQLJsDatabase<schema.Schema>): AbstractRepository<K, T, P> {
-      throw new Error('Unimplemented method')
+    abstract withSession(session: SQLJsDatabase<schema.Schema>): AbstractRepository<K, T, P>
+
+    /**
+     * Get the criteria builder specific to the repository
+     * @returns The criteria builder for the repository
+     */
+    getCriteriaBuilder() {
+      // @ts-expect-error
+      return getCriteriaBuilder<schema.Schema, T>(options.table)
     }
 
     /**
@@ -201,12 +211,12 @@ export function RepositoryAbstractFactory<
      *
      * @returns A list of `Entities`
      */
-    async findMany() {
+    async findMany(criteria?: Criteria) {
       const filters = withUnredacted(options.table, [])
       const entity = await this.db
         .select()
         .from(options.table)
-        .where(and(...filters))
+        .where(and(criteria?.unwrap(), ...filters))
 
       return entity
     }

@@ -19,6 +19,30 @@ export namespace record {
   export type RegFreqYearlyExprs = typeof schema.regularFrequencyYearlyExprs.$inferSelect
 }
 
+export namespace api {
+  export type RegFreqYearlyExprs = ReturnType<typeof getRegFreqYearlyExprs>
+}
+
+function getRegFreqYearlyExprs(exprs: record.RegFreqYearlyExprs) {
+  const { ordinal, variableWeekday, constantWeekday, createdAt, updatedAt, deletedAt, ...rest } =
+    exprs
+  return {
+    ...rest,
+    get on() {
+      return ordinal === null
+        ? undefined
+        : {
+            ordinal,
+            constantWeekday: constantWeekday!,
+            variableWeekday: variableWeekday!,
+          }
+    },
+    createdAt,
+    updatedAt,
+    deletedAt,
+  }
+}
+
 /**
  * Schedules repository for working with, and managing, schedules
  */
@@ -154,23 +178,10 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
       }
 
       case 'year': {
-        const { ordinal, variableWeekday, constantWeekday, ...rest } =
-          result.regular_frequency_yearly_exprs!
         return {
           ...result.regular_frequencies,
           type: result.regular_frequencies.type,
-          exprs: {
-            ...rest,
-            get on() {
-              return ordinal === null
-                ? undefined
-                : {
-                    ordinal,
-                    constantWeekday: constantWeekday!,
-                    variableWeekday: variableWeekday!,
-                  }
-            },
-          },
+          exprs: getRegFreqYearlyExprs(result.regular_frequency_yearly_exprs!),
         }
       }
 
@@ -389,6 +400,7 @@ export class SchedulesRepositoryFacade {
     const result = await this.withTransaction(async ($this) => {
       if (payload.frequency.type === 'never') {
         const schedule = await $this.schedules.createOne({
+          id: payload.id,
           taskId: payload.taskId,
           timestamp: payload.timestamp!,
           anchorTimestamp: payload.timestamp!,
@@ -398,6 +410,7 @@ export class SchedulesRepositoryFacade {
       }
 
       const schedule = await $this.schedules.createOne({
+        id: payload.id,
         taskId: payload.taskId,
         timestamp: payload.timestamp!,
         anchorTimestamp: payload.timestamp!,
@@ -527,7 +540,7 @@ export class SchedulesRepositoryFacade {
             frequency: {
               ...regularFrequency,
               type: payload.frequency.type,
-              exprs: regFreqYearlyExprs,
+              exprs: getRegFreqYearlyExprs(regFreqYearlyExprs),
             },
           }
         }

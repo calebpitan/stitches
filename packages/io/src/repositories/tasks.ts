@@ -19,4 +19,8 @@ export class TasksRepository extends RepositoryAbstractFactory('tasks', { table:
     super(db)
     this.tags = new TagsToTaskAssociation(db)
   }
+
+  withSession(session: SQLJsDatabase<schema.Schema>): TasksRepository {
+    return new TasksRepository(session)
+  }
 }

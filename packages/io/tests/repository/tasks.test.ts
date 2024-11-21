@@ -1,5 +1,4 @@
-import { sql } from 'drizzle-orm'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { StitchesIOPort, open } from '../../src/lib'
 import { CollectionError } from '../../src/repositories/factory'
@@ -12,13 +11,9 @@ describe('#TaskRepository', () => {
   const seedSize = 1000 // 10922: after which `Error: too many SQL variables`
   const database = new Uint8Array()
 
-  beforeAll(async () => {
-    port = await open(database, { wasm: false, log: false }).then((port) => (port.migrate(), port))
-  })
-
-  afterAll(() => port.close())
-
   beforeEach(async () => {
+    port = await open(database, { wasm: false, log: false }).then((port) => (port.migrate(), port))
+
     tasksRepository = new TasksRepository(port.mapper)
 
     const payloads: TaskCreatePayload[] = Array.from({ length: seedSize }).map((_, i) => ({
@@ -30,27 +25,23 @@ describe('#TaskRepository', () => {
     await tasksRepository.create(payloads)
   })
 
-  afterEach(async () => {
-    port.mapper.run(sql`
-      DELETE FROM ${port.schema.tasks};
-    `)
-  })
+  afterEach(() => port.close())
 
   it('should construct a new `TaskRepository` object', () => {
     expect(new TasksRepository(port.mapper)).toBeDefined()
   })
 
-  // describe('#withSession', () => {
-  //   it('should create a new repository with the given session', () => {
-  //     port.mapper.transaction((tx) => {
-  //       const newTasksRepository = tasksRepository.withSession(tx)
+  describe('#withSession', () => {
+    it('should create a new repository with the given session', () => {
+      port.mapper.transaction((tx) => {
+        const newTasksRepository = tasksRepository.withSession(tx)
 
-  //       expect(newTasksRepository).toBeInstanceOf(TasksRepository)
-  //       expect(newTasksRepository.db).toStrictEqual(tx)
-  //       expect(tasksRepository.db).not.toStrictEqual(tx)
-  //     })
-  //   })
-  // })
+        expect(newTasksRepository).toBeInstanceOf(TasksRepository)
+        expect(newTasksRepository.db).toStrictEqual(tx)
+        expect(tasksRepository.db).not.toStrictEqual(tx)
+      })
+    })
+  })
 
   describe('#findMany', () => {
     it('should find as many tasks', async () => {

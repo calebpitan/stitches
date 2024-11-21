@@ -1,5 +1,4 @@
-import { sql } from 'drizzle-orm'
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import { StitchesIOPort, open } from '../../src/lib'
 import { CollectionError } from '../../src/repositories/factory'
@@ -12,13 +11,9 @@ describe('#TagsRepository', () => {
   const seedSize = 1000 // 10922: after which `Error: too many SQL variables`
   const database = new Uint8Array()
 
-  beforeAll(async () => {
-    port = await open(database, { wasm: false, log: false }).then((port) => (port.migrate(), port))
-  })
-
-  afterAll(() => port.close())
-
   beforeEach(async () => {
+    port = await open(database, { wasm: false, log: false }).then((port) => (port.migrate(), port))
+
     tagsRepository = new TagsRepository(port.mapper)
 
     const payloads: TagsCreatePayload[] = Array.from({ length: seedSize }).map((_, i) => ({
@@ -29,27 +24,23 @@ describe('#TagsRepository', () => {
     await tagsRepository.create(payloads)
   })
 
-  afterEach(() => {
-    port.mapper.run(sql`
-      DELETE FROM ${port.schema.tags};
-    `)
-  })
+  afterEach(() => port.close())
 
   it('should construct a new `TagsRepository` object', () => {
     expect(new TagsRepository(port.mapper)).toBeDefined()
   })
 
-  // describe('#withSession', () => {
-  //   it('should create a new repository with the given session', () => {
-  //     port.mapper.transaction((tx) => {
-  //       const newTagsRepository = tagsRepository.withSession(tx)
+  describe('#withSession', () => {
+    it('should create a new repository with the given session', () => {
+      port.mapper.transaction((tx) => {
+        const newTagsRepository = tagsRepository.withSession(tx)
 
-  //       expect(newTagsRepository).toBeInstanceOf(TagsRepository)
-  //       expect(newTagsRepository.db).toStrictEqual(tx)
-  //       expect(tagsRepository.db).not.toStrictEqual(tx)
-  //     })
-  //   })
-  // })
+        expect(newTagsRepository).toBeInstanceOf(TagsRepository)
+        expect(newTagsRepository.db).toStrictEqual(tx)
+        expect(tagsRepository.db).not.toStrictEqual(tx)
+      })
+    })
+  })
 
   describe('#findMany', () => {
     it('should find as many tags', async () => {
