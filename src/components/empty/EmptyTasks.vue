@@ -1,15 +1,23 @@
 <script setup lang="ts">
+import { emptyTaskList } from '@/utils/assets'
+
 import VStack from '../stack/VStack.vue'
+
+type EmptyTasksEmits = {
+  emptyAction: []
+}
+
+const emit = defineEmits<EmptyTasksEmits>()
 </script>
 
 <template>
   <VStack class="s-empty" :spacing="4">
-    <span class="pi pi-list s-empty-illustration" />
+    <span class="s-empty-illustration" :style="{ '--empty-image-url': `url(${emptyTaskList})` }" />
 
     <div class="s-empty-message">
       <slot name="message">
-        <span>What would you like to do today 🤔? </span>
-        <span>Don't overthink it. Create a task now and get kicking!</span>
+        <span>What would you like to do today, tomorrow, and the day after?</span>
+        <Button label="Add a task" size="small" :fluid="true" @click="emit('emptyAction')" />
       </slot>
     </div>
   </VStack>
@@ -25,22 +33,25 @@ import VStack from '../stack/VStack.vue'
 
 .s-empty-illustration {
   font-size: 1.5rem;
-  background-color: var(--p-primary-color);
+  width: 100%;
+  height: 150px;
+  background-size: 250px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-image: var(--empty-image-url);
   color: var(--s-surface-middle);
   border-radius: 50%;
   padding: 0.75rem;
   position: relative;
-
-  &::after {
-    content: '💭';
-    position: absolute;
-    top: -0.4rem;
-  }
 }
 
 .s-empty-message {
   text-align: center;
   font-size: 0.875rem;
   color: var(--s-script-secondary);
+
+  & * + * {
+    margin-block-start: 1rem;
+  }
 }
 </style>

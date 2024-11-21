@@ -85,7 +85,7 @@ const grouped = computed<GroupedTask>(() => {
     today: [],
     get(label: Lowercase<Filters>) {
       return this[label]
-    }
+    },
   }
 })
 
@@ -103,38 +103,38 @@ const groups = computed<MeterItem[]>(() => {
       label: 'Completed',
       value: done && percent(done / total),
       color: $dt('green.500').value,
-      icon: 'pi pi-check-circle'
+      icon: 'pi pi-check-circle',
     },
     {
       label: 'Pending',
       value: pending && percent(pending / total),
       color: $dt('amber.500').value,
-      icon: 'pi pi-circle'
+      icon: 'pi pi-circle',
     },
     {
       label: 'Recent',
       value: recent && percent(recent / total),
       color: $dt('blue.500').value,
-      icon: 'pi pi-history'
+      icon: 'pi pi-history',
     },
     {
       label: 'Due',
       value: 0,
       color: $dt('zinc.500').value,
-      icon: 'pi pi-calendar-clock'
+      icon: 'pi pi-calendar-clock',
     },
     {
       label: 'Scheduled',
       value: scheduled && percent(scheduled / total),
       color: $dt('red.600').value,
-      icon: 'pi pi-clock'
+      icon: 'pi pi-clock',
     },
     {
       label: 'Today',
       value: 0,
       color: $dt('stone.950').value,
-      icon: 'pi pi-calendar'
-    }
+      icon: 'pi pi-calendar',
+    },
   ]
 })
 
@@ -170,13 +170,13 @@ watch(taskGroupBarIsOpen, (isOpen) => {
   if (isOpen) {
     return props.onGroupbarViewChange?.({
       type: 'unshifted',
-      offset: 0
+      offset: 0,
     })
   }
 
   return props.onGroupbarViewChange?.({
     type: 'shifted',
-    offset: -1 * taskGroupbarRect.width.value
+    offset: -1 * taskGroupbarRect.width.value,
   })
 })
 </script>
@@ -215,7 +215,10 @@ watch(taskGroupBarIsOpen, (isOpen) => {
           @select="selectTask"
         >
           <template #empty>
-            <EmptyTasks style="margin-block-start: 10rem">
+            <EmptyTasks
+              style="margin-block-start: 10rem"
+              @empty-action="addTask({ title: '', summary: '' })"
+            >
               <template v-if="activeSearchTerm" #message>
                 <span>No tasks matching "{{ activeSearchTerm }}"</span>
               </template>
