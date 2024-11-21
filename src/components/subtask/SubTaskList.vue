@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { range } from '@stitches/common'
-
 import { emptyTaskList } from '@/utils/assets'
 
 import List from '../list/List.vue'
@@ -24,13 +22,7 @@ const list = ref(split(props.items, 2).map((v, i) => ({ id: `${i}`, items: v }))
 function split<T>(items: Array<T>, into: number) {
   const result: T[][] = Array.from({ length: into }, () => [])
 
-  for (let j = 0; j < items.length; j += into) {
-    const cf = j - j / into // correction factor
-    for (const i of range(into - (((j + into) % items.length) % into))) {
-      // `(((j + into) % items.length) % into))` is to make sure `i + j` never passes `items.length`
-      result[i][j - cf] = items[i + j]
-    }
-  }
+  items.forEach((item, i) => result[i % into].push(item))
 
   return result
 }
