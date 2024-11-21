@@ -7,13 +7,18 @@ import EditableText from '../editable/EditableText.vue'
 import TagsInput, { type TagsInputProps } from '../editable/TagsInput.vue'
 import OverflowBox from '../overflow/OverflowBox.vue'
 
+
+type ManagementPresentationEmits = {
+  review: [id:string, patch: Partial<TaskListItem>]
+}
+
 interface MgmtPresentationProps extends Pick<TagsInputProps, 'onCreateTag'> {
   task: TaskListItem
   tags: TaskTag[]
-  onReview?: (id: string, patch: Partial<TaskListItem>) => void
 }
 
 const props = withDefaults(defineProps<MgmtPresentationProps>(), {})
+const emit = defineEmits<ManagementPresentationEmits>()
 
 const suggestions = computed(() => props.tags)
 const taskTags = computed(() => {
@@ -21,17 +26,17 @@ const taskTags = computed(() => {
 })
 
 function handleTitleModification(title: string) {
-  if (!title) return props.onReview?.(props.task.id, { title: props.task.title + ' ' })
-  props.onReview?.(props.task.id, { title })
+  if (!title) return emit('review', props.task.id, { title: props.task.title + '\u200B' })
+  emit('review', props.task.id, { title })
 }
 
 function handleSummaryModification(summary: string) {
-  props.onReview?.(props.task.id, { summary })
+   emit('review', props.task.id, { summary })
 }
 
 function handleTagsChange(tags: TaskTag[]) {
   const uniqueTagId = new Set(tags.map((t) => t.id))
-  props.onReview?.(props.task.id, { tagIds: Array.from(uniqueTagId) })
+   emit('review', props.task.id, { tagIds: Array.from(uniqueTagId) })
 }
 </script>
 
