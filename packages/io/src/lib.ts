@@ -11,7 +11,7 @@ export type StitchesIOConfig = {
   /**
    * The URL to the wasm file for the SQLite 3 WebAssembly binary.
    */
-  wasm?: URL | false
+  wasm?: URL | string | false
   log?: boolean
 }
 
@@ -61,7 +61,7 @@ export interface StitchesIOPort {
   close(): void
 }
 
-function getFileLocator(url?: URL) {
+function getFileLocator(url?: URL|string) {
   return (filename: string) => {
     return (url ?? new URL(filename, 'https://sql.js.org/dist/')).toString()
   }
