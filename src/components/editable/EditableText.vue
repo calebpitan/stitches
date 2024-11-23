@@ -22,7 +22,6 @@ interface EditableTextProps {
   placeholder?: string
   lines?: number
   multiline?: boolean
-  focusControlEl?: HTMLElement
 }
 
 const props = withDefaults(defineProps<EditableTextProps>(), {
@@ -76,7 +75,6 @@ const handleEditableBlur = (event: FocusEvent) => {
   // client area lost focus, not necessarily the editable document
   // ***************************************************************
   if (relatedTarget === null && document.activeElement === target) return
-  if (relatedTarget === props.focusControlEl) return editableText.value?.focus()
 
   editable.value = false
   editableText.value?.scrollTo({ top: 0 })
@@ -186,7 +184,7 @@ watch(editable, (isEditable) => {
     @focus="handleFocus"
     @input="handleInput"
     @paste.prevent="handlePaste"
-    @keydown.enter="handleEnterKey"
+    @keydown.enter.capture.stop="handleEnterKey"
     @dblclick.stop=""
   >
     {{ value }}

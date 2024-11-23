@@ -55,8 +55,10 @@ const activeSearchTerm = ref<string | null>(null)
 const fuse = new Fuse(taskStore.tasks, { keys: ['title', 'summary'], threshold: 0.5 })
 
 const taskGroupbarRef = ref<HTMLElement | null>(null)
+const taskControlHeaderRef = ref<HTMLElement | null>(null)
 const taskGroupBarIsOpen = ref(true)
 const taskGroupbarRect = useElementBounding(taskGroupbarRef)
+const taskControlHeaderRect = useElementBounding(taskControlHeaderRef)
 
 const maxAddedAt = computed(() => {
   return storedTasks.value
@@ -185,9 +187,12 @@ watch(taskGroupBarIsOpen, (isOpen) => {
   <div class="s-task-control">
     <div
       :class="['s-task-control-bar', { unshifted: !taskGroupBarIsOpen }]"
-      :style="{ '--s-taskgroupbar-width': `${taskGroupbarRect.width.value.toFixed(2)}px` }"
+      :style="{
+        '--s-taskgroupbar-width': `${taskGroupbarRect.width.value.toFixed(2)}px`,
+        '--s-taskcontrolheader-height': `${taskControlHeaderRect.height.value.toFixed(2)}px`,
+      }"
     >
-      <div class="s-task-control-header">
+      <div ref="taskControlHeaderRef" class="s-task-control-header">
         <SidebarControl
           class="s-task-control-sidebar-control"
           :style="{ visibility: taskGroupBarIsOpen ? 'hidden' : undefined }"
@@ -270,6 +275,7 @@ watch(taskGroupBarIsOpen, (isOpen) => {
   flex-direction: column;
   margin-inline-start: var(--s-taskgroupbar-width);
   transition: margin-inline-start var(--s-transition-timing);
+  scroll-padding-top: var(--s-taskcontrolheader-height);
 
   &.unshifted {
     margin-inline-start: 0;

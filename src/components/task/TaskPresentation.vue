@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
+
+import { useFocusTrap } from '@vueuse/integrations/useFocusTrap'
 
 import type { TaskListItem } from '@/interfaces/task'
 
@@ -17,65 +19,95 @@ interface TaskPresentationProps {
   focusable: boolean
 }
 
-const props = defineProps<TaskPresentationProps>()
+const props = withDefaults(defineProps<TaskPresentationProps>(), {})
 const emit = defineEmits<TaskPresentationEmits>()
 
 const completed = ref(props.task.completed ?? false)
+const rootElRef = ref<HTMLDivElement | null>(null)
 const titleRef = ref<InstanceType<typeof EditableText> | null>(null)
 const summaryRef = ref<InstanceType<typeof EditableText> | null>(null)
 const focusInitiator = ref<HTMLElement | null>(null)
 const blurInitiator = ref<HTMLElement | null>(null)
+const activeElementRef = ref<HTMLElement | null>(null)
+const details = reactive({ title: props.task.title, summary: props.task.summary })
+
+const { activate, deactivate } = useFocusTrap(rootElRef, {
+  initialFocus: () => rootElRef.value?.parentElement,
+  setReturnFocus: (n) => rootElRef.value?.parentElement ?? n,
+  allowOutsideClick: true,
+  clickOutsideDeactivates: true,
+  returnFocusOnDeactivate: true,
+})
+
+function focusTitleEditableText(): void {
+  return void titleRef.value?.$el.focus()
+}
+
+function titleEditableTextAcquiredFocus() {
+  return document.activeElement === titleRef.value?.$el
+}
+
+function summaryEditableTextAcquiredFocus() {
+  return document.activeElement === summaryRef.value?.$el
+}
+
+function canSaveWhenSaveCouldRevertAddItemAction(determinant: boolean) {
+  const shouldPreventSaveAction =
+    determinant && (titleEditableTextAcquiredFocus() || summaryEditableTextAcquiredFocus())
+
+  return !shouldPreventSaveAction
+}
 
 function handleTitleModification(title: string) {
-  // console.log(focusInitiator.value)
-  // console.log(blurInitiator.value)
-  {
-    const titleIsEmpty = !props.task.title
-    const atLeastOneInitiatorIsset = focusInitiator.value || blurInitiator.value
-    const initiatorReceivedFocus = focusInitiator.value === blurInitiator.value
-    const isFocusedFromOffCanvas = focusInitiator.value === null
-    const shouldPreventRevertAddItemAction =
-      titleIsEmpty && atLeastOneInitiatorIsset && (initiatorReceivedFocus || isFocusedFromOffCanvas)
-
-    if (shouldPreventRevertAddItemAction) {
-      return titleRef.value?.$el.focus()
-    }
+  if (canSaveWhenSaveCouldRevertAddItemAction(!title)) {
+    // If this task presentation comes from adding a new empty task, since
+    // EditableText only emits the `modify` event when the input loses focus
+    // and saving a task with an empty title deletes the task, then we make
+    // sure above that whenever the input loses focus to the
+    // initiator (add task button, probably), we return the focus back to the
+    // input without deleting the empty task yet and removing the inline editor
+    // from the screen.
+    details.title = title
+    return emit('review', props.task.id, details)
   }
-
-  // If this task presentation comes from adding a new empty task, since
-  // EditableText only emits the `modify` event when the input loses focus
-  // and saving a task with an empty title deletes the task, then we make
-  // sure above that whenever the input loses focus to the
-  // initiator (add task button, probably), we return the focus back to the
-  // input without deleting the empty task yet and removing the inline editor
-  // from the screen.
-  return emit('review', props.task.id, { title })
 }
 
 function handleSummaryModification(summary: string) {
-  emit('review', props.task.id, { summary })
+  if (canSaveWhenSaveCouldRevertAddItemAction(!details.title)) {
+    details.summary = summary
+    return emit('review', props.task.id, details)
+  }
 }
 
 watch(completed, (latest) => emit('toggle', props.task.id, latest))
+watch(
+  () => [props.focusable, rootElRef.value?.contains(activeElementRef.value)] as const,
+  ([focusable, focusin], _, onCleanup) => {
+    focusable && focusin && props.task.title ? activate() : deactivate()
 
-onMounted(() => {
-  // Whenever a task presentation is mounted with an empty title, focus it.
-  if (!props.task.title) {
-    titleRef.value?.$el.focus()
+    return onCleanup(() => {
+      !focusin && deactivate()
+    })
+  },
+)
+
+// Whenever a task presentation is mounted with an empty title, focus it.
+onMounted(() => void (!props.task.title && focusTitleEditableText()))
+
+{
+  const handler = () => {
+    activeElementRef.value = document.activeElement as HTMLElement | null
   }
-})
+
+  onMounted(() => document.addEventListener('focus', handler, true))
+  onUnmounted(() => document.removeEventListener('focus', handler, true))
+}
 </script>
 
 <template>
-  <div class="s-task-presentation" v-focustrap="{ disabled: !focusable }">
+  <div ref="rootElRef" class="s-task-presentation">
     <div class="s-task-controls">
-      <Checkbox
-        v-model="completed"
-        :name="task.title"
-        :aria-label="task.title"
-        :tabindex="focusable ? undefined : -1"
-        :binary="true"
-      />
+      <Checkbox v-model="completed" :name="task.title" :aria-label="task.title" :binary="true" />
     </div>
 
     <div class="s-task-contents">
@@ -87,11 +119,11 @@ onMounted(() => {
         :text="task.title"
         :multiline="false"
         @blur="blurInitiator = $event.relatedTarget"
-        @focus="focusInitiator = $event.relatedTarget"
+        @focus.once="focusInitiator = $event.relatedTarget"
         @modify="handleTitleModification"
       />
 
-      <OverflowBox :fade-color="'var(--s-surface-middle)'">
+      <OverflowBox :fade-color="'var(--s-taskitem-ground)'">
         <EditableText
           ref="summaryRef"
           class="s-task-summary"
