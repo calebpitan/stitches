@@ -3666,6 +3666,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"comlink@npm:^4.4.2":
+  version: 4.4.2
+  resolution: "comlink@npm:4.4.2"
+  checksum: 10c0/38aa1f455cf08e94aaa8fc494fd203cc0ef02ece6c21404b7931ce17567e8a72deacddab98aa5650cfd78332ff24c34610586f6fb27fd19dc77e753ed1980deb
+  languageName: node
+  linkType: hard
+
 "commander@npm:^10.0.0":
   version: 10.0.1
   resolution: "commander@npm:10.0.1"
@@ -8835,6 +8842,7 @@ __metadata:
     "@vueuse/core": "npm:^11.1.0"
     "@vueuse/integrations": "npm:^11.3.0"
     class-transformer: "npm:^0.5.1"
+    comlink: "npm:^4.4.2"
     cron-parser: "npm:^4.9.0"
     cronstrue: "npm:^2.50.0"
     cypress: "npm:^13.12.0"

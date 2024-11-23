@@ -33,6 +33,7 @@
     "@vueuse/core": "^11.1.0",
     "@vueuse/integrations": "^11.3.0",
     "class-transformer": "^0.5.1",
+    "comlink": "^4.4.2",
     "cron-parser": "^4.9.0",
     "cronstrue": "^2.50.0",
     "focus-trap": "^7.6.2",
