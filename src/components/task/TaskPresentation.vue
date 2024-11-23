@@ -117,6 +117,7 @@ onMounted(() => void (!props.task.title && focusTitleEditableText()))
         placeholder="Title"
         :key="task.title"
         :text="task.title"
+        :lines="1"
         :multiline="false"
         @blur="blurInitiator = $event.relatedTarget"
         @focus.once="focusInitiator = $event.relatedTarget"

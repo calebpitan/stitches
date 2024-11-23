@@ -221,28 +221,25 @@ onMounted(() => {
 }
 
 .s-taskitem {
-  --s-taskitem-margin-inline: calc(-0.75 * var(--s-base-padding));
+  --s-taskitem-margin: calc(-0.75 * var(--s-base-padding));
   --s-taskitem-ground: var(--s-surface-ground);
   &:focus {
     --s-taskitem-ground: var(--s-surface-elevated);
   }
 
-  /* @media (prefers-color-scheme: dark) {
-    --s-taskitem-ground: #0f0f11;
-    &:focus {
-      --s-taskitem-ground: var(--s-surface-elevated);
-    }
-  } */
-
   z-index: 1;
   display: flex;
   position: relative;
   padding: 0 0 0 1.625rem;
-  margin-inline: calc(-0.75 * var(--s-base-padding));
+  margin-inline: var(--s-taskitem-margin);
   background-color: var(--s-surface-middle);
   background-color: var(--s-taskitem-ground);
   border-radius: 10px;
-  margin-top: calc(var(--s-base-padding) + var(--s-taskitem-margin-inline));
+  margin-top: calc(var(--s-base-padding) + var(--s-taskitem-margin));
+
+  &:last-child {
+    margin-bottom: calc(var(--s-base-padding) + var(--s-taskitem-margin));
+  }
 
   &[draggable='true'] {
     background-color: var(--s-surface-middle);
@@ -283,6 +280,6 @@ onMounted(() => {
 
 .list-leave-active {
   position: absolute;
-  width: calc(100% - 2 * var(--s-taskitem-margin-inline));
+  width: calc(100% - 2 * var(--s-taskitem-margin));
 }
 </style>
