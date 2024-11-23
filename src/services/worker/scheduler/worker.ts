@@ -1,3 +1,4 @@
+/// <reference lib="webworker" />
 import * as sch from '@stitches/scheduler'
 import type { WeekdayVariable } from '@stitches/common'
 import type { TaskSchedule } from '@stitches/common'

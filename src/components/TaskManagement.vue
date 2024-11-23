@@ -6,7 +6,7 @@ import type { BaseTaskSchedule } from '@stitches/common'
 import { useTaskScheduleStore } from '@/stores/schedule'
 import { useTaskTagStore } from '@/stores/tag'
 import { useTaskStore } from '@/stores/task'
-import { SchedulerWorker } from '@/worker'
+import { SchedulerWorker } from '@/services/worker/scheduler'
 
 import MgmtPresentation from './management/MgmtPresentation.vue'
 import MgmtScheduler from './management/MgmtScheduler.vue'
