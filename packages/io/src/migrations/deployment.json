@@ -35,5 +35,14 @@
       "CREATE TABLE `schedules` (`id` text PRIMARY KEY NOT NULL,`task_id` text NOT NULL,`anchor_timestamp` integer NOT NULL,`timestamp` integer NOT NULL,`frequency_type` text,`until` integer,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON UPDATE no action ON DELETE cascade,CONSTRAINT \"no_until_without_frequency_type\" CHECK(          ((\"schedules\".\"frequency_type\" IS NULL) AND (\"schedules\".\"until\" IS NULL)) OR (\"schedules\".\"frequency_type\" IS NOT NULL)        ));",
       "CREATE UNIQUE INDEX `schedules_taskId_unique` ON `schedules` (`task_id`);"
     ]
+  },
+  {
+    "idx": 2,
+    "when": 1732478318886,
+    "tag": "0002_big_nick_fury",
+    "hash": "19ce3b7574317a4000a959612c6a3fbb505f4448115d83c3f4f078605dd5bad5",
+    "sql": [
+      "CREATE UNIQUE INDEX `tags_label_unique` ON `tags` (`label`);"
+    ]
   }
 ]

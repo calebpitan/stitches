@@ -15,6 +15,13 @@
       "when": 1731770250481,
       "tag": "0001_previous_boomer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1732478318886,
+      "tag": "0002_big_nick_fury",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX `tags_label_unique` ON `tags` (`label`);
