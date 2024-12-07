@@ -4,6 +4,10 @@ import * as schema from '../schema'
 import { TagsToTaskAssociation } from './associations'
 import { RepositoryAbstractFactory } from './factory'
 
+export namespace task {
+  export type Task = typeof schema.tasks.$inferSelect
+}
+
 export type TaskPayload = typeof schema.tasks.$inferInsert
 export type TaskCreatePayload = Omit<TaskPayload, 'updatedAt'>
 export type TaskUpdatePayload = Omit<TaskPayload, 'id' | 'createdAt'>
@@ -15,9 +19,9 @@ export class TasksRepository extends RepositoryAbstractFactory('tasks', { table:
    */
   public readonly tags: TagsToTaskAssociation<'tags'>
 
-  constructor(public readonly db: SQLJsDatabase<schema.Schema>) {
-    super(db)
-    this.tags = new TagsToTaskAssociation(db)
+  constructor(public readonly _db: SQLJsDatabase<schema.Schema>) {
+    super(_db)
+    this.tags = new TagsToTaskAssociation(_db)
   }
 
   withSession(session: SQLJsDatabase<schema.Schema>): TasksRepository {
