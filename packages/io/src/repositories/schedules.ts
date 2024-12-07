@@ -1,41 +1,64 @@
-import { TaskSchedule, never, turnon } from '@stitches/common'
+import {
+  BaseTaskSchedule,
+  BitMask,
+  Ordinals,
+  TaskSchedule,
+  WeekdayVariable,
+  FrequencyType as _FrequencyType,
+  never,
+} from '@stitches/common'
 
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
 
 import * as schema from '../schema'
+import { Op } from './criteria.builder'
 import { RepositoryAbstractFactory } from './factory'
 
-export namespace record {
-  export type Schedules = typeof schema.schedules.$inferSelect
-  export type CustomFrequencies = typeof schema.customFrequencies.$inferSelect
-  export type RegularFrequencies = typeof schema.regularFrequencies.$inferSelect
-  export type RegFreqWeeklyExprs = typeof schema.regularFrequencyWeeklyExprs.$inferSelect
-  export type RegFreqMonthlyExprs = typeof schema.regularFrequencyMonthlyExprs.$inferSelect
-  export type RegFreqMonthlyDaysSubExprs =
-    typeof schema.regularFrequencyMonthlyDaysSubExprs.$inferSelect
-  export type RegFreqMonthlyOrdinalSubExprs =
-    typeof schema.regularFrequencyMonthlyOrdinalSubExprs.$inferSelect
-  export type RegFreqYearlyExprs = typeof schema.regularFrequencyYearlyExprs.$inferSelect
+export namespace schedule {
+  export namespace models {
+    export type Schedules = typeof schema.schedules.$inferSelect
+    export type CustomFrequencies = typeof schema.customFrequencies.$inferSelect
+    export type RegularFrequencies = typeof schema.regularFrequencies.$inferSelect
+    export type RegFreqWeeklyExprs = typeof schema.regularFrequencyWeeklyExprs.$inferSelect
+    export type RegFreqMonthlyExprs = typeof schema.regularFrequencyMonthlyExprs.$inferSelect
+    export type RegFreqMonthlyDaysSubExprs =
+      typeof schema.regularFrequencyMonthlyDaysSubExprs.$inferSelect
+    export type RegFreqMonthlyOrdinalSubExprs =
+      typeof schema.regularFrequencyMonthlyOrdinalSubExprs.$inferSelect
+    export type RegFreqYearlyExprs = typeof schema.regularFrequencyYearlyExprs.$inferSelect
+  }
+
+  export type RegFreqLeftJoinedRelations = {
+    regular_frequencies: schedule.models.RegularFrequencies
+    regular_frequency_weekly_exprs: schedule.models.RegFreqWeeklyExprs | null
+    regular_frequency_monthly_exprs: schedule.models.RegFreqMonthlyExprs | null
+    regular_frequency_yearly_exprs: schedule.models.RegFreqYearlyExprs | null
+  }
+
+  export type LoadedScheduleFrequencies = {
+    custom: Array<schedule.Frequency<'custom'>>
+    regular: Array<schedule.Frequency<'regular'>>
+  }
 }
 
-export namespace api {
-  export type RegFreqYearlyExprs = ReturnType<typeof getRegFreqYearlyExprs>
-}
-
-function getRegFreqYearlyExprs(exprs: record.RegFreqYearlyExprs) {
+function getRegFreqYearlyExprs(
+  exprs: schedule.models.RegFreqYearlyExprs,
+): schedule.YearlyExpression {
   const { ordinal, variableWeekday, constantWeekday, createdAt, updatedAt, deletedAt, ...rest } =
     exprs
   return {
     ...rest,
     get on() {
-      return ordinal === null
-        ? undefined
-        : {
-            ordinal,
-            constantWeekday: constantWeekday!,
-            variableWeekday: variableWeekday!,
-          }
+      if (ordinal === null) return
+      return {
+        ordinal,
+        weekday: constantWeekday
+          ? { constant: constantWeekday }
+          : variableWeekday
+            ? { variable: variableWeekday }
+            : never(never.never),
+      }
     },
     createdAt,
     updatedAt,
@@ -56,64 +79,17 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
    * @returns A new repository created with the given database session
    */
   override withSession(session: SQLJsDatabase<schema.Schema>): SchedulesRepository {
-    return new SchedulesRepository(session)
+    return super.withSession(session) as SchedulesRepository
   }
 
-  /**
-   * Load the frequencies relations for a schedule either fully or partially.
-   *
-   * In the case of custom frequencies, the relations are loaded fully and limited to just three
-   * records, sicne custom frequencies only permits a maximum of three expressions.
-   *
-   * In the case of regular frequencies, the relations are fully loaded for all expressions except
-   * for monthly expressions, which have subexpressions (ordinal or onthe, and days or ondays) that
-   * are lazy loaded synchronously at the point of property access.
-   *
-   * @param schedule The schedule to load all "essential" frequency relations for
-   * @returns The fully loaded "custom frequencies" or fully or partially loaded "regular frequencies" relation
-   */
-  async load(schedule: Awaited<ReturnType<typeof this.findById>>) {
-    const filters = [eq(schema.customFrequencies.scheduleId, schedule.id)]
+  override async only(id: string): Promise<schedule.models.Schedules> {
+    return await super.only(id)
+  }
 
-    if (schedule.frequencyType === 'custom') {
-      const result = await this.db
-        .select()
-        .from(schema.customFrequencies)
-        .where(and(...filters))
-        .limit(3)
-
-      return result
-    }
-
-    const [result] = await this.db
-      .select()
-      .from(schema.regularFrequencies)
-      .where(and(...filters))
-      .leftJoin(
-        schema.regularFrequencyWeeklyExprs,
-        and(
-          eq(schema.regularFrequencyWeeklyExprs.regularFrequencyId, schema.regularFrequencies.id),
-          eq(schema.regularFrequencies.type, 'week'),
-        ),
-      )
-      .leftJoin(
-        schema.regularFrequencyMonthlyExprs,
-        and(
-          eq(schema.regularFrequencyMonthlyExprs.regularFrequencyId, schema.regularFrequencies.id),
-          eq(schema.regularFrequencies.type, 'month'),
-        ),
-      )
-      .leftJoin(
-        schema.regularFrequencyYearlyExprs,
-        and(
-          eq(schema.regularFrequencyYearlyExprs.regularFrequencyId, schema.regularFrequencies.id),
-          eq(schema.regularFrequencies.type, 'year'),
-        ),
-      )
-
+  private resolve(result: schedule.RegFreqLeftJoinedRelations): schedule.Frequency<'regular'> {
     switch (result.regular_frequencies.type) {
-      case 'day':
-      case 'hour': {
+      case 'hour':
+      case 'day': {
         return {
           ...result.regular_frequencies,
           type: result.regular_frequencies.type,
@@ -129,7 +105,7 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
       }
 
       case 'month': {
-        const db = this.db
+        const db = this._db
         const { id, type, ...rest } = result.regular_frequency_monthly_exprs!
 
         switch (type) {
@@ -147,7 +123,7 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
                     .select()
                     .from(model)
                     .where(eq(model.regularFrequencyMonthlyExprId, id))
-                    .get()
+                    .get()!
                 },
               },
             }
@@ -167,7 +143,7 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
                     .select()
                     .from(model)
                     .where(eq(model.regularFrequencyMonthlyExprId, id))
-                    .get()
+                    .get()!
                 },
               },
             }
@@ -188,6 +164,87 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
       default:
         never(result.regular_frequencies.type)
     }
+  }
+
+  /**
+   * Load the frequencies relations for a schedule either fully or partially.
+   *
+   * In the case of custom frequencies, the relations are loaded fully and limited to just three
+   * records, sicne custom frequencies only permits a maximum of three expressions.
+   *
+   * In the case of regular frequencies, the relations are fully loaded for all expressions except
+   * for monthly expressions, which have subexpressions (ordinal or onthe, and days or ondays) that
+   * are lazy loaded synchronously at the point of property access.
+   *
+   * @param schedule The schedule to load all "essential" frequency relations for
+   * @returns The fully loaded "custom frequencies" or fully or partially loaded "regular frequencies" relation
+   */
+  async load(schedules: schedule.models.Schedules[]): Promise<schedule.LoadedScheduleFrequencies> {
+    const output: schedule.LoadedScheduleFrequencies = { custom: [], regular: [] }
+
+    const customSchedules = schedules.filter(
+      (s) => s.frequencyType === 'custom',
+    ) as schedule.Schedule<'custom'>[]
+    const regularSchedule = schedules.filter(
+      (s) => s.frequencyType === 'regular',
+    ) as schedule.Schedule<'regular'>[]
+
+    {
+      const filters = [
+        inArray(
+          schema.customFrequencies.scheduleId,
+          customSchedules.map((s) => s.id),
+        ),
+      ]
+
+      const results = await this._db
+        .select()
+        .from(schema.customFrequencies)
+        .where(and(...filters))
+      output.custom.push(...results)
+    }
+
+    {
+      const filters = [
+        inArray(
+          schema.regularFrequencies.scheduleId,
+          regularSchedule.map((s) => s.id),
+        ),
+      ]
+
+      const results = await this._db
+        .select()
+        .from(schema.regularFrequencies)
+        .where(and(...filters))
+        .leftJoin(
+          schema.regularFrequencyWeeklyExprs,
+          and(
+            eq(schema.regularFrequencyWeeklyExprs.regularFrequencyId, schema.regularFrequencies.id),
+            eq(schema.regularFrequencies.type, 'week'),
+          ),
+        )
+        .leftJoin(
+          schema.regularFrequencyMonthlyExprs,
+          and(
+            eq(
+              schema.regularFrequencyMonthlyExprs.regularFrequencyId,
+              schema.regularFrequencies.id,
+            ),
+            eq(schema.regularFrequencies.type, 'month'),
+          ),
+        )
+        .leftJoin(
+          schema.regularFrequencyYearlyExprs,
+          and(
+            eq(schema.regularFrequencyYearlyExprs.regularFrequencyId, schema.regularFrequencies.id),
+            eq(schema.regularFrequencies.type, 'year'),
+          ),
+        )
+
+      output.regular.push(...results.map((result) => this.resolve(result)))
+    }
+
+    return output
   }
 }
 
@@ -386,8 +443,13 @@ export class SchedulesRepositoryFacade {
    * @throws CollectionError: When the schedule with the given ID is not found
    * @returns The Schedule matching the provided ID, otherwise throws
    */
-  async findById(id: string) {
-    return await this.schedules.findById(id)
+  async only(id: string) {
+    const schedule = await this.schedules.only(id)
+    const [loaded] = (await this.load([schedule])) as [schedule.ScheduleUnion | undefined]
+    // This should never happen, instead `await this.schedules.only(id)` should throw a
+    // `CollectionError`
+    if (!loaded) return never(loaded as never)
+    return loaded
   }
 
   /**
@@ -396,30 +458,32 @@ export class SchedulesRepositoryFacade {
    * @param payload The task schedule to add to the collection
    * @returns The resulting schedule that was added to the collection
    */
-  async add(payload: TaskSchedule) {
-    const result = await this.withTransaction(async ($this) => {
+  async add(payload: BaseTaskSchedule | TaskSchedule): Promise<schedule.ScheduleUnion> {
+    const result = await this.withTransaction(async ($this): Promise<schedule.ScheduleUnion> => {
       if (payload.frequency.type === 'never') {
         const schedule = await $this.schedules.createOne({
-          id: payload.id,
+          id: 'id' in payload ? payload.id : undefined,
           taskId: payload.taskId,
-          timestamp: payload.timestamp!,
-          anchorTimestamp: payload.timestamp!,
+          timestamp: payload.timing.upcoming,
+          anchorTimestamp: payload.timing.anchor,
         })
 
-        return { ...schedule, frequencyType: null }
+        const output: schedule.DefaultSchedule = schedule
+
+        return output
       }
 
       const schedule = await $this.schedules.createOne({
-        id: payload.id,
+        id: 'id' in payload ? payload.id : undefined,
         taskId: payload.taskId,
-        timestamp: payload.timestamp!,
-        anchorTimestamp: payload.timestamp!,
+        timestamp: payload.timing.upcoming,
+        anchorTimestamp: payload.timing.anchor,
         frequencyType: payload.frequency.type === 'custom' ? 'custom' : 'regular',
         until: payload.frequency.until,
       })
 
       if (payload.frequency.type === 'custom') {
-        const customFrequency = await $this.customFrequencies.createMany(
+        const customFrequencies = await $this.customFrequencies.createMany(
           payload.frequency.crons.map((cron) => {
             return {
               scheduleId: schedule.id,
@@ -429,11 +493,13 @@ export class SchedulesRepositoryFacade {
           }),
         )
 
-        return {
+        const output: schedule.Schedule<'custom'> = {
           ...schedule,
           frequencyType: payload.frequency.type,
-          frequency: customFrequency,
+          frequency: customFrequencies,
         }
+
+        return output
       }
 
       const regularFrequency = await $this.regularFrequencies.createOne({
@@ -442,12 +508,14 @@ export class SchedulesRepositoryFacade {
         every: payload.frequency.exprs.every,
       })
 
+      const frequencyType = 'regular' as const
+
       switch (payload.frequency.type) {
         case 'hour':
         case 'day': {
           return {
             ...schedule,
-            frequencyType: payload.frequency.type,
+            frequencyType,
             frequency: {
               ...regularFrequency,
               type: payload.frequency.type,
@@ -459,12 +527,12 @@ export class SchedulesRepositoryFacade {
           const { weekdays } = payload.frequency.exprs.subexpr
           const regularFrequencyWeeklyExprs = await $this.regFreqWeeklyExprs.createOne({
             regularFrequencyId: regularFrequency.id,
-            weekdays: weekdays.reduce((bits, bitIndex) => turnon(bits, bitIndex), 0),
+            weekdays: BitMask.fromPositions(weekdays).valueOf(),
           })
 
           return {
             ...schedule,
-            frequencyType: payload.frequency.type,
+            frequencyType,
             frequency: {
               ...regularFrequency,
               type: payload.frequency.type,
@@ -483,12 +551,12 @@ export class SchedulesRepositoryFacade {
           if (subexpr.type === 'ondays') {
             const regFreqMonthlyDaysSubExprs = await $this.regFreqMonthlyDaysSubExprs.createOne({
               regularFrequencyMonthlyExprId: regFreqMonthlyExprs.id,
-              days: subexpr.days.reduce((bits, bitIndex) => turnon(bits, bitIndex), 0),
+              days: BitMask.fromPositions(subexpr.days).valueOf(),
             })
 
             return {
               ...schedule,
-              frequencyType: payload.frequency.type,
+              frequencyType,
               frequency: {
                 ...regularFrequency,
                 type: payload.frequency.type,
@@ -511,7 +579,7 @@ export class SchedulesRepositoryFacade {
 
           return {
             ...schedule,
-            frequencyType: payload.frequency.type,
+            frequencyType,
             frequency: {
               ...regularFrequency,
               type: payload.frequency.type,
@@ -528,7 +596,7 @@ export class SchedulesRepositoryFacade {
           const { subexpr } = payload.frequency.exprs
           const regFreqYearlyExprs = await $this.regFreqYearlyExprs.createOne({
             regularFrequencyId: regularFrequency.id,
-            months: subexpr.in.months.reduce((bits, bitIndex) => turnon(bits, bitIndex), 0),
+            months: BitMask.fromPositions(subexpr.in.months).valueOf(),
             ordinal: subexpr.on?.ordinal,
             constantWeekday: subexpr.on?.weekday,
             variableWeekday: subexpr.on?.variable,
@@ -536,7 +604,7 @@ export class SchedulesRepositoryFacade {
 
           return {
             ...schedule,
-            frequencyType: payload.frequency.type,
+            frequencyType,
             frequency: {
               ...regularFrequency,
               type: payload.frequency.type,
@@ -563,32 +631,211 @@ export class SchedulesRepositoryFacade {
    * for monthly expressions, which have subexpressions (ordinal or onthe, and days or ondays) that
    * are lazy loaded synchronously at the point of property access.
    *
-   * @param schedule The schedule to load all "essential" frequency relations for
+   * @param schedules The schedule to load all "essential" frequency relations for
    * @returns The schedule with the fully loaded "custom frequencies" or fully or partially loaded "regular frequencies" relation
    */
-  async load(schedule: Awaited<ReturnType<typeof this.findById>>) {
-    const frequency = await this.schedules.load(schedule)
+  async load(schedules: schedule.models.Schedules[]): Promise<schedule.ScheduleUnion[]> {
+    const output: Array<schedule.ScheduleUnion> = []
+    const frequency = await this.schedules.load(schedules)
+    const customFreqGroupedByScheduleID: Map<string, schedule.Frequency<'custom'>[]> = new Map()
+    const schedulesIndexedByID: Map<string, schedule.models.Schedules> = new Map(
+      schedules
+        .filter((s) => {
+          return s.frequencyType !== null
+        })
+        .map((s) => [s.id, s]),
+    )
 
-    if (schedule.frequencyType === null) {
-      return {
-        ...schedule,
-        frequencyType: schedule.frequencyType,
-        frequency: null,
-      }
+    // Since custom frequencies has a many-to-one relationship with schedule, we
+    // group similar custom frequencies togther using `scheduleId` as aggregation key
+    {
+      frequency.custom.forEach((f) => {
+        const value = customFreqGroupedByScheduleID.get(f.scheduleId)
+        if (value && Array.isArray(value)) {
+          return void value.push(f) // by mut ref
+        }
+        return void customFreqGroupedByScheduleID.set(f.scheduleId, [f])
+      })
     }
 
-    if (schedule.frequencyType === 'custom') {
-      return {
-        ...schedule,
-        frequencyType: schedule.frequencyType,
-        frequency: Array.isArray(frequency) ? frequency : never(never.never),
-      }
+    // proecess each frequency type in serial and concat them with the output array
+    {
+      output.push(
+        ...(schedules.filter((s) => {
+          return s.frequencyType === null
+        }) as schedule.DefaultSchedule[]),
+      )
+
+      output.push(
+        ...frequency.custom.map((f): schedule.Schedule<'custom'> => {
+          const schedule = schedulesIndexedByID.get(f.scheduleId)!
+          return {
+            ...schedule,
+            frequencyType: 'custom',
+            frequency: customFreqGroupedByScheduleID.get(f.scheduleId)!,
+          }
+        }),
+      )
+
+      output.push(
+        ...frequency.regular.map((f): schedule.Schedule<'regular'> => {
+          const schedule = schedulesIndexedByID.get(f.scheduleId)!
+          return {
+            ...schedule,
+            frequencyType: 'regular',
+            frequency: f,
+          }
+        }),
+      )
     }
 
-    return {
-      ...schedule,
-      frequencyType: schedule.frequencyType,
-      frequency: Array.isArray(frequency) ? never(never.never) : frequency,
-    }
+    return output
   }
+
+  /**
+   * Replace a schedule with a new task schedule by removing the previous one,
+   * if any, and putting a new one in it's place.
+   *
+   * @param substitute The new task schedule to use to substitute the old one
+   * @returns The substituted schedule
+   */
+  async replace(substitute: BaseTaskSchedule | TaskSchedule) {
+    return await this.withTransaction(async (session) => {
+      if ('id' in substitute)
+        await session.schedules
+          .delete(substitute.id)
+          .catch((e) => console.error(`No existing schedule. Creating a schedule: %o`, e))
+      return await session.add(substitute)
+    })
+  }
+
+  /**
+   * Remove a schedule and all its associated objects
+   * @param id The ID of the schedule to remove
+   */
+  async remove(id: string) {
+    await this.schedules.delete(id)
+  }
+
+  async getScheduleFrequency(
+    scheduleId: string,
+  ): Promise<Record<
+    'frequency',
+    schedule.models.CustomFrequencies[] | schedule.models.RegularFrequencies
+  > | null> {
+    const customFreqCriteria = this.customFrequencies
+      .getCriteriaBuilder()
+      .on('scheduleId', Op.EQ, scheduleId)
+      .build()
+    const regularFreqCriteria = this.customFrequencies
+      .getCriteriaBuilder()
+      .on('scheduleId', Op.EQ, scheduleId)
+      .build()
+
+    const [customFreqs, regularFreqs] = await Promise.all([
+      this.customFrequencies.all(customFreqCriteria),
+      this.regularFrequencies.all(regularFreqCriteria),
+    ])
+
+    if (customFreqs.length > 0) return { frequency: customFreqs }
+    else if (regularFreqs.length === 1) return { frequency: regularFreqs[0] }
+    return null
+  }
+}
+
+export namespace schedule {
+  export interface Base {
+    id: string
+    createdAt: Date
+    updatedAt: Date
+    deletedAt: Date | null
+  }
+
+  export interface BaseExpression extends Base {
+    regularFrequencyId: string
+  }
+
+  export interface BaseFrequency extends Base {
+    scheduleId: string
+  }
+
+  export interface BaseSchedule extends Base {
+    taskId: string
+    timestamp: Date
+    anchorTimestamp: Date
+    until: Date | null
+  }
+}
+
+export namespace schedule {
+  export type Expression<U extends FrequencyUnit, T = null> = T extends null
+    ? { type: U; every: number }
+    : { type: U; every: number; exprs: T }
+
+  export type SubExpression<T extends 'onthe' | 'ondays', S> = { type: T; subexpr: S }
+}
+
+export namespace schedule {
+  export interface MonthlyOrdSubExpression extends Base {
+    regularFrequencyMonthlyExprId: string
+    ordinal: Ordinals
+    weekday: number
+  }
+
+  export interface MonthlyDaysSubExpression extends Base {
+    regularFrequencyMonthlyExprId: string
+    days: number
+  }
+
+  export type YearlyOnExpression = {
+    ordinal: Ordinals
+    weekday: Record<'constant', number> | Record<'variable', WeekdayVariable>
+  }
+}
+
+export namespace schedule {
+  type FrequencyMap = { custom: CustomFrequency; regular: RegularFrequency }
+  export type FrequencyType = 'custom' | 'regular'
+  export type FrequencyUnit = Exclude<_FrequencyType, 'custom' | 'never'>
+
+  export interface WeeklyExpression extends BaseExpression {
+    weekdays: number
+  }
+
+  export type MonthlyExpression = BaseExpression &
+    (
+      | SubExpression<'ondays', MonthlyDaysSubExpression>
+      | SubExpression<'onthe', MonthlyOrdSubExpression>
+    )
+
+  export interface YearlyExpression extends BaseExpression {
+    months: number
+    on?: YearlyOnExpression
+  }
+
+  export type Frequency<F extends FrequencyType> = FrequencyMap[F]
+
+  export interface CustomFrequency extends BaseFrequency {
+    expression: string
+    // TODO: rename "type" to "unit"
+    type: FrequencyUnit | null
+  }
+
+  export type RegularFrequency = BaseFrequency &
+    (
+      | Expression<'hour' | 'day'>
+      | Expression<'week', WeeklyExpression>
+      | Expression<'month', MonthlyExpression>
+      | Expression<'year', YearlyExpression>
+    )
+
+  export type DefaultSchedule = BaseSchedule
+  export interface Schedule<F extends FrequencyType> extends BaseSchedule {
+    frequencyType: F
+    frequency: F extends 'custom'
+      ? Frequency<Extract<F, 'custom'>>[]
+      : Frequency<Extract<F, 'regular'>>
+  }
+
+  export type ScheduleUnion = DefaultSchedule | Schedule<'custom'> | Schedule<'regular'>
 }
