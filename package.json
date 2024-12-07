@@ -24,6 +24,7 @@
     "svgo:images": "yarn svgo -f ./src/assets/illustrations"
   },
   "dependencies": {
+    "@pinia/colada": "^0.12.1",
     "@primevue/themes": "^4.0.7",
     "@stitches/common": "workspaces:*",
     "@stitches/io": "workspaces:*",

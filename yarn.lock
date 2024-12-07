@@ -1724,6 +1724,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@pinia/colada@npm:^0.12.1":
+  version: 0.12.1
+  resolution: "@pinia/colada@npm:0.12.1"
+  checksum: 10c0/d6a681d9eba5e5e39bd84878883ec9a9e0434d7ac2f21b00c3fb750dc1960ec8ddf0eb0418842c13ccfae17b581ed3a34faa8184a7e5ea00fbecce6eec27a6bc
+  languageName: node
+  linkType: hard
+
 "@pkgjs/parseargs@npm:^0.11.0":
   version: 0.11.0
   resolution: "@pkgjs/parseargs@npm:0.11.0"
@@ -1997,8 +2004,10 @@ __metadata:
   resolution: "@stitches/common@workspace:packages/common"
   dependencies:
     "@types/lodash.camelcase": "npm:^4"
+    "@types/lodash.clonedeep": "npm:^4"
     "@types/lodash.startcase": "npm:^4"
     lodash.camelcase: "npm:^4.3.0"
+    lodash.clonedeep: "npm:^4.5.0"
     lodash.startcase: "npm:^4.4.0"
     typescript: "npm:^5.6.3"
   languageName: unknown
@@ -2232,6 +2241,15 @@ __metadata:
   dependencies:
     "@types/lodash": "npm:*"
   checksum: 10c0/d6c42c800624b75b079ff7862d258d7c8236837f8485a4fe9f92e5e7d3e9ccaef2eb202e24e8f04d209ad5573c85edc7871d0cecc831454a501d594b11f1311b
+  languageName: node
+  linkType: hard
+
+"@types/lodash.clonedeep@npm:^4":
+  version: 4.5.9
+  resolution: "@types/lodash.clonedeep@npm:4.5.9"
+  dependencies:
+    "@types/lodash": "npm:*"
+  checksum: 10c0/2f224ce9578046bccd1cd9594fb73540600ebd3d59a45695166a6123e2c376b84ab106b005a00453f357907f25bc8bfd2271b822be76e8f5527eadb4690b5e96
   languageName: node
   linkType: hard
 
@@ -6600,6 +6618,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.clonedeep@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "lodash.clonedeep@npm:4.5.0"
+  checksum: 10c0/2caf0e4808f319d761d2939ee0642fa6867a4bbf2cfce43276698828380756b99d4c4fa226d881655e6ac298dd453fe12a5ec8ba49861777759494c534936985
+  languageName: node
+  linkType: hard
+
 "lodash.merge@npm:^4.6.2":
   version: 4.6.2
   resolution: "lodash.merge@npm:4.6.2"
@@ -8819,6 +8844,7 @@ __metadata:
   resolution: "stitches@workspace:."
   dependencies:
     "@csstools/postcss-global-data": "npm:^3.0.0"
+    "@pinia/colada": "npm:^0.12.1"
     "@primevue/auto-import-resolver": "npm:^4.0.7"
     "@primevue/themes": "npm:^4.0.7"
     "@rushstack/eslint-patch": "npm:^1.8.0"
