@@ -1,4 +1,4 @@
-import { entries, never, pascalCase } from '@stitches/common'
+import { Constructor, entries, never, pascalCase } from '@stitches/common'
 
 import {
   ExtractTablesWithRelations,
@@ -8,6 +8,7 @@ import {
   getTableName,
   isNotNull,
   isNull,
+  sql,
 } from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
 
@@ -110,8 +111,19 @@ export function RepositoryAbstractFactory<
 >(_: K, options: RepositoryFactoryOptions<K, T>) {
   const identifier = pascalCase(getTableName(options.table)).concat('AbstractRepository')
 
+  type Ref = {
+    concreteCtor: Constructor<AbstractRepository<K, T, P> | Repository>
+  }
+
+  const ref: Ref = {
+    concreteCtor: undefined!,
+  }
+
   abstract class Repository {
-    constructor(public readonly db: SQLJsDatabase<schema.Schema>) {}
+    constructor(public readonly _db: SQLJsDatabase<schema.Schema>) {
+      // save the subclass or subclass constructor or concrete implementation of the `AbstractRepository<K, T, P>`
+      ref.concreteCtor = new.target
+    }
 
     /**
      * Create a new repository with the given database session
@@ -119,13 +131,17 @@ export function RepositoryAbstractFactory<
      * @param session The database session to use to create a new repository
      * @returns A new repository created with the given database session
      */
-    abstract withSession(session: SQLJsDatabase<schema.Schema>): AbstractRepository<K, T, P>
+    withSession(session: SQLJsDatabase<schema.Schema>): AbstractRepository<K, T, P> {
+      return Reflect.construct(ref.concreteCtor, [session])
+    }
 
     /**
      * Get the criteria builder specific to the repository
      * @returns The criteria builder for the repository
      */
     getCriteriaBuilder() {
+      // should always generate on the fly to return a new instance, as `CriteriaBuilder`
+      // is mutable and multiple queries on the same repo running in parallel may corrupt state.
       // @ts-expect-error
       return getCriteriaBuilder<schema.Schema, T>(options.table)
     }
@@ -156,7 +172,7 @@ export function RepositoryAbstractFactory<
       const transformer = options.transforms?.create
       const data = typeof transformer !== 'undefined' ? transformer(payload) : payload
 
-      const result = await this.db
+      const result = await this._db
         .insert(options.table)
         .values(data as any)
         .returning()
@@ -175,12 +191,21 @@ export function RepositoryAbstractFactory<
       const transformer = options.transforms?.create
       const data = typeof transformer !== 'undefined' ? payload.map(transformer) : payload
 
-      const result = await this.db
+      const result = await this._db
         .insert(options.table)
         .values(data as any)
         .returning()
 
       return result ? result : never(never.never)
+    }
+
+    exists(criteria: Criteria) {
+      const result = this._db.get<{ exists: 1 | 0 }>(
+        sql`
+          SELECT EXISTS (SELECT 1 FROM ${options.table} WHERE ${criteria.unwrap()}) AS "exists"
+        `,
+      )
+      return result.exists === 0 ? false : result.exists === 1 ? true : never(result.exists)
     }
 
     /**
@@ -193,9 +218,9 @@ export function RepositoryAbstractFactory<
      * @throws {CollectionError} When the entity with the given ID is not found
      * @returns The `Entity` matching the provided ID, otherwise throws
      */
-    async findById(id: string) {
+    async only(id: string) {
       const filters = withUnredacted(options.table, [eq(options.table.id, id)])
-      const result = await this.db
+      const result = await this._db
         .select()
         .from(options.table)
         .where(and(...filters))
@@ -211,9 +236,9 @@ export function RepositoryAbstractFactory<
      *
      * @returns A list of `Entities`
      */
-    async findMany(criteria?: Criteria) {
+    async all(criteria?: Criteria) {
       const filters = withUnredacted(options.table, [])
-      const entity = await this.db
+      const entity = await this._db
         .select()
         .from(options.table)
         .where(and(criteria?.unwrap(), ...filters))
@@ -233,7 +258,7 @@ export function RepositoryAbstractFactory<
      */
     async findRedactedById(id: string) {
       const filters = withRedacted(options.table, [eq(options.table.id, id)])
-      const result = await this.db
+      const result = await this._db
         .select()
         .from(options.table)
         .where(and(...filters))
@@ -251,7 +276,7 @@ export function RepositoryAbstractFactory<
      */
     async findRedacted() {
       const filters = withRedacted(options.table, [])
-      const result = await this.db
+      const result = await this._db
         .select()
         .from(options.table)
         .where(and(...filters))
@@ -276,7 +301,7 @@ export function RepositoryAbstractFactory<
 
       const filters = withUnredacted(options.table, [eq(options.table.id, id)])
 
-      const result = await this.db
+      const result = await this._db
         .update(options.table)
         .set(data as {})
         .where(and(...filters))
@@ -304,7 +329,7 @@ export function RepositoryAbstractFactory<
      */
     async redact(id: string) {
       const filters = [eq(options.table.id, id), isNull(options.table.deletedAt)]
-      const result = await this.db
+      const result = await this._db
         .update(options.table)
         .set({ deletedAt: fragments.now } as any)
         .where(and(...filters))
@@ -332,7 +357,7 @@ export function RepositoryAbstractFactory<
      */
     async restore(id: string) {
       const filters = [eq(options.table.id, id), isNotNull(options.table.deletedAt)]
-      const result = await this.db
+      const result = await this._db
         .update(options.table)
         .set({ deletedAt: null } as any)
         .where(and(...filters))
@@ -358,7 +383,7 @@ export function RepositoryAbstractFactory<
      */
     async delete(id: string) {
       const filters = [eq(options.table.id, id)]
-      const result = await this.db
+      const result = await this._db
         .delete(options.table)
         .where(and(...filters))
         .returning()
