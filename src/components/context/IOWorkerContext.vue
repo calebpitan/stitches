@@ -24,7 +24,7 @@ if (!ioWorkerRef.value || (await ioWorkerRef.value.isConnected) === false) {
 
   cursorReq.addEventListener('success', (event) => {
     const cursor = (event.target as typeof cursorReq).result
-    if (!cursor) return
+    if (!cursor) return sqliteDbResolvers.reject(new Error('No local connections'))
     if (!cursor.value) {
       const msg = `No existing local SQLite 3 database for "${CONNECTION_NAME}"`
       sqliteDbResolvers.reject(new Error(msg))
