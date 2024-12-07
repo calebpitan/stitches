@@ -4,6 +4,7 @@ import { onMounted, reactive, ref, watch } from 'vue'
 import Draggable from 'vuedraggable'
 
 import { type TaskListItem } from '@/interfaces/task'
+import type { Patch } from '@/services/types'
 
 import IconDragHandle from '../icons/IconDragHandle.vue'
 import TaskPresentation from './TaskPresentation.vue'
@@ -13,7 +14,7 @@ type DraggableItem = { element: TaskListItem; index: number }
 type TaskListEmits = {
   toggle: [id: string]
   delete: [id: string]
-  review: [id: string, review: Record<string, any>]
+  review: [review: Patch<Record<string, any>>]
   select: [id: string]
 }
 
@@ -53,8 +54,8 @@ function getActiveListItem() {
 function focusActiveListItem() {
   const list = getList()
   const activeListItem = getActiveListItem()
-  activeListItem?.focus({ preventScroll: true })
-  activeListItem?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  activeListItem?.focus()
+  // activeListItem?.scrollIntoView({ behavior: 'smooth', block: 'center' })
 
   if (!activeListItem) {
     setTimeout(() => {
@@ -175,7 +176,7 @@ onMounted(() => {
           <TaskPresentation
             :task="element"
             :focusable="element.id === active.id"
-            @review="(id, patch) => emit('review', id, patch)"
+            @review="emit('review', $event)"
             @toggle="emit('toggle', $event)"
             @delete="emit('delete', $event)"
           />

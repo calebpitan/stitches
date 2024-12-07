@@ -1,42 +1,34 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-
 import type { TaskListItem, TaskTag } from '@/interfaces/task'
+import type { Patch } from '@/services/types'
 
 import EditableText from '../editable/EditableText.vue'
-import TagsInput, { type TagsInputProps } from '../editable/TagsInput.vue'
+import TagsInput from '../editable/TagsInput.vue'
 import OverflowBox from '../overflow/OverflowBox.vue'
 
-
 type ManagementPresentationEmits = {
-  review: [id:string, patch: Partial<TaskListItem>]
+  review: [patch: Patch<Partial<TaskListItem>>]
+  addTag: [tag: TaskTag | Pick<TaskTag, 'label'>]
+  removeTag: [tag: TaskTag | Pick<TaskTag, 'label'>]
 }
 
-interface MgmtPresentationProps extends Pick<TagsInputProps, 'onCreateTag'> {
+interface MgmtPresentationProps {
   task: TaskListItem
   tags: TaskTag[]
+  suggestions: TaskTag[]
 }
 
 const props = withDefaults(defineProps<MgmtPresentationProps>(), {})
 const emit = defineEmits<ManagementPresentationEmits>()
 
-const suggestions = computed(() => props.tags)
-const taskTags = computed(() => {
-  return props.tags.filter((t) => props.task.tagIds?.includes(t.id))
-})
-
 function handleTitleModification(title: string) {
-  if (!title) return emit('review', props.task.id, { title: props.task.title + '\u200B' })
-  emit('review', props.task.id, { title })
+  if (!title)
+    return emit('review', { id: props.task.id, data: { title: props.task.title + '\u200B' } })
+  emit('review', { id: props.task.id, data: { title } })
 }
 
 function handleSummaryModification(summary: string) {
-   emit('review', props.task.id, { summary })
-}
-
-function handleTagsChange(tags: TaskTag[]) {
-  const uniqueTagId = new Set(tags.map((t) => t.id))
-   emit('review', props.task.id, { tagIds: Array.from(uniqueTagId) })
+  emit('review', { id: props.task.id, data: { summary } })
 }
 </script>
 
@@ -56,10 +48,11 @@ function handleTagsChange(tags: TaskTag[]) {
 
       <template #subtitle>
         <TagsInput
-          :initial-tags="taskTags"
+          :tags="tags"
           :suggestions="suggestions"
-          @change="handleTagsChange"
-          @create-tag="onCreateTag"
+          @create="emit('addTag', { label: $event })"
+          @add="emit('addTag', $event)"
+          @remove="emit('removeTag', $event)"
         />
       </template>
 

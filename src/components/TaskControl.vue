@@ -7,12 +7,20 @@ import { useElementBounding } from '@vueuse/core'
 import Fuse from 'fuse.js'
 import type { MeterItem } from 'primevue/metergroup'
 
-import type { TaskListItem } from '@/interfaces/task'
-import { useTaskScheduleStore } from '@/stores/schedule'
+import type { BaseTaskListItem, TaskListItem } from '@/interfaces/task'
+import {
+  useAddTask,
+  useRedactTask,
+  useReviewTask,
+  useTasksQuery,
+  useTasksSchedulesQuery,
+} from '@/services/task'
+import type { Patch } from '@/services/types'
 import { useTaskStore } from '@/stores/task'
 import { evaluate } from '@/utils'
 
 import SidebarControl from './bars/SidebarControl.vue'
+import Dynamic from './dynamic/Dynamic.vue'
 import EmptyTasks from './empty/EmptyTasks.vue'
 import TaskGroup from './task/TaskGroup.vue'
 import TaskHeader from './task/TaskHeader.vue'
@@ -43,16 +51,22 @@ interface TaskControlProps {
 
 const props = withDefaults(defineProps<TaskControlProps>(), {})
 
+const tasksQuery = useTasksQuery()
+const tasksSchedulesQuery = useTasksSchedulesQuery()
+const createTaskMutation = useAddTask()
+const updateTaskMutation = useReviewTask()
+const redactTaskMutation = useRedactTask()
+
 const taskStore = useTaskStore()
-const taskScheduleStore = useTaskScheduleStore()
+// const taskScheduleStore = useTaskScheduleStore()
 
-const storedTasks = computed(() => taskStore.tasks)
-const scheduledTasks = computed(() => taskScheduleStore.schedules)
+const _tasks = computed(() => tasksQuery.tasks.value.data || [])
+const _tasksSchedules = computed(() => tasksSchedulesQuery.schedules.value.data || [])
 
-const tasks = ref(taskStore.tasks)
+const filteredTasks = ref<TaskListItem[] | null>(null)
 const filter = ref<Filters | null>(null)
 const activeSearchTerm = ref<string | null>(null)
-const fuse = new Fuse(taskStore.tasks, { keys: ['title', 'summary'], threshold: 0.5 })
+const fuse = new Fuse(_tasks.value, { keys: ['title', 'summary'], threshold: 0.5 })
 
 const taskGroupbarRef = ref<HTMLElement | null>(null)
 const taskControlHeaderRef = ref<HTMLElement | null>(null)
@@ -60,22 +74,49 @@ const taskGroupBarIsOpen = ref(true)
 const taskGroupbarRect = useElementBounding(taskGroupbarRef)
 const taskControlHeaderRect = useElementBounding(taskControlHeaderRef)
 
+// tasksSchedulesQuery.variables.taskIDs.push('01JE111GB79MG5CZS5VRHCNH99', '01JE111GB8AM6KH2EHWFDFKYT1')
+// const ct = useCreateTask()
+// const st = useScheduleTask()
+// const at = useAddTagToTask()
+
+// onMounted(async () => {
+//   const res1 = await Promise.all(
+//     taskStore.tasks.map(async (task) => {
+//       return await ct.mutateAsync(JSON.parse(JSON.stringify(task)))
+//     }),
+//   ).catch((e) => console.log('res1', e))
+//   const res2 = await Promise.all(
+//     taskScheduleStore.schedules.map(async (s) => {
+//       console.log(JSON.parse(JSON.stringify(s)))
+//       await st.mutateAsync({ id: s.id, data: JSON.parse(JSON.stringify(s)) })
+//     }),
+//   ).catch((e) => console.log('res2', e))
+
+//   console.log('reses', res2)
+// })
+
+// watch(
+//   () => tasksSchedulesQuery.schedules.value.data,
+//   () => console.log('Query 2', tasksSchedulesQuery.schedules.value.data),
+//   { deep: true },
+// )
+
 const maxAddedAt = computed(() => {
-  return storedTasks.value
-    .map((t) => t.addedAt.setHours(0, 0, 0, 0).valueOf())
-    .reduce((prev, next) => Math.max(prev.valueOf(), next.valueOf()))
+  return _tasks.value
+    .map((t) => t.addedAt.setHours(0, 0, 0, 0))
+    .reduce((prev, next) => Math.max(prev, next))
 })
 
 const grouped = computed<GroupedTask>(() => {
-  const completed = storedTasks.value.filter((t) => t.completed)
-  const pending = storedTasks.value.filter((t) => !t.completed)
-  const recent = storedTasks.value.filter((t) => {
-    return t.addedAt.setHours(0, 0, 0, 0).valueOf() === maxAddedAt.value
+  const completed = _tasks.value.filter((t) => t.completed)
+  const pending = _tasks.value.filter((t) => !t.completed)
+  const recent = _tasks.value.filter((t) => {
+    return t.addedAt.setHours(0, 0, 0, 0) === maxAddedAt.value
   })
 
   const scheduled = evaluate(() => {
-    const map = new Map(scheduledTasks.value.map((s) => [s.taskId, s.id]))
-    return storedTasks.value.filter((t) => map.has(t.id))
+    const map = new Map(_tasksSchedules.value.map((s) => [s.taskId, s.id]))
+    return _tasks.value.filter((t) => map.has(t.id))
   })
 
   return {
@@ -97,7 +138,7 @@ const groups = computed<MeterItem[]>(() => {
   const pending = group.pending.length
   const recent = group.recent.length
   const scheduled = group.scheduled.length
-  const total = storedTasks.value.length
+  const total = _tasks.value.length
   const percent = (ratio: number) => ratio * 100
 
   return [
@@ -140,32 +181,42 @@ const groups = computed<MeterItem[]>(() => {
   ]
 })
 
-const addTask = taskStore.addTask
+const addTask = (item: BaseTaskListItem) => createTaskMutation.mutate(item)
 const toggleTask = taskStore.toggleTask
-const removeTask = taskStore.removeTask
-const reviewTask = taskStore.updateTask
+const removeTask = (id: string) => redactTaskMutation.mutate(id)
+const reviewTask = (patch: Patch<Partial<TaskListItem>>) => updateTaskMutation.mutate(patch)
 const selectTask = taskStore.selectTask
 
 function searchTasks(term: string | null) {
   activeSearchTerm.value = term
-  if (!term) return void (tasks.value = taskStore.tasks)
+  if (!term) return void (filteredTasks.value = null)
 
   const results = fuse.search(term)
-  tasks.value = results.map((res) => res.item)
+  filteredTasks.value = results.map((res) => res.item)
 }
 
 function filterTasks(label: Filters | null) {
   filter.value = label
 }
 
-watch(taskStore.tasks, (latest) => {
-  fuse.setCollection(latest)
+watch(
+  tasksQuery.tasks,
+  (tasks) => {
+    if (tasks.status === 'error') throw tasks.error
+    if (tasks.status === 'pending') return
+    tasksSchedulesQuery.variables.taskIDs = tasks.data.map(({ id }) => id)
+  },
+  { deep: true },
+)
+
+watch(tasksQuery.tasks, (latest) => {
+  fuse.setCollection(latest.data || [])
 })
 
 watch(filter, () => {
-  if (!filter.value) return (tasks.value = taskStore.tasks)
+  if (!filter.value) return (filteredTasks.value = null)
   const label = filter.value.toLowerCase() as Lowercase<Filters>
-  tasks.value = grouped.value.get(label)
+  filteredTasks.value = grouped.value.get(label)
 })
 
 watch(taskGroupBarIsOpen, (isOpen) => {
@@ -206,30 +257,34 @@ watch(taskGroupBarIsOpen, (isOpen) => {
             @search="searchTasks"
             @add="addTask"
             @sort="console.log($event)"
-            :searchable="tasks.length > 0"
+            :searchable="tasksQuery.tasks.value.data && tasksQuery.tasks.value.data.length > 0"
           />
         </TaskHeader>
       </div>
 
       <div class="s-task-control-bar-items">
-        <TaskList
-          :items="tasks"
-          @toggle="toggleTask"
-          @delete="removeTask"
-          @review="reviewTask"
-          @select="selectTask"
-        >
-          <template #empty>
-            <EmptyTasks
-              style="margin-block-start: 10rem"
-              @empty-action="addTask({ title: '', summary: '' })"
+        <Dynamic :state="tasksQuery.tasks.value">
+          <template #success="{ data }">
+            <TaskList
+              :items="filteredTasks ? filteredTasks : data"
+              @toggle="toggleTask"
+              @delete="removeTask"
+              @review="reviewTask"
+              @select="selectTask"
             >
-              <template v-if="activeSearchTerm" #message>
-                <span>No tasks matching "{{ activeSearchTerm }}"</span>
+              <template #empty>
+                <EmptyTasks
+                  style="margin-block-start: 10rem"
+                  @empty-action="addTask({ title: '', summary: '' })"
+                >
+                  <template v-if="activeSearchTerm" #message>
+                    <span>No tasks matching "{{ activeSearchTerm }}"</span>
+                  </template>
+                </EmptyTasks>
               </template>
-            </EmptyTasks>
+            </TaskList>
           </template>
-        </TaskList>
+        </Dynamic>
       </div>
     </div>
 
@@ -244,10 +299,11 @@ watch(taskGroupBarIsOpen, (isOpen) => {
         :open="taskGroupBarIsOpen"
         @toggle="taskGroupBarIsOpen = $event"
       />
+
       <TaskGroup
         class="s-task-control-group"
         :groups="groups"
-        :total="storedTasks.length"
+        :total="_tasks.length"
         :filter="filter"
         @filter="filterTasks"
       />
@@ -275,6 +331,7 @@ watch(taskGroupBarIsOpen, (isOpen) => {
   flex-direction: column;
   margin-inline-start: var(--s-taskgroupbar-width);
   transition: margin-inline-start var(--s-transition-timing);
+  scroll-margin-top: var(--s-taskcontrolheader-height);
   scroll-padding-top: var(--s-taskcontrolheader-height);
 
   &.unshifted {

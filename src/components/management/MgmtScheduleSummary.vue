@@ -29,13 +29,13 @@ const freqTypeMap = {
 
 <template>
   <div class="s-mgmt-schedule-summary">
-    <div v-if="schedule !== null && schedule.timestamp" class="s-mgmt-schedule-timestamp">
+    <div v-if="schedule !== null && schedule.timing" class="s-mgmt-schedule-timestamp">
       <span>
-        {{ schedule.timestamp.toLocaleDateString(locale, { dateStyle: 'long' }) }}
+        {{ schedule.timing.upcoming.toLocaleDateString(locale, { dateStyle: 'long' }) }}
       </span>
       <span> &middot; </span>
       <span>
-        {{ schedule.timestamp.toLocaleTimeString(locale, { timeStyle: 'short' }) }}
+        {{ schedule.timing.upcoming.toLocaleTimeString(locale, { timeStyle: 'short' }) }}
       </span>
     </div>
     <div v-else>You have not set a schedule for this task</div>

@@ -4,13 +4,14 @@ import { onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useFocusTrap } from '@vueuse/integrations/useFocusTrap'
 
 import type { TaskListItem } from '@/interfaces/task'
+import type { Patch } from '@/services/types'
 
 import EditableText from '../editable/EditableText.vue'
 import OverflowBox from '../overflow/OverflowBox.vue'
 
 type TaskPresentationEmits = {
   toggle: [id: string, completed: boolean]
-  review: [id: string, patch: Partial<Pick<TaskListItem, 'title' | 'summary'>>]
+  review: [patch: Patch<Partial<Pick<TaskListItem, 'title' | 'summary'>>>]
   delete: [id: string]
 }
 
@@ -68,14 +69,14 @@ function handleTitleModification(title: string) {
     // input without deleting the empty task yet and removing the inline editor
     // from the screen.
     details.title = title
-    return emit('review', props.task.id, details)
+    return emit('review', { id: props.task.id, data: details })
   }
 }
 
 function handleSummaryModification(summary: string) {
   if (canSaveWhenSaveCouldRevertAddItemAction(!details.title)) {
     details.summary = summary
-    return emit('review', props.task.id, details)
+    return emit('review', { id: props.task.id, data: details })
   }
 }
 

@@ -1,6 +1,6 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts" generic="Item extends IListItem">
-import { isFn } from '@/utils'
+import { isFn } from '@stitches/common'
 
 export type IListItem = string | string[] | Record<string, unknown>[] | Record<string, unknown>
 export interface ListProps<Item extends IListItem> {

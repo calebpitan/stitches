@@ -23,11 +23,14 @@ import VStack from '../stack/VStack.vue'
 import MgmtScheduleInfo from './MgmtScheduleInfo.vue'
 import MgmtScheduleSummary from './MgmtScheduleSummary.vue'
 
+type MgmtScheduleEmits = {
+  schedule: [schedule: BaseTaskSchedule | TaskSchedule]
+  clearSchedule: [id: string]
+}
+
 interface MgmtScheduleProps {
   taskId: string
   schedule: TaskSchedule | null
-  onSchedule?: (schedule: BaseTaskSchedule | TaskSchedule) => void
-  onClearSchedule?: (id: string) => void
 }
 
 interface ThreadNode {
@@ -60,6 +63,7 @@ interface ThreadlineConfig {
 }
 
 const props = withDefaults(defineProps<MgmtScheduleProps>(), {})
+const emit = defineEmits<MgmtScheduleEmits>()
 
 const ids = { repeat: useId(), repeat_until: useId() }
 
@@ -70,8 +74,8 @@ const primaryColor = usePrimaryColor()
 
 const isExpanded = ref(true)
 
-// The selected date time as timestamp for period the task is due
-const datetime = ref<Date | null>(props.schedule?.timestamp ?? null)
+// The originally selected date time as timestamp for period the task is initially due
+const anchorTime = ref<Date | null>(props.schedule?.timing.anchor ?? null)
 // The frequency of schedule for the selected task in context
 const frequency = ref<Frequency>(
   evaluate((): Frequency => {
@@ -96,11 +100,9 @@ const frequencyOptionsGroup = computed(() => FREQUENCY_OPTIONS_GROUP.slice())
 // ***************************************************************
 const tooltip = computed(() => {
   const pt = { root: 's-tooltip', arrow: 's-tooltip-arrow', text: 's-tooltip-text' }
+  const toggleMsg = isExpanded.value === false ? 'Open scheduler' : 'Close scheduler'
   return {
-    toggle: {
-      pt,
-      value: isExpanded.value === false ? 'Open scheduler' : 'Close scheduler',
-    },
+    toggle: { pt, value: toggleMsg },
     edit: { pt, value: 'Edit schedule', showDelay: 1000 },
     clear: { pt, value: 'Clear all schedule', showDelay: 1000 },
   }
@@ -213,10 +215,10 @@ function drawThread(container: HTMLElement, config: ThreadlineConfig) {
 
 function handleClearSchedule() {
   if (props.schedule) {
-    props.onClearSchedule?.(props.schedule.id)
+    emit('clearSchedule', props.schedule.id)
   }
 
-  datetime.value = null
+  anchorTime.value = null
   frequency.value = { type: 'never' }
 }
 
@@ -234,7 +236,7 @@ watchEffect(() => {
 })
 
 function handleFrequencyTypeChange(evt: SelectChangeEvent) {
-  const timestamp = datetime.value ?? new Date()
+  const timestamp = anchorTime.value ?? new Date()
   const type = evt.value as typeof frequency.value.type
 
   if (type === frequency.value.type) return
@@ -299,14 +301,14 @@ function handleFrequencyTypeChange(evt: SelectChangeEvent) {
 }
 
 watch(
-  [datetime, frequency],
-  ([timestamp, freq]) => {
-    if (!timestamp) return
-    props.onSchedule?.({
+  [anchorTime, frequency],
+  ([anchor, freq]) => {
+    if (!anchor) return
+    emit('schedule', {
       id: props.schedule?.id,
       taskId: props.taskId,
       frequency: freq,
-      timestamp: timestamp,
+      timing: { ...props.schedule?.timing!, anchor: anchor },
     })
   },
   { deep: true },
@@ -329,7 +331,7 @@ watch(
       </div>
 
       <HStack
-        v-if="datetime !== null && isExpanded"
+        v-if="anchorTime !== null && isExpanded"
         class="s-schedule-headline"
         style="align-items: center"
         :spacing="1"
@@ -385,7 +387,7 @@ watch(
       <div :aria-hidden="isExpanded === false" :class="['s-animated', { active: isExpanded }]">
         <HStack class="s-mgmt-scheduler-stack" :spacing="4">
           <DatePicker
-            v-model="datetime"
+            v-model="anchorTime"
             class="s-datepicker"
             panel-class="s-datepicker-panel"
             date-format="dd/mm/yy"
@@ -435,7 +437,7 @@ watch(
             <CronScheduler
               v-if="frequency.type === 'custom'"
               :locale="locale"
-              :timestamp="datetime"
+              :timestamp="anchorTime"
               :crons="frequency.crons"
               @change="frequency.crons = $event"
             />
@@ -456,7 +458,7 @@ watch(
             />
             <WeeklyScheduler
               v-if="frequency.type === 'week'"
-              :timestamp="datetime"
+              :timestamp="anchorTime"
               :expression="
                 schedule?.frequency.type === 'week' ? schedule.frequency.exprs : undefined
               "
@@ -464,7 +466,7 @@ watch(
             />
             <MonthlyScheduler
               v-if="frequency.type === 'month'"
-              :timestamp="datetime"
+              :timestamp="anchorTime"
               :expression="
                 schedule?.frequency.type === 'month' ? schedule.frequency.exprs : undefined
               "
@@ -472,7 +474,7 @@ watch(
             />
             <YearlyScheduler
               v-if="frequency.type === 'year'"
-              :timestamp="datetime"
+              :timestamp="anchorTime"
               :expression="
                 schedule?.frequency.type === 'year' ? schedule.frequency.exprs : undefined
               "
