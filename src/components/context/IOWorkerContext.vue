@@ -8,9 +8,9 @@ import { IOWorker } from '@/services/worker/io'
 import { Sym } from '@/utils/symbols'
 import { withResolvers } from '@/utils/utils'
 
-const CONNECTION_NAME = 'freckless'
-const IDB_STORE_NAME = 'connections'
 const IDB_DB_NAME = 'local'
+const IDB_STORE_NAME = 'connections'
+const CONNECTION_NAME = 'freckless'
 
 const resolvers = computed(() => withResolvers<boolean>())
 const ioWorkerRef = ref<ReturnType<typeof IOWorker> | null>(null)
@@ -63,18 +63,20 @@ if (!ioWorkerRef.value || (await ioWorkerRef.value.isConnected) === false) {
 }
 
 function _downloadDatabaseFile(database: Uint8Array) {
-  const blob = new Blob([database], { type: 'application/x-sqlite3' })
+  const blob = new Blob([database], { type: 'application/x-sqlite3', })
   const anchor = document.createElement('a')
   document.body.appendChild(anchor)
   anchor.href = URL.createObjectURL(blob)
-  anchor.setAttribute('download', 'true')
+  anchor.setAttribute('download', `${CONNECTION_NAME}.sqlite3`)
   anchor.click()
+
   URL.revokeObjectURL(anchor.href)
 }
 
 onBeforeUnmount(async () => {
   const ioWorker = ioWorkerRef.value!
   const database = await ioWorker.export()
+
 
   const idb = await initIndexedDB(-1, IDB_DB_NAME, [{ name: IDB_STORE_NAME }])
   const store = idb.transaction(IDB_STORE_NAME, 'readwrite').objectStore(IDB_STORE_NAME)
