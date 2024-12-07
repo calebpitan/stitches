@@ -1,4 +1,4 @@
-import type { FrequencyType, Ordinals, WeekdayVariable } from '@stitches/common'
+import type { FrequencyType, Ordinals, Timing, WeekdayVariable } from '@stitches/common'
 import { never } from '@stitches/common'
 import type {
   BaseRegularExpr,
@@ -156,6 +156,16 @@ export class CustomFrequencySerializer implements CustomFrequency {
 }
 
 // ***************************************************************
+// Timing Configurations Serializer
+// ***************************************************************
+@Expose()
+export class TimingSerializer implements Timing {
+  @Type(() => Date) anchor: Date
+  @Type(() => Date) upcoming: Date
+  @Type(() => Date) due: Date | null
+}
+
+// ***************************************************************
 // Task Scheduling Serializer
 // ***************************************************************
 @Expose()
@@ -172,5 +182,5 @@ export class ScheduleSerializer implements TaskSchedule {
   })
   frequency: Frequency
 
-  @Type(() => Date) timestamp: Date | null
+  @Type(() => TimingSerializer) timing: TimingSerializer
 }

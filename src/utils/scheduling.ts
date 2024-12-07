@@ -1,6 +1,5 @@
 import type { Ordinals } from '@stitches/common'
-
-import { never } from './utils'
+import { never } from '@stitches/common'
 
 /**
  * Represent and ordianl value as an unsigned 8-bit integer.

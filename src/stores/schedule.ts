@@ -33,7 +33,7 @@ export const useTaskScheduleStore = defineStore(
         id: ulid(),
         taskId: data.taskId,
         frequency: data.frequency,
-        timestamp: data.timestamp,
+        timing: data.timing,
       }
 
       schedules.value.push(schedule)
