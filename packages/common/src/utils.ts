@@ -1,5 +1,17 @@
 import camelCase from 'lodash.camelcase'
+import cloneDeep from 'lodash.clonedeep'
 import startCase from 'lodash.startcase'
+
+/**
+ * Check if a value is a function.
+ *
+ * NOTE: This will return `true` for constructor functions (and/or classes) too
+ * @param v The value to check that is a function
+ * @returns a boolean indicating whether the value is a function
+ */
+export function isFn(v: any): v is (...args: any[]) => any {
+  return typeof v === 'function'
+}
 
 /**
  * A function that never returns and terminates execution by
@@ -50,6 +62,18 @@ export const turnoff = (bits: number, index: number) => {
 export const pascalCase = (s: string) => startCase(camelCase(s)).replace(/ /g, '')
 
 /**
+ * Clone any value. Specify intrinsic true to use JSON method
+ * otherwise performs a deep clone implemented by lodash.
+ * @param value The value to clone
+ * @param [intrinsic=false] Whether to use intrinsic JSON method
+ * @returns The cloned value
+ */
+export function clone<T>(value: T, intrinsic = false): T {
+  if (intrinsic) return JSON.parse(JSON.stringify(value)) as T
+  return cloneDeep(value)
+}
+
+/**
  * Generate a range of integers from `0` to `stop`
  * @param stop The number, exclusive, at which the range generator stops
  */
@@ -85,7 +109,7 @@ export function* range(stopOrStart: number, stop?: number, step?: number) {
  * @param indexer A function used for indexing the items
  * @returns The items with all duplicates removed
  */
-export function unique<T extends Record<string, unknown>, K>(items: T[], indexer: (item: T) => K) {
+export function unique<T extends Record<string, any>, K>(items: T[], indexer: (item: T) => K) {
   const map = new Map<K, T>()
 
   items.forEach((item) => {
@@ -110,7 +134,7 @@ export function plural<S extends string, P extends string>(count: number, s: S, 
 
 /**
  * Typed {@link Object.entries}:
- * 
+ *
  * Returns an array of key/values of the enumerable own properties of an object
  *
  * @param o — Object that contains the properties and methods. This can be an object that you created or an existing Document Object Model (DOM) object.
@@ -118,4 +142,36 @@ export function plural<S extends string, P extends string>(count: number, s: S, 
  */
 export function entries<O extends Record<string, any>>(o: O): [keyof O, O[keyof O]][] {
   return Object.entries(o)
+}
+
+export class BitMask {
+  private constructor(
+    private readonly bits: number,
+    private readonly len: number,
+  ) {}
+
+  static fromBits(bits: number, len: number) {
+    return new BitMask(bits, len)
+  }
+
+  static fromPositions(positions: Array<number>) {
+    const bits = positions.reduce((bits, pos) => turnon(bits, pos), 0)
+    return new BitMask(bits, positions.length)
+  }
+
+  toPositions(): Array<number> {
+    const result = Array.from({ length: this.len })
+      .map((_, i) => (this.bits >>> i) & 1)
+      .map((on, i) => (on === 1 ? i : -1))
+      .filter((n) => n !== -1)
+    return result
+  }
+
+  toJSON() {
+    return this.toPositions()
+  }
+
+  valueOf(): number {
+    return this.bits
+  }
 }

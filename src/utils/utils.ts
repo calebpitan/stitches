@@ -10,14 +10,6 @@ export function evaluate<R>(fn: () => R): R {
   return fn()
 }
 
-export function never(_: never): never {
-  throw new Error(`Unimplemented for ${_}`)
-}
-
-export function plural<S extends string, P extends string>(count: number, s: S, p: P) {
-  return count > 1 ? p : s
-}
-
 export function withResolvers<T = unknown>() {
   let [resolve, reject] = [] as unknown as Parameters<ConstructorParameters<typeof Promise<T>>[0]>
   const promise = new Promise<T>((rs, rj) => {
@@ -56,8 +48,6 @@ export function sleep(ms: number): AsyncSleep {
     },
   }
 }
-
-export const isFn = (v: any): v is (...args: any[]) => any => typeof v === 'function'
 
 export function timeToParts(timestamp: Date) {
   const minute = timestamp.getMinutes()
