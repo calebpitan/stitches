@@ -9,8 +9,8 @@ import { Sym } from '@/utils/symbols'
 import { withResolvers } from '@/utils/utils'
 
 const CONNECTION_NAME = 'freckless'
-const IDB_STORE_NAME = 'sch-db-files'
-const IDB_DB_NAME = 'sch_db'
+const IDB_STORE_NAME = 'connections'
+const IDB_DB_NAME = 'local'
 
 const resolvers = computed(() => withResolvers<boolean>())
 const ioWorkerRef = ref<ReturnType<typeof IOWorker> | null>(null)
@@ -18,7 +18,7 @@ const ioWorkerRef = ref<ReturnType<typeof IOWorker> | null>(null)
 if (!ioWorkerRef.value || (await ioWorkerRef.value.isConnected) === false) {
   const sqliteDbResolvers = withResolvers<Uint8Array>()
 
-  const idb = await initIndexedDB(IDB_DB_NAME, [{ name: IDB_STORE_NAME }])
+  const idb = await initIndexedDB(-1, IDB_DB_NAME, [{ name: IDB_STORE_NAME }])
   const store = idb.transaction(IDB_STORE_NAME, 'readonly').objectStore(IDB_STORE_NAME)
   const cursorReq = store.openCursor(CONNECTION_NAME)
 
@@ -76,12 +76,12 @@ onBeforeUnmount(async () => {
   const ioWorker = ioWorkerRef.value!
   const database = await ioWorker.export()
 
-  const idb = await initIndexedDB(IDB_DB_NAME, [{ name: IDB_STORE_NAME }])
+  const idb = await initIndexedDB(-1, IDB_DB_NAME, [{ name: IDB_STORE_NAME }])
   const store = idb.transaction(IDB_STORE_NAME, 'readwrite').objectStore(IDB_STORE_NAME)
 
   store.put(database, CONNECTION_NAME)
 
-  _downloadDatabaseFile(database)
+  // _downloadDatabaseFile(database)
 
   await ioWorker.disconnect(true).then(() => void (ioWorkerRef.value = null))
 })
