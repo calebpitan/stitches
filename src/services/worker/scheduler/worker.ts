@@ -27,9 +27,9 @@ const st_var_weekday_map = {
  * @returns The created schedule
  */
 function create_st_schedule(data: TaskSchedule) {
-  if (!data.timestamp) throw new Error('`timestamp` is required to create schedule')
+  if (!data.timing) throw new Error('`timing` is required to create schedule')
 
-  const timestamp = BigInt(data.timestamp.getTime())
+  const timing = BigInt(data.timing.anchor.getTime())
   const until =
     data.frequency.type !== 'never' && data.frequency.until
       ? BigInt(data.frequency.until.getTime())
@@ -37,29 +37,29 @@ function create_st_schedule(data: TaskSchedule) {
 
   switch (data.frequency.type) {
     case 'never': {
-      return new sch.StSchedule(data.id, timestamp)
+      return new sch.StSchedule(data.id, timing)
     }
 
     case 'custom': {
-      const tzOffset = -1 * 60 * 1_000 * data.timestamp.getTimezoneOffset()
+      const tzOffset = -1 * 60 * 1_000 * data.timing.anchor.getTimezoneOffset()
       const exprs = data.frequency.crons.map((c) => c.expression)
       const freq = new sch.StCustomFrequency(tzOffset, exprs, until)
 
-      return sch.StSchedule.with_custom(data.id, timestamp, freq)
+      return sch.StSchedule.with_custom(data.id, timing, freq)
     }
 
     case 'hour': {
       const expr = new sch.StHourlyExpression(data.frequency.exprs.every)
       const freq = new sch.StRegularFrequency(sch.StFrequencyType.Hour, expr, until)
 
-      return sch.StSchedule.with_regular(data.id, timestamp, freq)
+      return sch.StSchedule.with_regular(data.id, timing, freq)
     }
 
     case 'day': {
       const expr = new sch.StDailyExpression(data.frequency.exprs.every)
       const freq = sch.StRegularFrequency.with_daily_expr(sch.StFrequencyType.Day, expr, until)
 
-      return sch.StSchedule.with_regular(data.id, timestamp, freq)
+      return sch.StSchedule.with_regular(data.id, timing, freq)
     }
 
     case 'week': {
@@ -67,7 +67,7 @@ function create_st_schedule(data: TaskSchedule) {
       const expr = sch.StWeeklyExpression.with_weekdays(data.frequency.exprs.every, weekdays)
       const freq = sch.StRegularFrequency.with_weekly_expr(sch.StFrequencyType.Week, expr, until)
 
-      return sch.StSchedule.with_regular(data.id, timestamp, freq)
+      return sch.StSchedule.with_regular(data.id, timing, freq)
     }
 
     case 'month': {
@@ -85,7 +85,7 @@ function create_st_schedule(data: TaskSchedule) {
       }
 
       const freq = sch.StRegularFrequency.with_monthly_expr(sch.StFrequencyType.Month, expr, until)
-      return sch.StSchedule.with_regular(data.id, timestamp, freq)
+      return sch.StSchedule.with_regular(data.id, timing, freq)
     }
 
     case 'year': {
@@ -112,7 +112,7 @@ function create_st_schedule(data: TaskSchedule) {
 
       const freq = sch.StRegularFrequency.with_yearly_expr(sch.StFrequencyType.Year, expr, until)
 
-      return sch.StSchedule.with_regular(data.id, timestamp, freq)
+      return sch.StSchedule.with_regular(data.id, timing, freq)
     }
 
     default:
@@ -133,7 +133,7 @@ async function main() {
       case 'add': {
         const data = Array.isArray(msg.data.data) ? msg.data.data : [msg.data.data]
         data
-          .filter((v) => !!v.timestamp)
+          .filter((v) => !!v.timing)
           .map((v) => create_st_schedule(v))
           .forEach((v) => scheduler.add_schedule(v))
         break
@@ -148,7 +148,7 @@ async function main() {
         break
 
       case 'update':
-        if (msg.data.data.timestamp === null) break
+        if (msg.data.data.timing === null) break
         await runner.update_scheduler_with(create_st_schedule(msg.data.data))
         break
 

@@ -1,17 +1,39 @@
 /// <reference lib="webworker" />
+import 'reflect-metadata'
+
 import { type StitchesIOConfig, type StitchesIOPort, open } from '@stitches/io'
 
-import { expose } from 'comlink'
+import { type ProxyMarked, expose, proxyMarker } from 'comlink'
+
+import { ScheduleService } from './schedule.service'
+import { TagService } from './tag.service'
+import { TaskService } from './task.service'
 
 declare let self: SharedWorkerGlobalScope
 declare type Connection = { io: StitchesIOPort; clients: Set<MessagePort> }
+export declare type Sentinel = () => StitchesIOPort
 
 const pool: Map<string, Connection> = new Map()
+
+interface Services
+  extends Readonly<{ task: TaskService; schedule: ScheduleService; tag: TagService }>,
+    ProxyMarked {}
 
 class _IOController {
   private name!: string
 
-  constructor(private readonly port: MessagePort) {}
+  public readonly services: Services
+
+  constructor(private readonly port: MessagePort) {
+    const sentinel: Sentinel = () => this.io
+
+    this.services = Object.assign<{}, Services>(Object.create(null), {
+      [proxyMarker]: true,
+      schedule: new ScheduleService(sentinel),
+      task: new TaskService(sentinel),
+      tag: new TagService(sentinel),
+    })
+  }
 
   /**
    * Get the connection for this controller from the pool by its name
@@ -91,6 +113,13 @@ class _IOController {
   }
 
   /**
+   * Export the connected database objects in-memory as a `Uint8Array`
+   * @returns A typed arrary representation of the database in memory
+   */
+  public export() {
+    return this.connection.io.export()
+  }
+  /**
    * Connect to a database and optionally initialize it if not already initialized.
    *
    * NOTE: Calling connect more than once with the same name disconnects and drops
@@ -109,7 +138,8 @@ class _IOController {
     const database = typeof db === 'string' ? await _IOController.fetchDatabaseFromUrl(db) : db
 
     if (pool.has(name)) {
-      await this.disconnect(true)
+      this.connection.clients.add(this.port)
+      return true
     }
 
     return await open(database, config)
@@ -134,7 +164,9 @@ class _IOController {
     connection.clients.delete(this.port)
 
     if (this.connection.clients.size === 0 || forced) {
-      return Promise.resolve(connection.io.close()).then(() => pool.delete(this.name))
+      return Promise.resolve(connection.io.close())
+        .then(() => pool.delete(this.name))
+        .then(() => this.connection.clients.clear())
     }
 
     return Promise.resolve(true)
