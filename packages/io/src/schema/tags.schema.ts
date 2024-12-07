@@ -5,6 +5,6 @@ import { withDefaults } from './common'
 export const tags = sqliteTable(
   'tags',
   withDefaults({
-    label: text().notNull()
+    label: text().notNull().unique()
   })
 )
