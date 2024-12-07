@@ -36,3 +36,6 @@ export type Subtract<T extends string, U extends string> = T extends `${infer A}
 export type FirstUpper<K extends string> = K extends `${AlphaL}${infer Rest}`
   ? `${Uppercase<Subtract<K, Rest>>}${Rest}`
   : K
+
+export type AnyString = string & {}
+export type StringEnum<T extends string> = T | AnyString

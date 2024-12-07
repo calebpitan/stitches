@@ -1,6 +1,12 @@
 import type { FrequencyType, Ordinals, WeekdayVariable } from '../scheduling'
 
-export type Frequency = RegularFrequency | CustomFrequency | { type: 'never' }
+export type FrequencyAggregateType = 'custom' | 'regular' | 'never'
+export type FrequencyAggregateTypeMap = {
+  custom: CustomFrequency
+  regular: RegularFrequency
+  never: { type: 'never' }
+}
+export type Frequency<F extends FrequencyAggregateType = FrequencyAggregateType> = FrequencyAggregateTypeMap[F]
 
 export interface BaseRegularExpr {
   every: number
@@ -80,12 +86,19 @@ export interface CustomFrequency extends BaseFrequency {
   crons: CronSchedule[]
 }
 
-export interface BaseTaskSchedule {
-  taskId: string
-  timestamp: Date | null
-  frequency: Frequency
+export interface Timing {
+  anchor: Date
+  upcoming: Date
+  due: Date | null
 }
 
-export interface TaskSchedule extends BaseTaskSchedule {
+export interface BaseTaskSchedule<F extends FrequencyAggregateType = FrequencyAggregateType> {
+  taskId: string
+  timing: Timing
+  frequency: Frequency<F>
+}
+
+export interface TaskSchedule<F extends FrequencyAggregateType = FrequencyAggregateType>
+  extends BaseTaskSchedule<F> {
   id: string
 }
