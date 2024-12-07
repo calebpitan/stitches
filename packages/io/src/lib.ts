@@ -7,6 +7,14 @@ import { SchedulesRepository, SchedulesRepositoryFacade } from './repositories'
 import { TagsRepository } from './repositories/tags'
 import { TasksRepository } from './repositories/tasks'
 
+export { sql, max } from 'drizzle-orm'
+
+export type { Association } from './repositories/associations'
+export type { schedule } from './repositories/schedules'
+export type { tag } from './repositories/tags'
+export type { task } from './repositories/tasks'
+export { Op } from './repositories/criteria.builder'
+
 export type StitchesIOConfig = {
   /**
    * The URL to the wasm file for the SQLite 3 WebAssembly binary.
@@ -61,7 +69,7 @@ export interface StitchesIOPort {
   close(): void
 }
 
-function getFileLocator(url?: URL|string) {
+function getFileLocator(url?: URL | string) {
   return (filename: string) => {
     return (url ?? new URL(filename, 'https://sql.js.org/dist/')).toString()
   }

@@ -1,16 +1,17 @@
 import { never, unique } from '@stitches/common'
 
-import { and, eq, or } from 'drizzle-orm'
+import { and, count, eq, or, sql } from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
 
 import * as schema from '../schema'
+import { CollectionErrno, CollectionError } from './factory'
 
 type Relation = keyof Associations | undefined
 type Associations = {
   tasks: Array<typeof schema.tasks.$inferSelect>
   tags: Array<typeof schema.tags.$inferSelect>
 }
-type Association<T extends Relation> = T extends undefined
+export type Association<T extends Relation> = T extends undefined
   ? Associations
   : Record<Exclude<T, undefined>, Associations[Exclude<T, undefined>]>
 
@@ -101,15 +102,33 @@ export class TagsToTaskAssociation<R extends Relation = undefined> {
 
   /**
    * Unassociate a task with a tag and a tag with a task (dropping the many-to-many relationship)
+   * and, while at it, deleting the tag if it is dangling.
    *
-   * @param tag The ID of the tag to unassociate with a task specified as ID as `task`
+   * NOTE: A dangling tag has no associations with any task
+   *
    * @param task The ID of the task to associate with a tag specifed as ID as `tag`
+   * @param tag The ID of the tag to unassociate with a task specified as ID as `task`
    * @returns A promise that resolves when successful, otherwise rejects
    */
   async unassociate(task: string, tag: string) {
-    return await this.db
+    const result = await this.db
       .delete(schema.tagsToTasks)
       .where(and(eq(schema.tagsToTasks.tagId, tag), eq(schema.tagsToTasks.taskId, task)))
+      .returning()
       .execute()
+
+    // Delete a dangling tag after unassociating:
+    // This deletes a tag that is not associated with any tasks
+    const associationsCountSubQuery = this.db
+      .select({ cnt: count(schema.tagsToTasks.tagId) })
+      .from(schema.tagsToTasks)
+      .where(eq(schema.tagsToTasks.tagId, tag))
+    await this.db
+      .delete(schema.tags)
+      .where(and(sql`(${associationsCountSubQuery} = 0)`, eq(schema.tags.id, tag)))
+
+    if (result.length === 0) {
+      throw new CollectionError(CollectionErrno.PRECONDITION)
+    }
   }
 }
