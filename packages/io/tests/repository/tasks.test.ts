@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { StitchesIOPort, open } from '../../src/lib'
+import { Op, StitchesIOPort, open } from '../../src/lib'
 import { CollectionError } from '../../src/repositories/factory'
 import { TaskCreatePayload, TasksRepository } from '../../src/repositories/tasks'
 
@@ -37,31 +37,45 @@ describe('#TaskRepository', () => {
         const newTasksRepository = tasksRepository.withSession(tx)
 
         expect(newTasksRepository).toBeInstanceOf(TasksRepository)
-        expect(newTasksRepository.db).toStrictEqual(tx)
-        expect(tasksRepository.db).not.toStrictEqual(tx)
+        expect(newTasksRepository._db).toStrictEqual(tx)
+        expect(tasksRepository._db).not.toStrictEqual(tx)
       })
     })
   })
 
-  describe('#findMany', () => {
+  describe('#exists', () => {
+    it('should check if a given task exists', () => {
+      const exists = tasksRepository.exists(
+        tasksRepository.getCriteriaBuilder().on('title', Op.LIKE, '%1000').build(),
+      )
+      const exists2 = tasksRepository.exists(
+        tasksRepository.getCriteriaBuilder().on('title', Op.LIKE, '%1001').build(),
+      )
+
+      expect(exists).toBe(true)
+      expect(exists2).toBe(false)
+    })
+  })
+
+  describe('#all', () => {
     it('should find as many tasks', async () => {
-      const result = await tasksRepository.findMany()
+      const result = await tasksRepository.all()
 
       expect(result.length).toBe(seedSize)
     })
 
     it('should omit redacted tasks', async () => {
       const redacted = await tasksRepository.redact('676')
-      const result = await tasksRepository.findMany()
+      const result = await tasksRepository.all()
 
       expect(result.find((t) => t.id === redacted!.id)).toBeUndefined()
       expect(result.length).toBe(seedSize - 1)
     })
   })
 
-  describe('#findById', () => {
+  describe('#only', () => {
     it('should find a task by ID', async () => {
-      const result = await tasksRepository.findById('676')
+      const result = await tasksRepository.only('676')
 
       expect(result).toMatchObject({
         id: '676',
@@ -72,13 +86,13 @@ describe('#TaskRepository', () => {
 
     it('should omit redacted tasks', async () => {
       const redacted = await tasksRepository.redact('676')
-      const resultPromise = tasksRepository.findById(redacted.id)
+      const resultPromise = tasksRepository.only(redacted.id)
 
       await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
 
     it('should throw an error when no task is found by the ID', async () => {
-      const resultPromise = tasksRepository.findById('2000')
+      const resultPromise = tasksRepository.only('2000')
       await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
   })
@@ -143,7 +157,7 @@ describe('#TaskRepository', () => {
   describe('#update', () => {
     it('should update a task by a given ID', async () => {
       const updated = await tasksRepository.update('676', { title: 'Task six-seven-six' })
-      const result = await tasksRepository.findById('676')
+      const result = await tasksRepository.only('676')
 
       expect(updated).toStrictEqual(result)
     })
@@ -157,7 +171,7 @@ describe('#TaskRepository', () => {
   describe('#redact', () => {
     it('should redact a task by the given ID', async () => {
       const redacted = await tasksRepository.redact('676')
-      const resultPromise = tasksRepository.findById('676')
+      const resultPromise = tasksRepository.only('676')
 
       expect(redacted).toBeDefined()
       await expect(resultPromise).rejects.toThrowError(CollectionError)
@@ -172,7 +186,7 @@ describe('#TaskRepository', () => {
   describe('#restore', () => {
     it('should restore a redacted task by the given ID', async () => {
       const redacted = await tasksRepository.redact('676')
-      const resultPromise = tasksRepository.findById('676')
+      const resultPromise = tasksRepository.only('676')
 
       expect(redacted).toBeDefined()
       expect(redacted!.deletedAt).toBeDefined()
@@ -198,7 +212,7 @@ describe('#TaskRepository', () => {
   describe('#delete', () => {
     it('should delete a task by the given ID', async () => {
       const deleted = await tasksRepository.delete('676')
-      const resultPromise = tasksRepository.findById('676')
+      const resultPromise = tasksRepository.only('676')
 
       expect(deleted).toBeDefined()
       expect(deleted.deletedAt).toBe(null)

@@ -64,7 +64,7 @@ describe('#TagsToTaskAssociation', () => {
   describe('#associate', () => {
     it('should associate tasks with tags', async () => {
       const taskId = '1'
-      const promises: Promise<void>[] = new Array(seedSize)
+      const promises: Promise<void>[] = Array.from({ length: seedSize })
 
       for (let i = 1; i < seedSize + 1; i++) {
         promises.push(tasksRepository.tags.associate(taskId, i.toString()))
@@ -79,7 +79,7 @@ describe('#TagsToTaskAssociation', () => {
 
     it('should associate tags with tasks', async () => {
       const tagId = '1'
-      const promises: Promise<void>[] = new Array(seedSize)
+      const promises: Promise<void>[] = Array.from({ length: seedSize })
 
       for (let i = 1; i < seedSize + 1; i++) {
         promises.push(tagsRepository.tasks.associate(i.toString(), tagId))
@@ -91,13 +91,27 @@ describe('#TagsToTaskAssociation', () => {
 
       expect(associations.tasks.length).toEqual(seedSize)
     })
+
+    it('should fail when the tag or the task being associated with does not exist', async () => {
+      const [nonExistingTagId, nonExistingTaskId] = [
+        (seedSize + 1).toString(),
+        (seedSize + 1).toString(),
+      ]
+      const tagAssociationPromise = tasksRepository.tags.associate('1', nonExistingTagId)
+      const taskAssociationPromise = tagsRepository.tasks.associate(nonExistingTaskId, '1')
+
+      await expect(tagAssociationPromise).rejects.toThrowError('FOREIGN KEY constraint failed')
+      await expect(taskAssociationPromise).rejects.toThrowError('FOREIGN KEY constraint failed')
+    })
   })
 
   describe('#unassociate', () => {
     it('should unassociate tasks with tags', async () => {
       const taskId = '1'
+
+      //Association
       {
-        const promises: Promise<void>[] = new Array(seedSize)
+        const promises: Promise<void>[] = Array.from({ length: seedSize })
 
         for (let i = 1; i < seedSize + 1; i++) {
           promises.push(tasksRepository.tags.associate(taskId, i.toString()))
@@ -110,10 +124,11 @@ describe('#TagsToTaskAssociation', () => {
         expect(associations.tags.length).toEqual(seedSize)
       }
 
+      // Unassociation
       {
-        const promises: Promise<void>[] = new Array(seedSize)
+        const promises: Promise<void>[] = Array.from({ length: seedSize })
 
-        for (let i = 0; i < seedSize + 1; i++) {
+        for (let i = 1; i <= seedSize; i++) {
           promises.push(tasksRepository.tags.unassociate(taskId, i.toString()))
         }
 
@@ -128,8 +143,9 @@ describe('#TagsToTaskAssociation', () => {
     it('should unassociate tags with tasks', async () => {
       const tagId = '1'
 
+      // Association
       {
-        const promises: Promise<void>[] = new Array(seedSize)
+        const promises: Promise<void>[] = Array.from({ length: seedSize })
 
         for (let i = 1; i < seedSize + 1; i++) {
           promises.push(tagsRepository.tasks.associate(i.toString(), tagId))
@@ -142,8 +158,9 @@ describe('#TagsToTaskAssociation', () => {
         expect(associations.tasks.length).toEqual(seedSize)
       }
 
+      // Unassociation
       {
-        const promises: Promise<void>[] = new Array(seedSize)
+        const promises: Promise<void>[] = Array.from({ length: seedSize })
 
         for (let i = 1; i < seedSize + 1; i++) {
           promises.push(tagsRepository.tasks.unassociate(i.toString(), tagId))
@@ -155,6 +172,18 @@ describe('#TagsToTaskAssociation', () => {
 
         expect(associations.tasks.length).toEqual(0)
       }
+    })
+
+    it('should fail when the tag or the task being uassociated with does not exist', async () => {
+      const [nonExistingTagId, nonExistingTaskId] = [
+        (seedSize + 1).toString(),
+        (seedSize + 1).toString(),
+      ]
+      const tagAssociationPromise = tasksRepository.tags.unassociate('1', nonExistingTagId)
+      const taskAssociationPromise = tagsRepository.tasks.unassociate(nonExistingTaskId, '1')
+
+      await expect(tagAssociationPromise).rejects.toThrowError()
+      await expect(taskAssociationPromise).rejects.toThrowError()
     })
   })
 })

@@ -36,22 +36,22 @@ describe('#TagsRepository', () => {
         const newTagsRepository = tagsRepository.withSession(tx)
 
         expect(newTagsRepository).toBeInstanceOf(TagsRepository)
-        expect(newTagsRepository.db).toStrictEqual(tx)
-        expect(tagsRepository.db).not.toStrictEqual(tx)
+        expect(newTagsRepository._db).toStrictEqual(tx)
+        expect(tagsRepository._db).not.toStrictEqual(tx)
       })
     })
   })
 
   describe('#findMany', () => {
     it('should find as many tags', async () => {
-      const result = await tagsRepository.findMany()
+      const result = await tagsRepository.all()
 
       expect(result.length).toBe(seedSize)
     })
 
     it('should omit redacted tags', async () => {
       const redacted = await tagsRepository.redact('676')
-      const result = await tagsRepository.findMany()
+      const result = await tagsRepository.all()
 
       expect(result.find((t) => t.id === redacted!.id)).toBeUndefined()
       expect(result.length).toBe(seedSize - 1)
@@ -60,7 +60,7 @@ describe('#TagsRepository', () => {
 
   describe('#findById', () => {
     it('should find a tag by ID', async () => {
-      const result = await tagsRepository.findById('676')
+      const result = await tagsRepository.only('676')
 
       expect(result).toMatchObject({
         id: '676',
@@ -70,13 +70,13 @@ describe('#TagsRepository', () => {
 
     it('should omit redacted tags', async () => {
       const redacted = await tagsRepository.redact('676')
-      const resultPromise = tagsRepository.findById(redacted!.id)
+      const resultPromise = tagsRepository.only(redacted!.id)
 
       await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
 
     it('should throw an error when no tags is found by the ID', async () => {
-      const resultPromise = tagsRepository.findById('2000')
+      const resultPromise = tagsRepository.only('2000')
       await expect(resultPromise).rejects.toThrowError(CollectionError)
     })
   })
@@ -140,7 +140,7 @@ describe('#TagsRepository', () => {
   describe('#update', () => {
     it('should update a tag by a given ID', async () => {
       const updated = await tagsRepository.update('676', { label: 'Tag six-seven-six' })
-      const result = await tagsRepository.findById('676')
+      const result = await tagsRepository.only('676')
 
       expect(updated).toStrictEqual(result)
     })
@@ -154,7 +154,7 @@ describe('#TagsRepository', () => {
   describe('#redact', () => {
     it('should redact a tag by the given ID', async () => {
       const redacted = await tagsRepository.redact('676')
-      const resultPromise = tagsRepository.findById('676')
+      const resultPromise = tagsRepository.only('676')
 
       expect(redacted).toBeDefined()
       await expect(resultPromise).rejects.toThrowError(CollectionError)
@@ -169,7 +169,7 @@ describe('#TagsRepository', () => {
   describe('#restore', () => {
     it('should restore a redacted tag by the given ID', async () => {
       const redacted = await tagsRepository.redact('676')
-      const resultPromise = tagsRepository.findById('676')
+      const resultPromise = tagsRepository.only('676')
 
       expect(redacted).toBeDefined()
       expect(redacted!.deletedAt).toBeDefined()
@@ -194,7 +194,7 @@ describe('#TagsRepository', () => {
   describe('#delete', () => {
     it('should delete a tag by the given ID', async () => {
       const deleted = await tagsRepository.delete('676')
-      const resultPromise = tagsRepository.findById('676')
+      const resultPromise = tagsRepository.only('676')
 
       expect(deleted).toBeDefined()
       expect(deleted.deletedAt).toBe(null)

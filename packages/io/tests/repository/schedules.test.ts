@@ -63,8 +63,8 @@ describe('#SchedulesRepository', () => {
   })
 
   it('should create schedules and attach them to existing tasks', async () => {
-    const schedule1 = await schedulesRepository.findById('12')
-    const schedule2 = await schedulesRepository.findById(`${seedSize / 2 + 1}`)
+    const schedule1 = await schedulesRepository.only('12')
+    const schedule2 = await schedulesRepository.only(`${seedSize / 2 + 1}`)
 
     // console.log('%o\n%o\n%o\n%o', schedule1, task1, schedule2, task2)
     const date = new Date('2024-11-17T10:45:00.000Z')
@@ -97,8 +97,8 @@ describe('#SchedulesRepository', () => {
         const newSchedulesRepository = schedulesRepository.withSession(tx)
 
         expect(newSchedulesRepository).toBeInstanceOf(SchedulesRepository)
-        expect(newSchedulesRepository.db).toStrictEqual(tx)
-        expect(schedulesRepository.db).not.toStrictEqual(tx)
+        expect(newSchedulesRepository._db).toStrictEqual(tx)
+        expect(schedulesRepository._db).not.toStrictEqual(tx)
       })
     })
   })
@@ -120,7 +120,7 @@ describe('#SchedulesRepositoryFacade', () => {
     {
       id: '1',
       taskId: '1',
-      timestamp: date,
+      timing: { anchor: date, upcoming: date, due: null },
       frequency: {
         type: 'custom',
         crons: [{ expression: '*/2 * * * *', frequency: 'hour' }],
@@ -130,7 +130,7 @@ describe('#SchedulesRepositoryFacade', () => {
     {
       id: '2',
       taskId: '2',
-      timestamp: date,
+      timing: { anchor: date, upcoming: date, due: null },
       frequency: {
         type: 'year',
         until: until,
@@ -151,7 +151,7 @@ describe('#SchedulesRepositoryFacade', () => {
     {
       id: '3',
       taskId: '3',
-      timestamp: date,
+      timing: { anchor: date, upcoming: date, due: null },
       frequency: {
         type: 'year',
         until: until,
@@ -169,7 +169,7 @@ describe('#SchedulesRepositoryFacade', () => {
     {
       id: '4',
       taskId: '4',
-      timestamp: date,
+      timing: { anchor: date, upcoming: date, due: null },
       frequency: {
         type: 'month',
         until: undefined,
@@ -185,7 +185,7 @@ describe('#SchedulesRepositoryFacade', () => {
     {
       id: '5',
       taskId: '5',
-      timestamp: date,
+      timing: { anchor: date, upcoming: date, due: null },
       frequency: {
         type: 'month',
         until: undefined,
@@ -236,7 +236,7 @@ describe('#SchedulesRepositoryFacade', () => {
     //   .where(criteria.unwrap())
     // const sql = query.toSQL()
 
-    const schedulex = await schedulesRepository.findMany(criteria)
+    const schedulex = await schedulesRepository.all(criteria)
 
     expect(schedules.at(0)).toMatchObject({
       id: '1',
