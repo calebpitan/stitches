@@ -18,6 +18,16 @@ export function plural<S extends string, P extends string>(count: number, s: S, 
   return count > 1 ? p : s
 }
 
+export function withResolvers<T = unknown>() {
+  let [resolve, reject] = [] as unknown as Parameters<ConstructorParameters<typeof Promise<T>>[0]>
+  const promise = new Promise<T>((rs, rj) => {
+    resolve = rs
+    reject = rj
+  })
+
+  return { promise, resolve, reject }
+}
+
 export function sleep(ms: number): AsyncSleep {
   const controller = new AbortController()
   const future = new Promise<number>((resolve, reject) => {
