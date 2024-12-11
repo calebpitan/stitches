@@ -18,6 +18,8 @@ out: they may choose to store in the browser, Google Drive (recommended), Dropbo
 cordinated access of their data as there is mostly no server-side infrastructure developed for the
 application.
 
+![Entity Relationship Diagram](./dbml-erd.png)
+
 <!--
 ## Recommended IDE Setup
 
