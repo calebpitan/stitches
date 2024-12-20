@@ -109,11 +109,13 @@ export function* range(stopOrStart: number, stop?: number, step?: number) {
  * @param indexer A function used for indexing the items
  * @returns The items with all duplicates removed
  */
-export function unique<T extends Record<string, any>, K>(items: T[], indexer: (item: T) => K) {
+export function unique<T, K>(items: T[], indexer?: (item: T) => K) {
   const map = new Map<K, T>()
 
   items.forEach((item) => {
-    const key = indexer(item)
+    if (typeof item === 'object' && indexer === undefined)
+      throw new Error('An indexing function must be provided for non-primitive elements')
+    const key = indexer?.(item) ?? (item as unknown as K)
     return void (map.has(key) ? void 0 : map.set(key, item))
   })
 
@@ -142,6 +144,48 @@ export function plural<S extends string, P extends string>(count: number, s: S, 
  */
 export function entries<O extends Record<string, any>>(o: O): [keyof O, O[keyof O]][] {
   return Object.entries(o)
+}
+
+/**
+ * Evaluate a function and return the result
+ *
+ * _Similar to an IIFE_
+ *
+ * This is useful when you want to scope an action and the set of variables
+ * required to execute within a block while still having access to the result
+ * of the action outside the block.
+ *
+ * More like a block scoped expression (in Rust) that returns.
+ *
+ * @param fn The function to evaluate
+ * @returns The result `R` of the evaluated function
+ */
+export function evaluate<R>(fn: () => R): R {
+  return fn()
+}
+
+export function multiline<T extends string>(strs: TemplateStringsArray, ...interpolations: T[]) {
+  const trim = (str: string): string =>
+    str
+      .trim()
+      .replace(/^[ \t]+/gm, '')
+      .replace(/[ \t]+/g, '\x20')
+      .replace(/\n/gm, '\\n')
+  let result = ''
+  strs.forEach((str, i) => {
+    result += str.concat(i < interpolations.length ? interpolations[i] : '')
+  })
+
+  return JSON.parse(`"${trim(result)}"`) as string
+}
+
+/**
+ * Get the succeeding digits starting from a decimal point in a floating point number
+ * @param val The floating point number to get the digits succeeding the dot or period or point
+ * @returns The succeeding digits starting from the decimal point (`.`)
+ */
+export function getFloatingPoint(val: number) {
+  return Math.sign(val) === -1 ? val - Math.ceil(val) : val - Math.floor(val)
 }
 
 export class BitMask {
