@@ -1,5 +1,5 @@
 import type { FirstUpper } from '../types'
-import { never } from '../utils'
+import { evaluate, never, range, unique } from '../utils'
 
 export type FrequencyType = 'hour' | 'day' | 'week' | 'month' | 'year' | 'custom' | 'never'
 export type Weekday =
@@ -73,13 +73,13 @@ export const FREQUENCY_OPTIONS_GROUP: readonly FrequencyGroup[] = Object.freeze(
       { label: 'Daily', value: 'day' },
       { label: 'Weekly', value: 'week' },
       { label: 'Monthly', value: 'month' },
-      { label: 'Yearly', value: 'year' }
-    ]
+      { label: 'Yearly', value: 'year' },
+    ],
   },
   {
     group: 'custom',
-    items: [{ label: 'Custom', value: 'custom' }]
-  }
+    items: [{ label: 'Custom', value: 'custom' }],
+  },
 ])
 
 export const WEEKDAY_OPTIONS: readonly WeekdayOption[] = Object.freeze([
@@ -89,7 +89,7 @@ export const WEEKDAY_OPTIONS: readonly WeekdayOption[] = Object.freeze([
   { alt: 'Thu', value: 4, label: 'Thursday' },
   { alt: 'Fri', value: 5, label: 'Friday' },
   { alt: 'Sat', value: 6, label: 'Saturday' },
-  { alt: 'Sun', value: 0, label: 'Sunday' }
+  { alt: 'Sun', value: 0, label: 'Sunday' },
 ])
 
 export const WEEKDAY_OPTIONS_GROUP: readonly WeekdayGroup[] = Object.freeze([
@@ -99,9 +99,9 @@ export const WEEKDAY_OPTIONS_GROUP: readonly WeekdayGroup[] = Object.freeze([
     items: [
       { alt: 'day', value: 'day', label: 'Day' },
       { alt: 'weekday', value: 'weekday', label: 'Weekday' },
-      { alt: 'weekend day', value: 'weekend-day', label: 'Weekend day' }
-    ]
-  }
+      { alt: 'weekend day', value: 'weekend-day', label: 'Weekend day' },
+    ],
+  },
 ])
 
 export const MONTH_OPTIONS: readonly MonthOption[] = Object.freeze([
@@ -116,7 +116,7 @@ export const MONTH_OPTIONS: readonly MonthOption[] = Object.freeze([
   { alt: 'Sep', value: 8, label: 'September' },
   { alt: 'Oct', value: 9, label: 'October' },
   { alt: 'Nov', value: 10, label: 'November' },
-  { alt: 'Dec', value: 11, label: 'December' }
+  { alt: 'Dec', value: 11, label: 'December' },
 ])
 
 export const ORDINAL_OPTIONS_GROUP: readonly OrdinalsGroup[] = Object.freeze([
@@ -127,13 +127,13 @@ export const ORDINAL_OPTIONS_GROUP: readonly OrdinalsGroup[] = Object.freeze([
       { alt: '2nd', label: 'Second', value: 'second' },
       { alt: '3rd', label: 'Third', value: 'third' },
       { alt: '4th', label: 'Fourth', value: 'fourth' },
-      { alt: '5th', label: 'Fifth', value: 'fifth' }
-    ]
+      { alt: '5th', label: 'Fifth', value: 'fifth' },
+    ],
   },
   {
     group: 'others',
-    items: [{ label: 'Last', alt: 'Last', value: 'last' }]
-  }
+    items: [{ label: 'Last', alt: 'Last', value: 'last' }],
+  },
 ])
 
 export function ordinalToUint8(ordinal: Ordinals) {
@@ -155,105 +155,820 @@ export function ordinalToUint8(ordinal: Ordinals) {
   }
 }
 
-export function nextHourlySchedule(timestamp: Date, hours: number) {
-  const hourMillis = 3_600_000 * hours
+type OrdinalConstantWeekday = { ordinal: Ordinals; weekday: number }
+type OrdinalWeekday = { ordinal: Ordinals; weekday: number | WeekdayVariable }
+
+const HOUR_MILLIS = 3_600_000
+const DAY_MILLIS = 86_400_000
+const WEEK_MILLIS = 604_800_000
+const DOY = 365
+const MOY = 12
+const DOW = 7
+const INDEXED_MONTH_DAYS = Object.freeze([31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31] as const)
+const ORDINAL_OFFSET_MAP = { first: 0, second: 1, third: 2, fourth: 3, fifth: 4 } as const
+
+class ImutDate extends Date {
+  static from(...args: ConstructorParameters<typeof Date>) {
+    return new ImutDate(...args)
+  }
+
+  static fromDate(d: Date): ImutDate {
+    return new ImutDate(d.getTime())
+  }
+
+  static toDate(imut: ImutDate): Date {
+    return new Date(imut.getTime())
+  }
+
+  toDate(): Date {
+    return new Date(this.getTime())
+  }
+
+  // @ts-expect-error
+  override setDate(date: number): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setDate(date))
+  }
+
+  // @ts-expect-error
+  override setFullYear(
+    year: number,
+    month?: number | undefined,
+    date?: number | undefined,
+  ): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setFullYear(year, month, date))
+  }
+
+  // @ts-expect-error
+  override setHours(
+    hours: number,
+    min?: number | undefined,
+    sec?: number | undefined,
+    ms?: number | undefined,
+  ): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setHours(hours, min, sec, ms))
+  }
+
+  // @ts-expect-error
+  override setMilliseconds(ms: number): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setMilliseconds(ms))
+  }
+
+  // @ts-expect-error
+  override setMinutes(min: number, sec?: number | undefined, ms?: number | undefined): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setMinutes(min, sec, ms))
+  }
+
+  // @ts-expect-error
+  override setMonth(month: number, date?: number | undefined): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setMonth(month, date))
+  }
+
+  // @ts-expect-error
+  override setSeconds(sec: number, ms?: number | undefined): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setSeconds(sec, ms))
+  }
+
+  // @ts-expect-error
+  override setTime(time: number): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setTime(time))
+  }
+
+  // @ts-expect-error
+  override setUTCDate(date: number): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setUTCDate(date))
+  }
+
+  // @ts-expect-error
+  override setUTCFullYear(
+    year: number,
+    month?: number | undefined,
+    date?: number | undefined,
+  ): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setUTCFullYear(year, month, date))
+  }
+
+  // @ts-expect-error
+  override setUTCHours(
+    hours: number,
+    min?: number | undefined,
+    sec?: number | undefined,
+    ms?: number | undefined,
+  ): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setUTCHours(hours, min, sec, ms))
+  }
+
+  // @ts-expect-error
+  override setUTCMilliseconds(ms: number): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setUTCMilliseconds(ms))
+  }
+
+  // @ts-expect-error
+  override setUTCMinutes(min: number, sec?: number | undefined, ms?: number | undefined): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setUTCMinutes(min, sec, ms))
+  }
+
+  // @ts-expect-error
+  override setUTCMonth(month: number, date?: number | undefined): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setUTCMonth(month, date))
+  }
+
+  // @ts-expect-error
+  override setUTCSeconds(sec: number, ms?: number | undefined): ImutDate {
+    const d = new Date(this.getTime())
+    return ImutDate.from(d.setUTCSeconds(sec, ms))
+  }
+}
+
+/**
+ * Get the total number of days in a given month.
+ *
+ * The only reason the year is required is for the sake of february which could have 29
+ *
+ * @param year The year of the month to get days for
+ * @param month The month to get the total days in
+ * @returns The total number of days in the given month
+ */
+export function getDaysInYearMonth(year: number, month: number) {
+  return isLeapMonth({ year, month }) ? INDEXED_MONTH_DAYS[month] + 1 : INDEXED_MONTH_DAYS[month]
+}
+
+/**
+ * Get the next hourly date for a nearest future schedule from the original schedule date
+ * and a repeating frequency specified in hours
+ *
+ * @param anchortime The timestamp at which the original schedule is anchored at
+ * @param hours The repeating frequency of hours
+ * @returns The next hourly date for a nearest future schedule
+ */
+export function nextHourlySchedule(anchortime: Date, hours: number) {
+  const hoursMillis = HOUR_MILLIS * hours
   const currentMillis = Date.now()
-  const timestampMillis = timestamp.getTime()
+  const anchorMillis = anchortime.getTime()
 
-  if (timestampMillis >= currentMillis) return timestamp
+  if (anchorMillis >= currentMillis) return anchortime
 
-  const elapsed = currentMillis - timestampMillis
-  const elapsedHoursFactor = elapsed / hourMillis
+  const elapsed = currentMillis - anchorMillis
+  const elapsedHoursFactor = elapsed / hoursMillis
   const nextHourFactor = Math.ceil(elapsedHoursFactor)
-  const nextHourMillis = hourMillis * nextHourFactor
-  const nextMillis = timestampMillis + nextHourMillis
+  const nextHourMillis = hoursMillis * nextHourFactor
+  const nextMillis = anchorMillis + nextHourMillis
 
   return new Date(nextMillis)
 }
 
-export function nextDailySchedule(timestamp: Date, days: number) {
-  const dayMillis = 86_400_000 * days
+/**
+ * Get the next daily date for a nearest future schedule from the original schedule date
+ * and a repeating frequency specified in days
+ *
+ * @param anchortime The timestamp at which the original schedule is anchored at
+ * @param hours The repeating frequency of hours
+ * @returns The next hourly date for a nearest future schedule
+ */
+export function nextDailySchedule(anchortime: Date, days: number) {
+  const daysMillis = DAY_MILLIS * days
   const currentMillis = Date.now()
-  const timestampMillis = timestamp.getTime()
+  const anchorMillis = anchortime.getTime()
 
-  if (timestampMillis >= currentMillis) return timestamp
+  if (anchorMillis >= currentMillis) return anchortime
 
-  const elapsed = currentMillis - timestampMillis
-  const elapsedDaysFactor = elapsed / dayMillis
+  const elapsed = currentMillis - anchorMillis
+  const elapsedDaysFactor = elapsed / daysMillis
   const nextDayFactor = Math.ceil(elapsedDaysFactor)
-  const nextDayMillis = dayMillis * nextDayFactor
-  const nextMillis = timestampMillis + nextDayMillis
+  const nextDayMillis = daysMillis * nextDayFactor
+  const nextMillis = anchorMillis + nextDayMillis
 
   return new Date(nextMillis)
 }
 
-// function nextDailySchedule(timestamp: Date, days: number) {
-//   const DAY_MS = 86_400_000 * days
-//   const currentMillis = Date.now()
-//   const timestampMillis = timestamp.getTime()
+export function nextWeeklySchedule(anchortime: Date, weeks: number): Date | undefined
+/**
+ * Get the next weekly date for a nearest future shcedule from the original schedule date,
+ * a repeating frequency specified in weeks and optional weekday to filter repitition to only
+ * certain weekdays.
+ *
+ * @param anchortime The timestmap at which the original schedule is anchored at
+ * @param weeks The repeating frequency of week
+ * @param weekdays The chosen weekdays when the schedule should repeat
+ * @returns The next weekly date at chosen weekdays, if any, for a nearest future schedule
+ */
+export function nextWeeklySchedule(anchortime: Date, weeks: number, weekdays: number[]): Date[]
+export function nextWeeklySchedule(anchortime: Date, weeks: number, weekdays?: number[]) {
+  if (!weekdays) {
+    const result = nextWeeklySchedule.bringForward(anchortime, weeks)
+    return result
+  }
 
-//   if (timestampMillis >= currentMillis) return timestamp
+  return unique(weekdays)
+    .map((w) => w % DOW)
+    .map((weekday) => {
+      const reftime = nextWeeklySchedule.setWeekday(anchortime, weekday)
+      return nextWeeklySchedule.bringForward(reftime, weeks)
+    })
+    .filter((v) => v !== undefined) as Date[]
+}
 
-//   const elapsed = currentMillis - timestampMillis
-//   const elapsedDays = elapsed / DAY_MS
-//   const nextDay = Math.sign(days) === -1 ? Math.floor(elapsedDays) : Math.ceil(elapsedDays)
-//   const nextDayMillis = Math.abs(nextDay) * DAY_MS
-//   const nextMillis = timestampMillis + nextDayMillis
+/**
+ * Set the weekday or day of the week or day of a given date to the desired `weekday`
+ * in the same week as the original date.
+ *
+ * ## Example
+ *
+ * ```
+ * const weekday = 1 // Monday
+ * const date = new Date('2024-12-06T15:09:00.005Z') // Friday
+ * const actual = nextWeeklySchedule.setWeekday(date, weekday)
+ * {
+ *    const expected = new Date('2024-12-02T15:09:00.005Z')
+ *    console.assert(actual.getTime() === expected.getTime(), "Exepcted `actual` to be equal to `expected`")
+ * }
+ * ```
+ *
+ * @param date The datetime to set weekday or day of the week or day for
+ * @param weekday The day of the week to set anchortime to
+ * @returns A new time with the day of the week set to `weekday` in the same week
+ */
+nextWeeklySchedule.setWeekday = (date: Date, weekday: number) =>
+  // -ac + bc = -c(a - b);
+  // where
+  //   a = date.getDay()
+  //   b = weekday
+  //   c = DAY_MILLIS
+  new Date(date.getTime() - DAY_MILLIS * (date.getDay() - (weekday % DOW)))
 
-//   return new Date(nextMillis)
-// }
-
-export function nextWeeklySchedule(timestamp: Date, weeks: number) {
-  const weekMillis = 604_800_000 * weeks
+/**
+ * Fast-forward the given anchor time to the nearest future time when a repeating
+ * weekly frequency specified as `every` will be.
+ *
+ * ## Note
+ * Returns undefined if the current time is behind the anchor time
+ *
+ * @param anchortime The original anchor time of the schedule
+ * @param every The weekly repeating frequency expression
+ * @returns The fast-forwarded date from the anchor time or undefined
+ */
+nextWeeklySchedule.bringForward = (anchortime: Date, every: number): Date | undefined => {
+  const weeksMillis = WEEK_MILLIS * every
   const currentMillis = Date.now()
-  const timestampMillis = timestamp.getTime()
+  const anchorMillis = anchortime.getTime()
 
-  if (timestampMillis >= currentMillis) return timestamp
+  if (anchorMillis >= currentMillis) return undefined
 
-  const elapsed = currentMillis - timestampMillis
-  const elapsedWeeksFactor = elapsed / weekMillis
+  const elapsed = currentMillis - anchorMillis
+  const elapsedWeeksFactor = elapsed / weeksMillis
+
   const nextWeekFactor = Math.ceil(elapsedWeeksFactor)
-  const nextWeekMillis = weekMillis * nextWeekFactor
-  const nextMillis = timestampMillis + nextWeekMillis
+  const nextWeekMillis = weeksMillis * nextWeekFactor
+  const nextMillis = anchorMillis + nextWeekMillis
 
   return new Date(nextMillis)
 }
 
-export function nextWeeklyScheduleCorrectionFactor(nextWeeklyTimestamp: Date, weekday: number) {
-  // `nextWeeklySchedule` add `x` weeks to the originating timestamp.
-  //
-  // `let x = 1` [1wk; 604800000ms] such that:
-  //
-  // on Thu 24, Oct 2024, `nextWeeklySchedule("2024-10-24")` returns `"2024-10-31"`
-  // which is a Thu 31, Oct 2024.
-  //
-  // But the user wants the event repeating every 1 week on a Tuesday (weekday = 2);
-  // So we subtract Tuesday (weekday = 2) from Thursday (weekday = 4) to compute our
-  // `weekdayOffset`.
-  //
-  // We go ahead and clone `nextWeeklyTimestamp`, setting date to be 31 + 2 * -1
-  // which gives `29` and that's a Tuesday one week away from the past week of 24th
-  const weekdayOffset = nextWeeklyTimestamp.getUTCDay() - weekday
-  const newWeeklyTimestamp = new Date(nextWeeklyTimestamp.getTime())
+/**
+ * Get the next monthly date for a nearest future shcedule from the original schedule date,
+ * a repeating frequency specified in months, and days of the month to filter schedule to only
+ * certain days of the month.
+ *
+ * @param anchortime The original anchor time of the schedule
+ * @param every The monthly repeating frequency expression
+ * @param days The days of the month for which the schedule should repeat
+ * @returns A list of dates matching the schedule for the individual days of the month `days`
+ */
+export function nextMonthlySchedule(anchortime: Date, every: number, days: number[]): Date[]
+/**
+ * Get the next monthly date for a nearest future shcedule from the original schedule date,
+ * a repeating frequency specified in months, and ordinal weekdays to **dynamically** filter
+ * schedule to only certain days of the month, based on what day of the month the specified
+ * ordinal weekday falls on.
+ *
+ * @param anchortime The original anchor time of the schedule
+ * @param every The monthly repeating frequency expression
+ * @param ord The ordinal weekdays to use to determine days of the month for which the schedule should repeat
+ * @returns The date matching the schedule for the computed day of the month (from ordinal weekdays)
+ */
+export function nextMonthlySchedule(
+  anchortime: Date,
+  every: number,
+  ord: OrdinalConstantWeekday,
+): Date | undefined
+export function nextMonthlySchedule(
+  anchortime: Date,
+  every: number,
+  daysOrOrd: Array<number> | OrdinalConstantWeekday,
+): Date[] | (Date | undefined) {
+  const forwarded = nextMonthlySchedule.bringForward(anchortime, every)
 
-  newWeeklyTimestamp.setDate(newWeeklyTimestamp.getDate() + weekdayOffset * -1)
+  if (!forwarded) return undefined
 
-  return newWeeklyTimestamp.getTime() / nextWeeklyTimestamp.getTime()
+  const [month, year] = [forwarded.getMonth(), forwarded.getFullYear()]
+  const maxDayOfMonth = getDaysInYearMonth(year, month)
+
+  if (Array.isArray(daysOrOrd)) {
+    const daysOfMonth = daysOrOrd
+    return unique(daysOfMonth)
+      .filter((d) => d > 0 && d <= maxDayOfMonth)
+      .map((dayOfMonth) => {
+        const domOffset = forwarded.getDate() - dayOfMonth
+        return new Date(forwarded.getTime() - domOffset * DAY_MILLIS)
+      })
+  }
+
+  const ord = daysOrOrd
+
+  switch (ord.ordinal) {
+    case 'first':
+    case 'second':
+    case 'third':
+    case 'fourth':
+    case 'fifth': {
+      forwarded.setDate(1)
+
+      const dowOffset = getDayOfWeekOffset(forwarded, ord.weekday)
+      const daysToWeeksOffset = DOW * ORDINAL_OFFSET_MAP[ord.ordinal]
+      const dayOfMonth = forwarded.getDate() + daysToWeeksOffset + dowOffset
+      if (dayOfMonth > maxDayOfMonth) return undefined // consider recursion with a max-depth for backoff
+      return new Date(forwarded.getTime() + DAY_MILLIS * (daysToWeeksOffset + dowOffset))
+    }
+    case 'last': {
+      forwarded.setDate(maxDayOfMonth)
+      /// You may optimize away overhead of calling fn by checking if `schedule.getDay()` is already same as `ord.weekday`
+
+      const dowOffset = getDayOfWeekOffset(forwarded, ord.weekday)
+      // The modulo at the end guarantees `DOW - 0` will always return `0` rather than `DOW`
+      const dowOffsetReversed = (DOW - dowOffset) % DOW
+      return new Date(forwarded.getTime() - DAY_MILLIS * dowOffsetReversed)
+    }
+    default:
+      return never(ord.ordinal)
+  }
 }
 
-export function month(every: number, start: { month: number; year: number }) {
+/**
+ * Fast-forward the given anchor time to the nearest future time when a repeating
+ * monthly frequency specified as `every` could be, no further than the month and year.
+ *
+ * ## Note
+ * Returns undefined if the current time is behind the anchor time
+ *
+ * @param anchortime The original anchor time of the schedule
+ * @param every The monthly repeating frequency expression
+ * @returns The fast-forwarded date from the anchor time or undefined
+ */
+nextMonthlySchedule.bringForward = (anchortime: Date, every: number) => {
+  const date = new Date()
+  const [currentMonth, currentYear] = [date.getMonth(), date.getFullYear()]
+  const monthsRemaining = getMonthsRemaining(every, {
+    month: anchortime.getMonth(),
+    year: anchortime.getFullYear(),
+  })
+
+  if (monthsRemaining === undefined || anchortime > date) return undefined
+
+  // get days left in current month of the current year
+  const remainingDaysInCurrentMonth = getDaysInYearMonth(currentYear, currentMonth) - date.getDate()
+
+  const daysToMonthsRemaining = evaluate(() => {
+    const yearsToMonthsRemaining = Math.floor(monthsRemaining / MOY)
+    const remainderMonths = monthsRemaining % MOY
+
+    // The moment the month is going to be beyond January for the end year, then it matters if it's a leap year
+    const a = anchortime.getMonth() >= 1 ? 1 : 0
+
+    const leapYearsBetween = getLeapYearsBetween(
+      currentYear + 1,
+      currentYear + a + yearsToMonthsRemaining,
+      true,
+    )
+
+    // compute days in the "years to months remaining", and in the "remainder months" that aren't
+    // enough to make up to at least a year. that is, if `monthsRemaining` is `16` then years to
+    // months remaining is `int(16 / 12) = 1` and remainder months is `16 % 12 = 4` meaning 1yr 4mo.
+    // so calculate days in 1 year from current year and check for leap years adding one to the days
+    // for every leap year, then calculate days in 4 months from current month.
+
+    const numberOfLeapYears = leapYearsBetween.length
+    // get days in number of years till remaining months and adjust for leap years
+    const daysInYearsToMonthsRemaining = DOY * yearsToMonthsRemaining + numberOfLeapYears
+    let daysInRemainderMonths = 0
+
+    {
+      const startMonth = (currentMonth + 1) % MOY
+      const endMonth = startMonth + remainderMonths
+      // If the start month has overflown, therefore is now reset to zero, then initialize `n` to 1 to add to current year
+      let n = startMonth === 0 ? 1 : 0 // currentMonth + 1 >= MOY ? 1 : 0
+      for (const m of range(startMonth, endMonth)) {
+        // For every time `m` overflows increment `n` to be added to the current year
+        if (m >= MOY && m % MOY === 0) n++
+        daysInRemainderMonths += getDaysInYearMonth(currentYear + n, m % MOY)
+      }
+    }
+
+    return daysInYearsToMonthsRemaining + daysInRemainderMonths
+  })
+
+  const daysToNextSchedule = daysToMonthsRemaining + remainingDaysInCurrentMonth
+  const daysToNextScheduleMillis = DAY_MILLIS * daysToNextSchedule
+
+  return new Date(align(date.getTime(), anchortime.getTime()) + daysToNextScheduleMillis)
+}
+
+/**
+ * Get the next yearly dates for a nearest future shcedule from the original schedule date,
+ * a repeating frequency specified in year, months of the year for which the schedule should repeat,
+ * and ordinal weekdays to either **statically** or **dynamically** filter schedule to only certain
+ * days of the month, based on what day of the month the specified ordinal weekday falls on.
+ *
+ * @param anchortime The original anchor time of the schedule
+ * @param every The yearly repeating frequency expression
+ * @param months The months of the year for which the schedule should repeat
+ * @param ord The ordinal static/constant or dynamic/variable days of the week for which the schedule should repeat
+ * @returns A list of dates that match the specified schedule frequency expressions and/or undefined in some cases
+ */
+export function nextYearlySchedule(
+  anchortime: Date,
+  every: number,
+  months: Array<number>,
+  ord?: OrdinalWeekday,
+) {
+  // const everyday = false
+  const forwarded = nextYearlySchedule.bringForward(anchortime, every)
+
+  if (!forwarded) return undefined
+
+  const schedules = unique(months)
+    .map((m) => m % MOY)
+    .map((m) =>
+      ImutDate.from(forwarded).setMonth(m, getDaysInYearMonth(forwarded.getFullYear(), m)).toDate(),
+    )
+
+  if (!ord) return schedules
+
+  return schedules.map((schedule) => {
+    const [month, year] = [schedule.getMonth(), schedule.getFullYear()]
+    const maxDayOfMonth = getDaysInYearMonth(year, month)
+
+    switch (ord.ordinal) {
+      case 'first':
+      case 'second':
+      case 'third':
+      case 'fourth':
+      case 'fifth': {
+        schedule.setDate(1)
+
+        switch (ord.weekday) {
+          case 'day': {
+            const daysOffset = ORDINAL_OFFSET_MAP[ord.ordinal]
+            return new Date(schedule.getTime() + daysOffset * DAY_MILLIS)
+          }
+
+          case 'weekday': {
+            const weekdays = [1, 2, 3, 4, 5] // M T W T F
+            const daysOffset = ORDINAL_OFFSET_MAP[ord.ordinal]
+            const weekday = evaluate(() => {
+              const indexOfFirstWeekday = weekdays.indexOf(schedule.getDay())
+              if (indexOfFirstWeekday !== -1) {
+                const indexOfWeekday = (indexOfFirstWeekday + daysOffset) % weekdays.length
+                return weekdays[indexOfWeekday]
+              }
+              // if `weekdays` does not include the day of the week of the first day of the month,
+              // then it is a weekend day and the first weekday would be `weekdays` at `[0]`;
+              // second, `weekdays` at `[1]`...so `daysOffset` can be used to accurately index weekdays
+              // to get the correct weekday.
+              return weekdays[daysOffset]
+            })
+
+            const dowOffset = getDayOfWeekOffset(schedule, weekday)
+            return new Date(schedule.getTime() + dowOffset * DAY_MILLIS)
+          }
+
+          case 'weekend-day': {
+            const offset = ORDINAL_OFFSET_MAP[ord.ordinal]
+            const [sun, sat] = [
+              [0, getDayOfWeekOffset(schedule, 0)],
+              [6, getDayOfWeekOffset(schedule, 6)],
+            ] as const
+            const closest = sat[1] < sun[1] ? sat : sun
+            const daysOffset = evaluate(() => {
+              const a = {
+                get 0() {
+                  const a = Math.ceil(offset / 2)
+                  const b = offset % 2
+                  const c = DOW * a - b
+                  return c
+                },
+                get 6() {
+                  const a = Math.floor(offset / 2)
+                  const b = offset % 2
+                  const c = DOW * a + b
+                  return c
+                },
+              }
+              return a[closest[0]] + closest[1]
+            })
+            const dayOfMonth = schedule.getDate() + daysOffset
+            if (dayOfMonth > maxDayOfMonth) return undefined // consider recursion with a max-depth for backoff
+            return new Date(schedule.getTime() + daysOffset * DAY_MILLIS)
+          }
+
+          default: {
+            const dowOffset = getDayOfWeekOffset(schedule, ord.weekday)
+            const daysToWeeksOffset = DOW * ORDINAL_OFFSET_MAP[ord.ordinal]
+            const dayOfMonth = schedule.getDate() + daysToWeeksOffset + dowOffset
+            if (dayOfMonth > maxDayOfMonth) return undefined // consider recursion with a max-depth for backoff
+            return new Date(schedule.getTime() + (daysToWeeksOffset + dowOffset) * DAY_MILLIS)
+          }
+        }
+      }
+      case 'last': {
+        schedule.setDate(maxDayOfMonth)
+
+        switch (ord.weekday) {
+          case 'day': {
+            return new Date(schedule.getTime())
+          }
+          case 'weekday': {
+            const weekday = schedule.getDay()
+            if (weekday > 0 && weekday < 6) return new Date(schedule.getTime())
+            // 2 - ((7 - 6) % 7) = 1
+            // 2 - ((7 - 0) % 7) = 2
+            const daysOffset = 2 - ((DOW - weekday) % DOW)
+            return new Date(schedule.getTime() - daysOffset * DAY_MILLIS)
+          }
+          case 'weekend-day': {
+            /// You may optimize away overhead of calling fn by checking if `schedule.getDay()` is already one of 0 or 6
+
+            // The modulo at the end guarantees `DOW - 0` will always return `0` rather than `DOW`
+            const sunOffsetReversed = (DOW - getDayOfWeekOffset(schedule, 0)) % DOW
+            const satOffsetReversed = (DOW - getDayOfWeekOffset(schedule, 6)) % DOW
+            const dowOffsetReversed = Math.min(sunOffsetReversed, satOffsetReversed)
+            return new Date(schedule.getTime() - dowOffsetReversed * DAY_MILLIS)
+          }
+
+          default: {
+            // The modulo at the end guarantees `DOW - 0` will always return `0` rather than `DOW`
+            const dowOffsetReversed = (DOW - getDayOfWeekOffset(schedule, ord.weekday)) % DOW
+            return new Date(schedule.getTime() - dowOffsetReversed * DAY_MILLIS)
+          }
+        }
+      }
+      default:
+        never(ord.ordinal)
+    }
+  })
+}
+
+/**
+ * Fast-forward the given anchor time to the nearest future time when a repeating
+ * yearly frequency specified as `every` could be, no further than the and year.
+ *
+ * ## Note
+ * Returns undefined if the current time is behind the anchor time
+ *
+ * @param anchortime The original anchor time of the schedule
+ * @param every The yearly repeating frequency expression
+ * @returns The fast-forwarded date from the anchor time or undefined
+ */
+nextYearlySchedule.bringForward = (anchortime: Date, every: number) => {
+  const date = new Date()
+  const [currentMonth, currentYear] = [date.getMonth(), date.getFullYear()]
+  const yearsRemaining = getYearsRemaining(every, { year: anchortime.getFullYear() })
+
+  if (yearsRemaining === undefined || anchortime > date) return undefined
+
+  const daysToYearsRemaining = evaluate(() => {
+    if (yearsRemaining === 0) return 0
+
+    const leapYearsBetween = getLeapYearsBetween(
+      currentYear + 1,
+      currentYear + yearsRemaining,
+      true,
+    )
+
+    const numberOfLeapYears = leapYearsBetween.length
+    const daysInYearsRemaining = DOY * yearsRemaining + numberOfLeapYears
+
+    return daysInYearsRemaining
+  })
+
+  const remainingDaysInCurrentYear = evaluate((): number => {
+    // get days left in current month of the current year
+    const remainingDaysInCurrentMonth =
+      getDaysInYearMonth(currentYear, currentMonth) - date.getDate()
+    let daysInRemainderMonths = 0
+
+    {
+      let n = 1
+      const end = MOY - (currentMonth + n)
+      while (n < end) {
+        daysInRemainderMonths += getDaysInYearMonth(currentYear, currentMonth + n)
+        n++
+      }
+    }
+
+    return daysInRemainderMonths + remainingDaysInCurrentMonth
+  })
+
+  const daysToNextSchedule = daysToYearsRemaining + remainingDaysInCurrentYear
+  const daysToNextScheduleMillis = DAY_MILLIS * daysToNextSchedule
+  const forwardedDate = new Date(
+    align(date.getTime(), anchortime.getTime()) + daysToNextScheduleMillis,
+  )
+
+  return forwardedDate
+}
+
+/**
+ * Calculate the number of years left till a repeating yearly frequency specified as `every` will elapse
+ * @param every The yearly repeating frequency
+ * @param start An object specifying the start year of the repeating occasion
+ * @returns The number of years left till another repeating frequency is due or undefined if the start is in the future
+ */
+export function getYearsRemaining(every: number, start: { year: number }) {
+  const date = new Date()
+  const end = { year: date.getFullYear() }
+  if (end.year < start.year) return undefined
+
+  const yearsElapsed = end.year - start.year
+  // The modulo at the end guarantees `every - 0` will always return `0` rather than `every`
+  return (every - (yearsElapsed % every)) % every
+}
+
+/**
+ * Calculate the number of months left till a repeating monthly frequency specified as `every` will elapse
+ * @param every The monthly repeating frequency
+ * @param start An object specifying the start month and year of the repeating occasion
+ * @returns The number of months left till another repeating frequency is due or undefined if the start is in the future
+ */
+export function getMonthsRemaining(every: number, start: { month: number; year: number }) {
   const MAX_MONTH = 12
   const date = new Date()
   const end = { month: date.getMonth(), year: date.getFullYear() }
 
   if (end.year < start.year) {
     // The inital schedule is still ahead of now
-    return
+    return undefined
   }
 
   const monthDifference = end.month - start.month
   const yearDifference = end.year - start.year
   const monthsElapsed = monthDifference + MAX_MONTH * yearDifference
 
+  // The modulo at the end guarantees `every - 0` will always return `0` rather than `every`
   return (every - (monthsElapsed % every)) % every
+}
+
+/**
+ * Calculates an offset such that when applied to `date` places it on the specified `weekday` in the same
+ * **month week** as the original date.
+ *
+ * ## NOTE
+ * The idea of "month week" or even "year week" is not the same as just "week". Ideally, there are
+ * ~52 weeks in a year and ~4 weeks in a month.
+ * Every "week" starts on Sunday (or Monday, as the case may be). Conversely, a "year week" starts
+ * on the first day of the year. Similarly, a "month week" starts on the first day of the month.
+ *
+ * @param date The datetime starting on the first or last day of the month
+ * @param weekday The target weekday for which to calculate for what `nth` day of the month it is
+ * @returns An offset such that when applied to `date` places it on the specified `weekday` in the same **month week**
+ */
+// Given:
+//   a variable, `(a)`, day of the week, as the `1st` day of the month,
+//   a variable, `(b)`, day of the week, as the target, `nth` day of the month
+//   a constant, `(c)`, number of days of the week as `7`
+//
+// We need to find how many days from `(a)` is `(b)`.
+//
+// Take for instance:
+//   a = 4 (Thu.)
+//   b = 2 (Tue.)
+// 0 1 2 3 4 5 6
+// S M T W T F S
+//         --->∙
+// --->∙
+//
+// With a derivation:
+//   x = (c - a + (b mod c)) mod c
+//   x = (7 - a + (b mod 7)) mod 7
+//   x = (7 - 4 + (2 mod 7)) mod 7
+//   x = 5
+//
+// Which means from Thu. the 1st, we have 5 days to get to Tue., which will then be the 6th.
+// To acheive the reverse, for example Thu. the 31st, we may do `7 - 5` to get to the last Tue.,
+// which will then be the 29th.
+const getDayOfWeekOffset = (date: Date, weekday: number) =>
+  (DOW - date.getDay() + (weekday % DOW)) % DOW
+
+/**
+ * Calculates and applies a correction factor, `b`, such that when added to `x2` makes the
+ * difference between `x2` and `x1` modulo `86_400_000` equal zero.
+ *
+ * ## Correction Factor Derivations:
+ * ```txt
+ * b = round(a / c) * c - a
+ * Where c = 86_400_000
+ *       a = Δx mod c
+ *       b = correction factor
+ * ```
+ *
+ * @param x2 The leading timestamp in milliseconds that a correction factor should be applied to
+ * @param x1 The trailing timestamp in milliseconds that when subtracted from `x2` mod `86_400_000` should equal zero
+ * @returns A timestamp, `x3`, in milliseconds, with the correction factor applied
+ */
+function align(x2: number, x1: number) {
+  // cf = round((dx % c) / c) * c - (dx % c)
+  const c = 86_400_000
+  const a = (x2 - x1) % c
+  const b = Math.round(a / c) * c - a
+  const x3 = x2 + b
+  return x3
+}
+
+/**
+ * Check if a given year is a leap year according to the Gregorian calendar
+ * @param year The year to check for
+ * @returns A boolean indicating whether the specified year is a leap year
+ */
+export function isLeapYear(year: number) {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)
+}
+
+/**
+ * Check if a given month is February using zero-based index for representing months of the year
+ * @param month The month to check for
+ * @returns A boolean indicating whether the specified month is February
+ */
+export function isFebruary(month: number): month is 1 {
+  return month == 1
+}
+
+/**
+ * Check if a given month is a leap month by checking whether the year is a leap year and the month
+ * is February.
+ *
+ * @param opts An object options specifying the month and year to check for
+ * @returns A boolean indicating whether the specified month is a leap month
+ */
+export function isLeapMonth(opts: { month: number; year: number }) {
+  return isFebruary(opts.month) && isLeapYear(opts.year)
+}
+
+/**
+ * Calculate the next leap year occuring after the specified year.
+ *
+ * @param year The start year from which to calculate the next leap year
+ * @returns The next leap year from the specified year
+ */
+export function nextLeapYear(year: number) {
+  let nextYearDivisibleBy4 = year + 1
+  if (nextYearDivisibleBy4 % 4 !== 0) nextYearDivisibleBy4 += 4 - (nextYearDivisibleBy4 % 4)
+  if (nextYearDivisibleBy4 % 100 === 0 && nextYearDivisibleBy4 % 400 !== 0)
+    nextYearDivisibleBy4 += 4
+  return nextYearDivisibleBy4
+}
+
+/**
+ * Generate a list of leap years ranging from the specified start year to the end year.
+ *
+ * Whether to include both the start year and end year as part of the results if they happen
+ * to be leap years themselves is customized using the `inclusive` option which is `false` by
+ * default.
+ *
+ * @param startYear The start year
+ * @param endYear The end year
+ * @param inclusive Whether to include both the start and end year in the result if they happen to be leap years
+ * @returns A list of leap years ranging from start year to end year, either inclusive or exclusive.
+ */
+export function getLeapYearsBetween(
+  startYear: number,
+  endYear: number,
+  inclusive: boolean = false,
+) {
+  const leapYears: Array<number> = []
+
+  // already implicitly guaranteed in loop condition, but better to return earlier
+  if (startYear === endYear) return leapYears
+
+  const start = inclusive ? startYear - 1 : startYear
+  const end = inclusive ? endYear : endYear - 1
+
+  {
+    let year = start
+    while ((year = nextLeapYear(year)) && year <= end) {
+      leapYears.push(year)
+    }
+  }
+  return leapYears
 }
