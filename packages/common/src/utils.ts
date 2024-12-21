@@ -22,7 +22,7 @@ export function isFn(v: any): v is (...args: any[]) => any {
  */
 export function never(_: never): never {
   never.never = null as never
-  throw new Error(`Unimplemented for ${_}`)
+  throw new Error(`Unexpected: This should never happen (args: ${_})`)
 }
 
 export namespace never {
@@ -194,13 +194,18 @@ export class BitMask {
     private readonly len: number,
   ) {}
 
-  static fromBits(bits: number, len: number) {
+  static fromBits(bits: number, len?: number) {
+    len ??= evaluate(() => {
+      let i = 0
+      while (bits >>> i !== 0) i++
+      return i
+    })
     return new BitMask(bits, len)
   }
 
   static fromPositions(positions: Array<number>) {
     const bits = positions.reduce((bits, pos) => turnon(bits, pos), 0)
-    return new BitMask(bits, positions.length)
+    return new BitMask(bits, Math.max(...positions) + 1)
   }
 
   toPositions(): Array<number> {
@@ -215,7 +220,18 @@ export class BitMask {
     return this.toPositions()
   }
 
+  toString(): string {
+    return this.bits.toString(2)
+  }
+
   valueOf(): number {
     return this.bits
+  }
+
+  [Symbol.toPrimitive](hint: 'string' | 'number' | 'default') {
+    if (hint === 'number') {
+      return this.valueOf()
+    }
+    return this.toString()
   }
 }
