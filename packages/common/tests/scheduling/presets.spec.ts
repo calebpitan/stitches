@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  ImutDate,
   nextDailySchedule,
   nextHourlySchedule,
   nextMonthlySchedule,
@@ -10,22 +11,22 @@ import {
 
 describe('scheduling/presets', () => {
   describe('#nextYearlySchedule', () => {
-    const date = new Date('2023-10-23T10:32:40.005Z')
+    const date = ImutDate.from('2023-10-23T10:32:40.005Z')
 
     it('should bring forward the anchortime to the next schedule date', () => {
       const forwarded = nextYearlySchedule.bringForward(date, 400)
-      expect(forwarded).toStrictEqual(new Date('2423-12-31T10:32:40.005Z'))
+      expect(forwarded).toStrictEqual(ImutDate.from('2423-12-31T10:32:40.005Z'))
     })
 
     it('should find the schedule for every `x` years in `m` months', () => {
       const schedules = nextYearlySchedule(date, 7, [0, 2, 4, 6, 8])
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-31T10:32:40.005Z'),
-        new Date('2030-03-31T10:32:40.005Z'),
-        new Date('2030-05-31T10:32:40.005Z'),
-        new Date('2030-07-31T10:32:40.005Z'),
-        new Date('2030-09-30T10:32:40.005Z'),
+        ImutDate.from('2030-01-31T10:32:40.005Z'),
+        ImutDate.from('2030-03-31T10:32:40.005Z'),
+        ImutDate.from('2030-05-31T10:32:40.005Z'),
+        ImutDate.from('2030-07-31T10:32:40.005Z'),
+        ImutDate.from('2030-09-30T10:32:40.005Z'),
       ])
     })
 
@@ -40,11 +41,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-06T10:32:40.005Z'),
-        new Date('2030-03-03T10:32:40.005Z'),
-        new Date('2030-05-05T10:32:40.005Z'),
-        new Date('2030-07-07T10:32:40.005Z'),
-        new Date('2030-09-01T10:32:40.005Z'),
+        ImutDate.from('2030-01-06T10:32:40.005Z'),
+        ImutDate.from('2030-03-03T10:32:40.005Z'),
+        ImutDate.from('2030-05-05T10:32:40.005Z'),
+        ImutDate.from('2030-07-07T10:32:40.005Z'),
+        ImutDate.from('2030-09-01T10:32:40.005Z'),
       ])
     })
 
@@ -55,11 +56,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-07T10:32:40.005Z'),
-        new Date('2030-03-04T10:32:40.005Z'),
-        new Date('2030-05-06T10:32:40.005Z'),
-        new Date('2030-07-01T10:32:40.005Z'),
-        new Date('2030-09-02T10:32:40.005Z'),
+        ImutDate.from('2030-01-07T10:32:40.005Z'),
+        ImutDate.from('2030-03-04T10:32:40.005Z'),
+        ImutDate.from('2030-05-06T10:32:40.005Z'),
+        ImutDate.from('2030-07-01T10:32:40.005Z'),
+        ImutDate.from('2030-09-02T10:32:40.005Z'),
       ])
     })
 
@@ -70,11 +71,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-02T10:32:40.005Z'),
-        new Date('2030-03-06T10:32:40.005Z'),
-        new Date('2030-05-01T10:32:40.005Z'),
-        new Date('2030-07-03T10:32:40.005Z'),
-        new Date('2030-09-04T10:32:40.005Z'),
+        ImutDate.from('2030-01-02T10:32:40.005Z'),
+        ImutDate.from('2030-03-06T10:32:40.005Z'),
+        ImutDate.from('2030-05-01T10:32:40.005Z'),
+        ImutDate.from('2030-07-03T10:32:40.005Z'),
+        ImutDate.from('2030-09-04T10:32:40.005Z'),
       ])
     })
 
@@ -85,11 +86,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-13T10:32:40.005Z'),
-        new Date('2030-03-10T10:32:40.005Z'),
-        new Date('2030-05-12T10:32:40.005Z'),
-        new Date('2030-07-14T10:32:40.005Z'),
-        new Date('2030-09-08T10:32:40.005Z'),
+        ImutDate.from('2030-01-13T10:32:40.005Z'),
+        ImutDate.from('2030-03-10T10:32:40.005Z'),
+        ImutDate.from('2030-05-12T10:32:40.005Z'),
+        ImutDate.from('2030-07-14T10:32:40.005Z'),
+        ImutDate.from('2030-09-08T10:32:40.005Z'),
       ])
     })
 
@@ -100,11 +101,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-08T10:32:40.005Z'),
-        new Date('2030-03-12T10:32:40.005Z'),
-        new Date('2030-05-14T10:32:40.005Z'),
-        new Date('2030-07-09T10:32:40.005Z'),
-        new Date('2030-09-10T10:32:40.005Z'),
+        ImutDate.from('2030-01-08T10:32:40.005Z'),
+        ImutDate.from('2030-03-12T10:32:40.005Z'),
+        ImutDate.from('2030-05-14T10:32:40.005Z'),
+        ImutDate.from('2030-07-09T10:32:40.005Z'),
+        ImutDate.from('2030-09-10T10:32:40.005Z'),
       ])
     })
 
@@ -115,11 +116,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-10T10:32:40.005Z'),
-        new Date('2030-03-14T10:32:40.005Z'),
-        new Date('2030-05-09T10:32:40.005Z'),
-        new Date('2030-07-11T10:32:40.005Z'),
-        new Date('2030-09-12T10:32:40.005Z'),
+        ImutDate.from('2030-01-10T10:32:40.005Z'),
+        ImutDate.from('2030-03-14T10:32:40.005Z'),
+        ImutDate.from('2030-05-09T10:32:40.005Z'),
+        ImutDate.from('2030-07-11T10:32:40.005Z'),
+        ImutDate.from('2030-09-12T10:32:40.005Z'),
       ])
     })
 
@@ -131,10 +132,10 @@ describe('scheduling/presets', () => {
 
       expect(schedules).toMatchObject([
         undefined,
-        new Date('2030-03-31T10:32:40.005Z'),
+        ImutDate.from('2030-03-31T10:32:40.005Z'),
         undefined,
         undefined,
-        new Date('2030-09-29T10:32:40.005Z'),
+        ImutDate.from('2030-09-29T10:32:40.005Z'),
       ])
     })
 
@@ -146,8 +147,8 @@ describe('scheduling/presets', () => {
 
       expect(schedules).toMatchObject([
         undefined,
-        new Date('2030-03-29T10:32:40.005Z'),
-        new Date('2030-05-31T10:32:40.005Z'),
+        ImutDate.from('2030-03-29T10:32:40.005Z'),
+        ImutDate.from('2030-05-31T10:32:40.005Z'),
         undefined,
         undefined,
       ])
@@ -161,7 +162,7 @@ describe('scheduling/presets', () => {
 
       expect(schedules).toMatchObject([
         undefined,
-        new Date('2030-03-30T10:32:40.005Z'),
+        ImutDate.from('2030-03-30T10:32:40.005Z'),
         undefined,
         undefined,
         undefined,
@@ -175,11 +176,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-29T10:32:40.005Z'),
-        new Date('2030-03-26T10:32:40.005Z'),
-        new Date('2030-05-28T10:32:40.005Z'),
-        new Date('2030-07-30T10:32:40.005Z'),
-        new Date('2030-09-24T10:32:40.005Z'),
+        ImutDate.from('2030-01-29T10:32:40.005Z'),
+        ImutDate.from('2030-03-26T10:32:40.005Z'),
+        ImutDate.from('2030-05-28T10:32:40.005Z'),
+        ImutDate.from('2030-07-30T10:32:40.005Z'),
+        ImutDate.from('2030-09-24T10:32:40.005Z'),
       ])
     })
 
@@ -190,11 +191,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-31T10:32:40.005Z'),
-        new Date('2030-03-28T10:32:40.005Z'),
-        new Date('2030-05-30T10:32:40.005Z'),
-        new Date('2030-07-25T10:32:40.005Z'),
-        new Date('2030-09-26T10:32:40.005Z'),
+        ImutDate.from('2030-01-31T10:32:40.005Z'),
+        ImutDate.from('2030-03-28T10:32:40.005Z'),
+        ImutDate.from('2030-05-30T10:32:40.005Z'),
+        ImutDate.from('2030-07-25T10:32:40.005Z'),
+        ImutDate.from('2030-09-26T10:32:40.005Z'),
       ])
     })
 
@@ -205,11 +206,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-26T10:32:40.005Z'),
-        new Date('2030-03-30T10:32:40.005Z'),
-        new Date('2030-05-25T10:32:40.005Z'),
-        new Date('2030-07-27T10:32:40.005Z'),
-        new Date('2030-09-28T10:32:40.005Z'),
+        ImutDate.from('2030-01-26T10:32:40.005Z'),
+        ImutDate.from('2030-03-30T10:32:40.005Z'),
+        ImutDate.from('2030-05-25T10:32:40.005Z'),
+        ImutDate.from('2030-07-27T10:32:40.005Z'),
+        ImutDate.from('2030-09-28T10:32:40.005Z'),
       ])
     })
 
@@ -224,11 +225,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-01T10:32:40.005Z'),
-        new Date('2030-03-01T10:32:40.005Z'),
-        new Date('2030-05-01T10:32:40.005Z'),
-        new Date('2030-07-01T10:32:40.005Z'),
-        new Date('2030-09-01T10:32:40.005Z'),
+        ImutDate.from('2030-01-01T10:32:40.005Z'),
+        ImutDate.from('2030-03-01T10:32:40.005Z'),
+        ImutDate.from('2030-05-01T10:32:40.005Z'),
+        ImutDate.from('2030-07-01T10:32:40.005Z'),
+        ImutDate.from('2030-09-01T10:32:40.005Z'),
       ])
     })
 
@@ -239,11 +240,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-02T10:32:40.005Z'),
-        new Date('2030-03-02T10:32:40.005Z'),
-        new Date('2030-05-02T10:32:40.005Z'),
-        new Date('2030-07-02T10:32:40.005Z'),
-        new Date('2030-09-02T10:32:40.005Z'),
+        ImutDate.from('2030-01-02T10:32:40.005Z'),
+        ImutDate.from('2030-03-02T10:32:40.005Z'),
+        ImutDate.from('2030-05-02T10:32:40.005Z'),
+        ImutDate.from('2030-07-02T10:32:40.005Z'),
+        ImutDate.from('2030-09-02T10:32:40.005Z'),
       ])
     })
 
@@ -254,11 +255,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-03T10:32:40.005Z'),
-        new Date('2030-03-03T10:32:40.005Z'),
-        new Date('2030-05-03T10:32:40.005Z'),
-        new Date('2030-07-03T10:32:40.005Z'),
-        new Date('2030-09-03T10:32:40.005Z'),
+        ImutDate.from('2030-01-03T10:32:40.005Z'),
+        ImutDate.from('2030-03-03T10:32:40.005Z'),
+        ImutDate.from('2030-05-03T10:32:40.005Z'),
+        ImutDate.from('2030-07-03T10:32:40.005Z'),
+        ImutDate.from('2030-09-03T10:32:40.005Z'),
       ])
     })
 
@@ -269,11 +270,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-04T10:32:40.005Z'),
-        new Date('2030-03-04T10:32:40.005Z'),
-        new Date('2030-05-04T10:32:40.005Z'),
-        new Date('2030-07-04T10:32:40.005Z'),
-        new Date('2030-09-04T10:32:40.005Z'),
+        ImutDate.from('2030-01-04T10:32:40.005Z'),
+        ImutDate.from('2030-03-04T10:32:40.005Z'),
+        ImutDate.from('2030-05-04T10:32:40.005Z'),
+        ImutDate.from('2030-07-04T10:32:40.005Z'),
+        ImutDate.from('2030-09-04T10:32:40.005Z'),
       ])
     })
 
@@ -284,11 +285,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-05T10:32:40.005Z'),
-        new Date('2030-03-05T10:32:40.005Z'),
-        new Date('2030-05-05T10:32:40.005Z'),
-        new Date('2030-07-05T10:32:40.005Z'),
-        new Date('2030-09-05T10:32:40.005Z'),
+        ImutDate.from('2030-01-05T10:32:40.005Z'),
+        ImutDate.from('2030-03-05T10:32:40.005Z'),
+        ImutDate.from('2030-05-05T10:32:40.005Z'),
+        ImutDate.from('2030-07-05T10:32:40.005Z'),
+        ImutDate.from('2030-09-05T10:32:40.005Z'),
       ])
     })
 
@@ -299,11 +300,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-02-28T10:32:40.005Z'),
-        new Date('2030-04-30T10:32:40.005Z'),
-        new Date('2030-06-30T10:32:40.005Z'),
-        new Date('2030-08-31T10:32:40.005Z'),
-        new Date('2030-10-31T10:32:40.005Z'),
+        ImutDate.from('2030-02-28T10:32:40.005Z'),
+        ImutDate.from('2030-04-30T10:32:40.005Z'),
+        ImutDate.from('2030-06-30T10:32:40.005Z'),
+        ImutDate.from('2030-08-31T10:32:40.005Z'),
+        ImutDate.from('2030-10-31T10:32:40.005Z'),
       ])
     })
 
@@ -317,11 +318,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-01T10:32:40.005Z'),
-        new Date('2030-03-01T10:32:40.005Z'),
-        new Date('2030-05-01T10:32:40.005Z'),
-        new Date('2030-07-01T10:32:40.005Z'),
-        new Date('2030-09-02T10:32:40.005Z'),
+        ImutDate.from('2030-01-01T10:32:40.005Z'),
+        ImutDate.from('2030-03-01T10:32:40.005Z'),
+        ImutDate.from('2030-05-01T10:32:40.005Z'),
+        ImutDate.from('2030-07-01T10:32:40.005Z'),
+        ImutDate.from('2030-09-02T10:32:40.005Z'),
       ])
     })
 
@@ -332,11 +333,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-02T10:32:40.005Z'),
-        new Date('2030-03-04T10:32:40.005Z'),
-        new Date('2030-05-02T10:32:40.005Z'),
-        new Date('2030-07-02T10:32:40.005Z'),
-        new Date('2030-09-03T10:32:40.005Z'),
+        ImutDate.from('2030-01-02T10:32:40.005Z'),
+        ImutDate.from('2030-03-04T10:32:40.005Z'),
+        ImutDate.from('2030-05-02T10:32:40.005Z'),
+        ImutDate.from('2030-07-02T10:32:40.005Z'),
+        ImutDate.from('2030-09-03T10:32:40.005Z'),
       ])
     })
 
@@ -347,11 +348,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-03T10:32:40.005Z'),
-        new Date('2030-03-05T10:32:40.005Z'),
-        new Date('2030-05-03T10:32:40.005Z'),
-        new Date('2030-07-03T10:32:40.005Z'),
-        new Date('2030-09-04T10:32:40.005Z'),
+        ImutDate.from('2030-01-03T10:32:40.005Z'),
+        ImutDate.from('2030-03-05T10:32:40.005Z'),
+        ImutDate.from('2030-05-03T10:32:40.005Z'),
+        ImutDate.from('2030-07-03T10:32:40.005Z'),
+        ImutDate.from('2030-09-04T10:32:40.005Z'),
       ])
     })
 
@@ -362,11 +363,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-04T10:32:40.005Z'),
-        new Date('2030-03-06T10:32:40.005Z'),
-        new Date('2030-05-06T10:32:40.005Z'),
-        new Date('2030-07-04T10:32:40.005Z'),
-        new Date('2030-09-05T10:32:40.005Z'),
+        ImutDate.from('2030-01-04T10:32:40.005Z'),
+        ImutDate.from('2030-03-06T10:32:40.005Z'),
+        ImutDate.from('2030-05-06T10:32:40.005Z'),
+        ImutDate.from('2030-07-04T10:32:40.005Z'),
+        ImutDate.from('2030-09-05T10:32:40.005Z'),
       ])
     })
 
@@ -377,11 +378,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-07T10:32:40.005Z'),
-        new Date('2030-03-07T10:32:40.005Z'),
-        new Date('2030-05-07T10:32:40.005Z'),
-        new Date('2030-07-05T10:32:40.005Z'),
-        new Date('2030-09-06T10:32:40.005Z'),
+        ImutDate.from('2030-01-07T10:32:40.005Z'),
+        ImutDate.from('2030-03-07T10:32:40.005Z'),
+        ImutDate.from('2030-05-07T10:32:40.005Z'),
+        ImutDate.from('2030-07-05T10:32:40.005Z'),
+        ImutDate.from('2030-09-06T10:32:40.005Z'),
       ])
     })
 
@@ -392,11 +393,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-01-31T10:32:40.005Z'),
-        new Date('2030-03-29T10:32:40.005Z'),
-        new Date('2030-05-31T10:32:40.005Z'),
-        new Date('2030-07-31T10:32:40.005Z'),
-        new Date('2030-09-30T10:32:40.005Z'),
+        ImutDate.from('2030-01-31T10:32:40.005Z'),
+        ImutDate.from('2030-03-29T10:32:40.005Z'),
+        ImutDate.from('2030-05-31T10:32:40.005Z'),
+        ImutDate.from('2030-07-31T10:32:40.005Z'),
+        ImutDate.from('2030-09-30T10:32:40.005Z'),
       ])
     })
 
@@ -411,11 +412,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-02-02T10:32:40.005Z'),
-        new Date('2030-04-06T10:32:40.005Z'),
-        new Date('2030-06-01T10:32:40.005Z'),
-        new Date('2030-08-03T10:32:40.005Z'),
-        new Date('2030-10-05T10:32:40.005Z'),
+        ImutDate.from('2030-02-02T10:32:40.005Z'),
+        ImutDate.from('2030-04-06T10:32:40.005Z'),
+        ImutDate.from('2030-06-01T10:32:40.005Z'),
+        ImutDate.from('2030-08-03T10:32:40.005Z'),
+        ImutDate.from('2030-10-05T10:32:40.005Z'),
       ])
     })
 
@@ -426,11 +427,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-02-03T10:32:40.005Z'),
-        new Date('2030-04-07T10:32:40.005Z'),
-        new Date('2030-06-02T10:32:40.005Z'),
-        new Date('2030-08-04T10:32:40.005Z'),
-        new Date('2030-10-06T10:32:40.005Z'),
+        ImutDate.from('2030-02-03T10:32:40.005Z'),
+        ImutDate.from('2030-04-07T10:32:40.005Z'),
+        ImutDate.from('2030-06-02T10:32:40.005Z'),
+        ImutDate.from('2030-08-04T10:32:40.005Z'),
+        ImutDate.from('2030-10-06T10:32:40.005Z'),
       ])
     })
 
@@ -441,11 +442,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-02-09T10:32:40.005Z'),
-        new Date('2030-04-13T10:32:40.005Z'),
-        new Date('2030-06-08T10:32:40.005Z'),
-        new Date('2030-08-10T10:32:40.005Z'),
-        new Date('2030-10-12T10:32:40.005Z'),
+        ImutDate.from('2030-02-09T10:32:40.005Z'),
+        ImutDate.from('2030-04-13T10:32:40.005Z'),
+        ImutDate.from('2030-06-08T10:32:40.005Z'),
+        ImutDate.from('2030-08-10T10:32:40.005Z'),
+        ImutDate.from('2030-10-12T10:32:40.005Z'),
       ])
     })
 
@@ -456,11 +457,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-02-10T10:32:40.005Z'),
-        new Date('2030-04-14T10:32:40.005Z'),
-        new Date('2030-06-09T10:32:40.005Z'),
-        new Date('2030-08-11T10:32:40.005Z'),
-        new Date('2030-10-13T10:32:40.005Z'),
+        ImutDate.from('2030-02-10T10:32:40.005Z'),
+        ImutDate.from('2030-04-14T10:32:40.005Z'),
+        ImutDate.from('2030-06-09T10:32:40.005Z'),
+        ImutDate.from('2030-08-11T10:32:40.005Z'),
+        ImutDate.from('2030-10-13T10:32:40.005Z'),
       ])
     })
 
@@ -471,11 +472,11 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-02-16T10:32:40.005Z'),
-        new Date('2030-04-20T10:32:40.005Z'),
-        new Date('2030-06-15T10:32:40.005Z'),
-        new Date('2030-08-17T10:32:40.005Z'),
-        new Date('2030-10-19T10:32:40.005Z'),
+        ImutDate.from('2030-02-16T10:32:40.005Z'),
+        ImutDate.from('2030-04-20T10:32:40.005Z'),
+        ImutDate.from('2030-06-15T10:32:40.005Z'),
+        ImutDate.from('2030-08-17T10:32:40.005Z'),
+        ImutDate.from('2030-10-19T10:32:40.005Z'),
       ])
     })
 
@@ -486,21 +487,21 @@ describe('scheduling/presets', () => {
       })
 
       expect(schedules).toMatchObject([
-        new Date('2030-02-24T10:32:40.005Z'),
-        new Date('2030-04-28T10:32:40.005Z'),
-        new Date('2030-06-30T10:32:40.005Z'),
-        new Date('2030-08-31T10:32:40.005Z'),
-        new Date('2030-10-27T10:32:40.005Z'),
+        ImutDate.from('2030-02-24T10:32:40.005Z'),
+        ImutDate.from('2030-04-28T10:32:40.005Z'),
+        ImutDate.from('2030-06-30T10:32:40.005Z'),
+        ImutDate.from('2030-08-31T10:32:40.005Z'),
+        ImutDate.from('2030-10-27T10:32:40.005Z'),
       ])
     })
   })
 
   describe('#nextMonthlySchedule', () => {
-    const date = new Date('2023-10-23T10:32:40.005Z')
+    const date = ImutDate.from('2023-10-23T10:32:40.005Z')
 
     it('should bring forward the anchortime to the next schedule date', () => {
       const forwarded = nextMonthlySchedule.bringForward(date, 60)
-      expect(forwarded).toStrictEqual(new Date('2028-10-31T10:32:40.005Z'))
+      expect(forwarded).toStrictEqual(ImutDate.from('2028-10-31T10:32:40.005Z'))
     })
 
     it('should find the schedule for every `x` months on `n` days', () => {
@@ -512,37 +513,37 @@ describe('scheduling/presets', () => {
       const schedule6 = nextMonthlySchedule(date, 36, [23, 24, 31])
 
       expect(schedule1).toMatchObject([
-        new Date('2025-02-01T10:32:40.005Z'),
-        new Date('2025-02-15T10:32:40.005Z'),
+        ImutDate.from('2025-02-01T10:32:40.005Z'),
+        ImutDate.from('2025-02-15T10:32:40.005Z'),
       ])
 
       expect(schedule2).toMatchObject([
-        new Date('2025-10-13T10:32:40.005Z'),
-        new Date('2025-10-14T10:32:40.005Z'),
-        new Date('2025-10-31T10:32:40.005Z'),
+        ImutDate.from('2025-10-13T10:32:40.005Z'),
+        ImutDate.from('2025-10-14T10:32:40.005Z'),
+        ImutDate.from('2025-10-31T10:32:40.005Z'),
       ])
 
       expect(schedule3).toMatchObject([
-        new Date('2025-05-10T10:32:40.005Z'),
-        new Date('2025-05-12T10:32:40.005Z'),
-        new Date('2025-05-31T10:32:40.005Z'),
+        ImutDate.from('2025-05-10T10:32:40.005Z'),
+        ImutDate.from('2025-05-12T10:32:40.005Z'),
+        ImutDate.from('2025-05-31T10:32:40.005Z'),
       ])
 
       expect(schedule4).toMatchObject([
-        new Date('2025-10-21T10:32:40.005Z'),
-        new Date('2025-10-27T10:32:40.005Z'),
-        new Date('2025-10-31T10:32:40.005Z'),
+        ImutDate.from('2025-10-21T10:32:40.005Z'),
+        ImutDate.from('2025-10-27T10:32:40.005Z'),
+        ImutDate.from('2025-10-31T10:32:40.005Z'),
       ])
 
       expect(schedule5).toMatchObject([
-        new Date('2025-11-03T10:32:40.005Z'),
-        new Date('2025-11-09T10:32:40.005Z'),
+        ImutDate.from('2025-11-03T10:32:40.005Z'),
+        ImutDate.from('2025-11-09T10:32:40.005Z'),
       ])
 
       expect(schedule6).toMatchObject([
-        new Date('2026-10-23T10:32:40.005Z'),
-        new Date('2026-10-24T10:32:40.005Z'),
-        new Date('2026-10-31T10:32:40.005Z'),
+        ImutDate.from('2026-10-23T10:32:40.005Z'),
+        ImutDate.from('2026-10-24T10:32:40.005Z'),
+        ImutDate.from('2026-10-31T10:32:40.005Z'),
       ])
     })
 
@@ -589,13 +590,13 @@ describe('scheduling/presets', () => {
         weekday: 6,
       })
 
-      expect(schedule1).toStrictEqual(new Date('2028-10-01T10:32:40.005Z'))
-      expect(schedule2).toStrictEqual(new Date('2028-10-02T10:32:40.005Z'))
-      expect(schedule3).toStrictEqual(new Date('2028-10-03T10:32:40.005Z'))
-      expect(schedule4).toStrictEqual(new Date('2028-10-04T10:32:40.005Z'))
-      expect(schedule5).toStrictEqual(new Date('2028-10-05T10:32:40.005Z'))
-      expect(schedule6).toStrictEqual(new Date('2028-10-06T10:32:40.005Z'))
-      expect(schedule7).toStrictEqual(new Date('2028-10-07T10:32:40.005Z'))
+      expect(schedule1).toStrictEqual(ImutDate.from('2028-10-01T10:32:40.005Z'))
+      expect(schedule2).toStrictEqual(ImutDate.from('2028-10-02T10:32:40.005Z'))
+      expect(schedule3).toStrictEqual(ImutDate.from('2028-10-03T10:32:40.005Z'))
+      expect(schedule4).toStrictEqual(ImutDate.from('2028-10-04T10:32:40.005Z'))
+      expect(schedule5).toStrictEqual(ImutDate.from('2028-10-05T10:32:40.005Z'))
+      expect(schedule6).toStrictEqual(ImutDate.from('2028-10-06T10:32:40.005Z'))
+      expect(schedule7).toStrictEqual(ImutDate.from('2028-10-07T10:32:40.005Z'))
     })
 
     it('should find the schedule for every `x` months on the second Sun...Sat.', () => {
@@ -641,13 +642,13 @@ describe('scheduling/presets', () => {
         weekday: 6,
       })
 
-      expect(schedule1).toStrictEqual(new Date('2028-10-08T10:32:40.005Z'))
-      expect(schedule2).toStrictEqual(new Date('2028-10-09T10:32:40.005Z'))
-      expect(schedule3).toStrictEqual(new Date('2028-10-10T10:32:40.005Z'))
-      expect(schedule4).toStrictEqual(new Date('2028-10-11T10:32:40.005Z'))
-      expect(schedule5).toStrictEqual(new Date('2028-10-12T10:32:40.005Z'))
-      expect(schedule6).toStrictEqual(new Date('2028-10-13T10:32:40.005Z'))
-      expect(schedule7).toStrictEqual(new Date('2028-10-14T10:32:40.005Z'))
+      expect(schedule1).toStrictEqual(ImutDate.from('2028-10-08T10:32:40.005Z'))
+      expect(schedule2).toStrictEqual(ImutDate.from('2028-10-09T10:32:40.005Z'))
+      expect(schedule3).toStrictEqual(ImutDate.from('2028-10-10T10:32:40.005Z'))
+      expect(schedule4).toStrictEqual(ImutDate.from('2028-10-11T10:32:40.005Z'))
+      expect(schedule5).toStrictEqual(ImutDate.from('2028-10-12T10:32:40.005Z'))
+      expect(schedule6).toStrictEqual(ImutDate.from('2028-10-13T10:32:40.005Z'))
+      expect(schedule7).toStrictEqual(ImutDate.from('2028-10-14T10:32:40.005Z'))
     })
 
     it('should find the schedule for every `x` months on the third Sun...Sat.', () => {
@@ -693,13 +694,13 @@ describe('scheduling/presets', () => {
         weekday: 6,
       })
 
-      expect(schedule1).toStrictEqual(new Date('2028-10-15T10:32:40.005Z'))
-      expect(schedule2).toStrictEqual(new Date('2028-10-16T10:32:40.005Z'))
-      expect(schedule3).toStrictEqual(new Date('2028-10-17T10:32:40.005Z'))
-      expect(schedule4).toStrictEqual(new Date('2028-10-18T10:32:40.005Z'))
-      expect(schedule5).toStrictEqual(new Date('2028-10-19T10:32:40.005Z'))
-      expect(schedule6).toStrictEqual(new Date('2028-10-20T10:32:40.005Z'))
-      expect(schedule7).toStrictEqual(new Date('2028-10-21T10:32:40.005Z'))
+      expect(schedule1).toStrictEqual(ImutDate.from('2028-10-15T10:32:40.005Z'))
+      expect(schedule2).toStrictEqual(ImutDate.from('2028-10-16T10:32:40.005Z'))
+      expect(schedule3).toStrictEqual(ImutDate.from('2028-10-17T10:32:40.005Z'))
+      expect(schedule4).toStrictEqual(ImutDate.from('2028-10-18T10:32:40.005Z'))
+      expect(schedule5).toStrictEqual(ImutDate.from('2028-10-19T10:32:40.005Z'))
+      expect(schedule6).toStrictEqual(ImutDate.from('2028-10-20T10:32:40.005Z'))
+      expect(schedule7).toStrictEqual(ImutDate.from('2028-10-21T10:32:40.005Z'))
     })
 
     it('should find the schedule for every `x` months on the fourth Sun...Sat.', () => {
@@ -745,13 +746,13 @@ describe('scheduling/presets', () => {
         weekday: 6,
       })
 
-      expect(schedule1).toStrictEqual(new Date('2028-10-22T10:32:40.005Z'))
-      expect(schedule2).toStrictEqual(new Date('2028-10-23T10:32:40.005Z'))
-      expect(schedule3).toStrictEqual(new Date('2028-10-24T10:32:40.005Z'))
-      expect(schedule4).toStrictEqual(new Date('2028-10-25T10:32:40.005Z'))
-      expect(schedule5).toStrictEqual(new Date('2028-10-26T10:32:40.005Z'))
-      expect(schedule6).toStrictEqual(new Date('2028-10-27T10:32:40.005Z'))
-      expect(schedule7).toStrictEqual(new Date('2028-10-28T10:32:40.005Z'))
+      expect(schedule1).toStrictEqual(ImutDate.from('2028-10-22T10:32:40.005Z'))
+      expect(schedule2).toStrictEqual(ImutDate.from('2028-10-23T10:32:40.005Z'))
+      expect(schedule3).toStrictEqual(ImutDate.from('2028-10-24T10:32:40.005Z'))
+      expect(schedule4).toStrictEqual(ImutDate.from('2028-10-25T10:32:40.005Z'))
+      expect(schedule5).toStrictEqual(ImutDate.from('2028-10-26T10:32:40.005Z'))
+      expect(schedule6).toStrictEqual(ImutDate.from('2028-10-27T10:32:40.005Z'))
+      expect(schedule7).toStrictEqual(ImutDate.from('2028-10-28T10:32:40.005Z'))
     })
 
     it('should find the schedule for every `x` months on the fifth Sun...Sat.', () => {
@@ -797,13 +798,13 @@ describe('scheduling/presets', () => {
         weekday: 6,
       })
 
-      expect(schedule1).toStrictEqual(new Date('2028-10-29T10:32:40.005Z'))
-      expect(schedule2).toStrictEqual(new Date('2028-10-30T10:32:40.005Z'))
-      expect(schedule3).toStrictEqual(new Date('2028-10-31T10:32:40.005Z'))
-      expect(schedule4).toStrictEqual(undefined)
-      expect(schedule5).toStrictEqual(undefined)
-      expect(schedule6).toStrictEqual(undefined)
-      expect(schedule7).toStrictEqual(undefined)
+      expect(schedule1).toStrictEqual(ImutDate.from('2028-10-29T10:32:40.005Z'))
+      expect(schedule2).toStrictEqual(ImutDate.from('2028-10-30T10:32:40.005Z'))
+      expect(schedule3).toStrictEqual(ImutDate.from('2028-10-31T10:32:40.005Z'))
+      expect(schedule4).toStrictEqual(ImutDate.from('2053-10-29T10:32:40.005Z')) // the closest time every 60mo with 5 Wed's in Oct
+      expect(schedule5).toStrictEqual(ImutDate.from('2043-10-29T10:32:40.005Z')) // the closest time every 60mo with 5 Thu's in Oct
+      expect(schedule6).toStrictEqual(ImutDate.from('2038-10-29T10:32:40.005Z')) // the closest time every 60mo with 5 Fri's in Oct
+      expect(schedule7).toStrictEqual(ImutDate.from('2033-10-29T10:32:40.005Z')) // the closest time every 60mo with 5 Sat's in Oct
     })
 
     it('should find the schedule for every `x` months on the last Sun...Sat.', () => {
@@ -849,22 +850,22 @@ describe('scheduling/presets', () => {
         weekday: 6,
       })
 
-      expect(schedule1).toStrictEqual(new Date('2028-10-29T10:32:40.005Z'))
-      expect(schedule2).toStrictEqual(new Date('2028-10-30T10:32:40.005Z'))
-      expect(schedule3).toStrictEqual(new Date('2028-10-31T10:32:40.005Z'))
-      expect(schedule4).toStrictEqual(new Date('2028-10-25T10:32:40.005Z'))
-      expect(schedule5).toStrictEqual(new Date('2028-10-26T10:32:40.005Z'))
-      expect(schedule6).toStrictEqual(new Date('2028-10-27T10:32:40.005Z'))
-      expect(schedule7).toStrictEqual(new Date('2028-10-28T10:32:40.005Z'))
+      expect(schedule1).toStrictEqual(ImutDate.from('2028-10-29T10:32:40.005Z'))
+      expect(schedule2).toStrictEqual(ImutDate.from('2028-10-30T10:32:40.005Z'))
+      expect(schedule3).toStrictEqual(ImutDate.from('2028-10-31T10:32:40.005Z'))
+      expect(schedule4).toStrictEqual(ImutDate.from('2028-10-25T10:32:40.005Z'))
+      expect(schedule5).toStrictEqual(ImutDate.from('2028-10-26T10:32:40.005Z'))
+      expect(schedule6).toStrictEqual(ImutDate.from('2028-10-27T10:32:40.005Z'))
+      expect(schedule7).toStrictEqual(ImutDate.from('2028-10-28T10:32:40.005Z'))
     })
   })
 
   describe('#nextWeeklySchedule', () => {
-    const anchor = new Date('2024-12-06T15:09:00.005Z')
+    const anchor = ImutDate.from('2024-12-06T15:09:00.005Z')
 
     it('should bring forward the anchor time to the next schedule date', () => {
       const result = nextWeeklySchedule.bringForward(anchor, 12)
-      expect(result).toStrictEqual(new Date('2025-02-28T15:09:00.005Z'))
+      expect(result).toStrictEqual(ImutDate.from('2025-02-28T15:09:00.005Z'))
     })
 
     it('should find the schedule for every `x` weeks', () => {
@@ -878,19 +879,19 @@ describe('scheduling/presets', () => {
       const result = nextWeeklySchedule(anchor, 13, [0, 1, 2, 3, 4, 5, 6])
 
       expect(result).toMatchObject([
-        new Date('2025-03-02T15:09:00.005Z'),
-        new Date('2025-03-03T15:09:00.005Z'),
-        new Date('2025-03-04T15:09:00.005Z'),
-        new Date('2025-03-05T15:09:00.005Z'),
-        new Date('2025-03-06T15:09:00.005Z'),
-        new Date('2025-03-07T15:09:00.005Z'),
-        new Date('2025-03-08T15:09:00.005Z'),
+        ImutDate.from('2025-03-02T15:09:00.005Z'),
+        ImutDate.from('2025-03-03T15:09:00.005Z'),
+        ImutDate.from('2025-03-04T15:09:00.005Z'),
+        ImutDate.from('2025-03-05T15:09:00.005Z'),
+        ImutDate.from('2025-03-06T15:09:00.005Z'),
+        ImutDate.from('2025-03-07T15:09:00.005Z'),
+        ImutDate.from('2025-03-08T15:09:00.005Z'),
       ])
     })
   })
 
   describe('#nextDailySchedule', () => {
-    const anchor = new Date('2024-12-06T15:09:00.005Z')
+    const anchor = ImutDate.from('2024-12-06T15:09:00.005Z')
 
     it('should find the schedule for every `x` days', () => {
       const result = nextDailySchedule(anchor, 73)
@@ -900,11 +901,11 @@ describe('scheduling/presets', () => {
   })
 
   describe('#nextHourlySchedule', () => {
-    const anchor = new Date('2024-12-06T15:09:00.005Z')
+    const anchor = ImutDate.from('2024-12-06T15:09:00.005Z')
 
     it('should find the schedule for every `x` hours', () => {
       const result = nextHourlySchedule(anchor, 13)
-      // assertion can be ambigous due to multiples, even other than 1 and 2. 
+      // assertion can be ambigous due to multiples, even other than 1 and 2.
       // 13, 26, 52, 65..., so in the fourth occurence 5 would be a factor and would be ambigous with 13
       expect(((result.getTime() - anchor.getTime()) / 3_600_000) % 13).toStrictEqual(0)
     })
