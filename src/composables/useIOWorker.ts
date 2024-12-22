@@ -1,4 +1,4 @@
-import { inject } from 'vue'
+import { inject, type Ref } from 'vue'
 
 import type { Remote } from 'comlink'
 
@@ -6,10 +6,10 @@ import type { IOController } from '@/services/worker/io'
 import { Sym } from '@/utils'
 
 export function useIOWorker() {
-  const ioWorker = inject<Remote<IOController> | null>(Sym.Inject.IO_WORKER)
+  const ioWorker = inject<Ref<Remote<IOController> | null>>(Sym.Inject.IO_WORKER)
 
-  if (!ioWorker)
+  if (!ioWorker || !ioWorker.value)
     throw new Error(`Cannot inject an unprovided value: ${Sym.Inject.IO_WORKER.toString()}`)
 
-  return ioWorker
+  return ioWorker.value
 }

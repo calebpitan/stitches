@@ -129,25 +129,19 @@ export function useRedactTask() {
   return mutated('task', result)
 }
 
-// export const useScheduleTask = defineMutation(() => {
-//   const worker = useIOWorker()
-//   const queryCache = useQueryCache()
+export function useMarkTaskAsCompleted() {
+  const worker = useIOWorker()
+  // const queryCache = useQueryCache()
 
-//   const result = useMutation({
-//     mutation: async (patch: Patch<Omit<BaseTaskSchedule, 'taskId'>>) => {
-//       const res = await worker.services.task.scheduleTask(patch.id, patch.data)
-//       return res
-//     },
-//     onSettled: async () => {
-//       await queryCache.invalidateQueries({
-//         key: ['tasks-schedules'],
-//         active: true,
-//       })
-//     },
-//   })
+  const result = useMutation({
+    mutation: async (id: string) => {
+      const res = await worker.services.task.markAsCompleted(id)
+      return res
+    },
+  })
 
-//   return mutated('schedule', result)
-// })
+  return result
+}
 
 export function useAddTagToTask() {
   const worker = useIOWorker()

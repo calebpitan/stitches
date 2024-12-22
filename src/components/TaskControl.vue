@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 
 import { $dt } from '@primevue/themes'
+import { evaluate } from '@stitches/common'
 import { useElementBounding } from '@vueuse/core'
 
 import Fuse from 'fuse.js'
@@ -10,6 +11,7 @@ import type { MeterItem } from 'primevue/metergroup'
 import type { BaseTaskListItem, TaskListItem } from '@/interfaces/task'
 import {
   useAddTask,
+  useMarkTaskAsCompleted,
   useRedactTask,
   useReviewTask,
   useTasksQuery,
@@ -17,7 +19,6 @@ import {
 } from '@/services/task'
 import type { Patch } from '@/services/types'
 import { useTaskStore } from '@/stores/task'
-import { evaluate } from '@/utils'
 
 import SidebarControl from './bars/SidebarControl.vue'
 import Dynamic from './dynamic/Dynamic.vue'
@@ -56,6 +57,7 @@ const tasksSchedulesQuery = useTasksSchedulesQuery()
 const createTaskMutation = useAddTask()
 const updateTaskMutation = useReviewTask()
 const redactTaskMutation = useRedactTask()
+const comleteTaskMutation = useMarkTaskAsCompleted()
 
 const taskStore = useTaskStore()
 // const taskScheduleStore = useTaskScheduleStore()
@@ -182,7 +184,7 @@ const groups = computed<MeterItem[]>(() => {
 })
 
 const addTask = (item: BaseTaskListItem) => createTaskMutation.mutate(item)
-const toggleTask = taskStore.toggleTask
+const toggleTask = (id: string) => comleteTaskMutation.mutate(id)
 const removeTask = (id: string) => redactTaskMutation.mutate(id)
 const reviewTask = (patch: Patch<Partial<TaskListItem>>) => updateTaskMutation.mutate(patch)
 const selectTask = taskStore.selectTask

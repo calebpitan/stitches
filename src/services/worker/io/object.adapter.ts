@@ -20,9 +20,7 @@ export abstract class ObjectAdapter {
       id: schedule.id,
       taskId: schedule.taskId,
       timing: {
-        anchor: schedule.anchorTimestamp,
-        due: null,
-        upcoming: schedule.timestamp,
+        anchor: schedule.anchoredAt,
       },
       frequency: { type: 'never' },
     }
@@ -35,24 +33,24 @@ export abstract class ObjectAdapter {
         until: schedule.until,
         crons: schedule.frequency.map((f) => ({
           expression: f.expression,
-          frequency: f.type ?? 'never',
+          frequency: f.unit ?? 'never',
         })),
       }
       return result
     }
 
-    switch (schedule.frequency.type) {
+    switch (schedule.frequency.unit) {
       case 'hour':
       case 'day':
         result.frequency = {
-          type: schedule.frequency.type,
+          type: schedule.frequency.unit,
           until: schedule.until,
           exprs: { every: schedule.frequency.every },
         }
         break
       case 'week':
         result.frequency = {
-          type: schedule.frequency.type,
+          type: schedule.frequency.unit,
           until: schedule.until,
           exprs: {
             every: schedule.frequency.every,
@@ -64,7 +62,7 @@ export abstract class ObjectAdapter {
         break
       case 'month':
         result.frequency = {
-          type: schedule.frequency.type,
+          type: schedule.frequency.unit,
           until: schedule.until,
           exprs: {
             every: schedule.frequency.every,
@@ -91,7 +89,7 @@ export abstract class ObjectAdapter {
         break
       case 'year':
         result.frequency = {
-          type: schedule.frequency.type,
+          type: schedule.frequency.unit,
           until: schedule.until,
           exprs: {
             every: schedule.frequency.every,

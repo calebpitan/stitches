@@ -1,3 +1,4 @@
+/// <reference lib="webworker" />
 import type { tag } from '@stitches/io'
 
 import { AbstractService } from './abstract.service'

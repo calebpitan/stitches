@@ -1,11 +1,14 @@
 /// <reference lib="webworker" />
-import { type TaskSchedule, unique } from '@stitches/common'
+import { evaluate, unique } from '@stitches/common'
+import type { TaskSchedule } from '@stitches/common'
 import { Op } from '@stitches/io'
-import type { Association, tag } from '@stitches/io'
+import type { Association, schedule, tag } from '@stitches/io'
 
 import type { BaseTaskListItem, TaskListItem, TaskTag } from '@/interfaces/task'
+import { getUpcomingSchedules } from '@/utils'
 
 import { AbstractService } from './abstract.service'
+import { synchronized } from './decorator'
 import { ObjectAdapter } from './object.adapter'
 
 type _TaskFilters = {
@@ -23,6 +26,7 @@ type _TaskFilters = {
 }
 
 export class TaskService extends AbstractService {
+  @synchronized()
   async createTask(data: BaseTaskListItem): Promise<TaskListItem> {
     const task = await this.io.repo.tasks.createOne({
       title: data.title,
@@ -31,6 +35,7 @@ export class TaskService extends AbstractService {
     return ObjectAdapter.toTaskListItem(task)
   }
 
+  @synchronized()
   async updateTask(id: string, patch: Partial<BaseTaskListItem>): Promise<TaskListItem> {
     const task = await this.io.repo.tasks.update(id, {
       title: patch.title,
@@ -40,6 +45,7 @@ export class TaskService extends AbstractService {
     return ObjectAdapter.toTaskListItem(task)
   }
 
+  @synchronized()
   async redactTask(id: string): Promise<TaskListItem> {
     const task = await this.io.repo.tasks.redact(id)
     return ObjectAdapter.toTaskListItem(task)
@@ -79,6 +85,7 @@ export class TaskService extends AbstractService {
 
   // tagTask(id: string, tag: Pick<TaskTag, 'id'>): Promise<tag.Tag>
   // tagTask(id: string, tag: Pick<TaskTag, 'label'>): Promise<tag.Tag>
+  @synchronized()
   async tagTask(id: string, tag: Pick<TaskTag, 'id'> | Pick<TaskTag, 'label'>): Promise<tag.Tag> {
     if ('id' in tag) {
       const tagObj = await this.io.repo.tags.only(tag.id)
@@ -100,6 +107,7 @@ export class TaskService extends AbstractService {
     return tagObj
   }
 
+  @synchronized()
   async untagTask(id: string, tag: Pick<TaskTag, 'id'> | Pick<TaskTag, 'label'>): Promise<tag.Tag> {
     if ('id' in tag) {
       const tagObj = await this.io.repo.tags.only(tag.id)
@@ -119,5 +127,47 @@ export class TaskService extends AbstractService {
 
     await this.io.repo.tasks.tags.unassociate(id, tagObj.id)
     return tagObj
+  }
+
+  // @synchronized()
+  async markAsCompleted(id: string) {
+    const schedule = await evaluate(async (): Promise<schedule.ScheduleUnion | undefined> => {
+      const criteria = this.io.repo.schedules.gcb().on('taskId', Op.EQ, id).build()
+      const schedules = await this.io.repo.schedulesFacade.all(criteria)
+      return schedules.at(0)
+    })
+
+    const timeseries = await evaluate(async () => {
+      if (!schedule) {
+        return this.io.repo.timeseries.createOne({ dueAt: new Date(), taskId: id })
+      }
+
+      const taskSchedule = ObjectAdapter.toTaskSchedule(schedule)
+      const upcomingDatetime = getUpcomingSchedules.resolve(taskSchedule) || new Date()
+
+      const criteria = this.io.repo.timeseries
+        .gcb()
+        .on('taskId', Op.EQ, id)
+        .sort('dueAt', 1)
+        .take(1)
+        .build()
+      const result = await this.io.repo.timeseries
+        .allUncompleted(criteria)
+        .then(([uncompleted]) => {
+          if (uncompleted === undefined) {
+            return this.io.repo.timeseries.createOne({ dueAt: upcomingDatetime, taskId: id })
+          }
+          return uncompleted
+        })
+      return result
+    })
+
+    const completion = await this.io.repo.completions.createOne({
+      completedAt: new Date(),
+      timeSeriesId: timeseries.id,
+      taskId: timeseries.taskId,
+    })
+
+    return { completion, timeseries }
   }
 }

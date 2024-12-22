@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, useId, watch } from 'vue'
 
-import { plural } from '@stitches/common'
+import { evaluate, plural } from '@stitches/common'
 import type { YearlyExpr } from '@stitches/common'
 import type { Ordinals, WeekdayVariable } from '@stitches/common'
 import { MONTH_OPTIONS, ORDINAL_OPTIONS_GROUP, WEEKDAY_OPTIONS_GROUP } from '@stitches/common'
 
 import type { SelectButtonChangeEvent } from 'primevue/selectbutton'
-
-import { evaluate } from '@/utils'
 
 import Stack from '../stack/Stack.vue'
 

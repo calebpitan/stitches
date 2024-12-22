@@ -3,13 +3,13 @@ import { computed, onMounted, ref, useId, watch, watchEffect } from 'vue'
 
 import { FREQUENCY_OPTIONS_GROUP } from '@stitches/common'
 import type { BaseTaskSchedule, Frequency, TaskSchedule } from '@stitches/common'
+import { evaluate } from '@stitches/common'
 import { SVG } from '@svgdotjs/svg.js'
 
 import type { SelectChangeEvent } from 'primevue/select'
 
 import { useLocale } from '@/composables/useLocale'
 import { usePrimaryColor } from '@/composables/usePrimaryColor'
-import { evaluate } from '@/utils'
 
 import IconClearAll from '../icons/IconClearAll.vue'
 import CronScheduler from '../repeatables/CronScheduler.vue'

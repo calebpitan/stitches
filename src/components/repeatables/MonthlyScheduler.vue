@@ -2,11 +2,9 @@
 import { computed, ref, useId, watch } from 'vue'
 
 import { ORDINAL_OPTIONS_GROUP, WEEKDAY_OPTIONS } from '@stitches/common'
-import { plural, range } from '@stitches/common'
+import { evaluate, plural, range } from '@stitches/common'
 import type { Ordinals } from '@stitches/common'
 import type { MonthlyExpr } from '@stitches/common'
-
-import { evaluate } from '@/utils'
 
 import Stack from '../stack/Stack.vue'
 
