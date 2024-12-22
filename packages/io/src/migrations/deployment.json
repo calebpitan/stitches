@@ -44,5 +44,50 @@
     "sql": [
       "CREATE UNIQUE INDEX `tags_label_unique` ON `tags` (`label`);"
     ]
+  },
+  {
+    "idx": 3,
+    "when": 1734118275318,
+    "tag": "0003_charming_selene",
+    "hash": "3fd702443b4f5fef5e1ec484792d67e404315cb7c3f3e23b58ca258e49e5d08c",
+    "sql": [
+      "CREATE TABLE `completions` (`id` text PRIMARY KEY NOT NULL,`task_id` text NOT NULL,`time_series_id` text NOT NULL,`completed_at` integer NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON UPDATE no action ON DELETE cascade,FOREIGN KEY (`time_series_id`) REFERENCES `time_series`(`id`) ON UPDATE no action ON DELETE cascade);",
+      "CREATE UNIQUE INDEX `completions_timeSeriesId_unique` ON `completions` (`time_series_id`);",
+      "CREATE TABLE `time_series` (`id` text PRIMARY KEY NOT NULL,`task_id` text NOT NULL,`due_at` integer NOT NULL,`created_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`updated_at` integer DEFAULT (strftime('%s', 'now') || substr(strftime('%f', 'now'), -3)) NOT NULL,`deleted_at` integer,FOREIGN KEY (`task_id`) REFERENCES `tasks`(`id`) ON UPDATE no action ON DELETE cascade);"
+    ]
+  },
+  {
+    "idx": 4,
+    "when": 1734120033977,
+    "tag": "0004_lean_silver_sable",
+    "hash": "442801af8adb820e350484cf36c81f9c6f07e8ae471dca7382983c43b3b4a921",
+    "sql": [
+      "ALTER TABLE `schedules` RENAME COLUMN \"anchor_timestamp\" TO \"anchored_at\";",
+      "ALTER TABLE `schedules` RENAME COLUMN \"timestamp\" TO \"due_at\";",
+      "ALTER TABLE `schedules` ADD `past_due` integer DEFAULT false NOT NULL;"
+    ]
+  },
+  {
+    "idx": 5,
+    "when": 1734131535031,
+    "tag": "0005_eager_major_mapleleaf",
+    "hash": "b66810590653b3d7d359a6d46d5cf84827b17e81370e93cabcb7101366101aec",
+    "sql": [
+      "ALTER TABLE `time_series` ADD `past_due` integer DEFAULT false NOT NULL;",
+      "CREATE UNIQUE INDEX `time_series_taskId_dueAt_unique` ON `time_series` (`task_id`,`due_at`);"
+    ]
+  },
+  {
+    "idx": 6,
+    "when": 1734872012535,
+    "tag": "0006_bitter_goblin_queen",
+    "hash": "bf0d8bc2a9bf62feeed23a8500db7e59bba87f8915f25452d627b6fa6620b9e7",
+    "sql": [
+      "ALTER TABLE `custom_frequencies` RENAME COLUMN \"type\" TO \"unit\";",
+      "ALTER TABLE `regular_frequencies` RENAME COLUMN \"type\" TO \"unit\";",
+      "ALTER TABLE `schedules` DROP COLUMN `due_at`;",
+      "ALTER TABLE `schedules` DROP COLUMN `past_due`;",
+      "ALTER TABLE `time_series` DROP COLUMN `past_due`;"
+    ]
   }
 ]

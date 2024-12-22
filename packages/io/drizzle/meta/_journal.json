@@ -22,6 +22,34 @@
       "when": 1732478318886,
       "tag": "0002_big_nick_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1734118275318,
+      "tag": "0003_charming_selene",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1734120033977,
+      "tag": "0004_lean_silver_sable",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1734131535031,
+      "tag": "0005_eager_major_mapleleaf",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1734872012535,
+      "tag": "0006_bitter_goblin_queen",
+      "breakpoints": true
     }
   ]
 }
