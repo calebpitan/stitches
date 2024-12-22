@@ -12,7 +12,7 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { SQLJsDatabase } from 'drizzle-orm/sql-js'
 
 import * as schema from '../schema'
-import { Op } from './criteria.builder'
+import { Criteria, Op } from './criteria.builder'
 import { RepositoryAbstractFactory } from './factory'
 
 export namespace schedule {
@@ -87,19 +87,19 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
   }
 
   private resolve(result: schedule.RegFreqLeftJoinedRelations): schedule.Frequency<'regular'> {
-    switch (result.regular_frequencies.type) {
+    switch (result.regular_frequencies.unit) {
       case 'hour':
       case 'day': {
         return {
           ...result.regular_frequencies,
-          type: result.regular_frequencies.type,
+          unit: result.regular_frequencies.unit,
         }
       }
 
       case 'week': {
         return {
           ...result.regular_frequencies,
-          type: result.regular_frequencies.type,
+          unit: result.regular_frequencies.unit,
           exprs: result.regular_frequency_weekly_exprs!,
         }
       }
@@ -112,7 +112,7 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
           case 'onthe': {
             return {
               ...result.regular_frequencies,
-              type: result.regular_frequencies.type,
+              unit: result.regular_frequencies.unit,
               exprs: {
                 id,
                 type,
@@ -132,7 +132,7 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
           case 'ondays': {
             return {
               ...result.regular_frequencies,
-              type: result.regular_frequencies.type,
+              unit: result.regular_frequencies.unit,
               exprs: {
                 id,
                 type,
@@ -156,13 +156,13 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
       case 'year': {
         return {
           ...result.regular_frequencies,
-          type: result.regular_frequencies.type,
+          unit: result.regular_frequencies.unit,
           exprs: getRegFreqYearlyExprs(result.regular_frequency_yearly_exprs!),
         }
       }
 
       default:
-        never(result.regular_frequencies.type)
+        never(result.regular_frequencies.unit)
     }
   }
 
@@ -220,7 +220,7 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
           schema.regularFrequencyWeeklyExprs,
           and(
             eq(schema.regularFrequencyWeeklyExprs.regularFrequencyId, schema.regularFrequencies.id),
-            eq(schema.regularFrequencies.type, 'week'),
+            eq(schema.regularFrequencies.unit, 'week'),
           ),
         )
         .leftJoin(
@@ -230,14 +230,14 @@ export class SchedulesRepository extends RepositoryAbstractFactory('schedules', 
               schema.regularFrequencyMonthlyExprs.regularFrequencyId,
               schema.regularFrequencies.id,
             ),
-            eq(schema.regularFrequencies.type, 'month'),
+            eq(schema.regularFrequencies.unit, 'month'),
           ),
         )
         .leftJoin(
           schema.regularFrequencyYearlyExprs,
           and(
             eq(schema.regularFrequencyYearlyExprs.regularFrequencyId, schema.regularFrequencies.id),
-            eq(schema.regularFrequencies.type, 'year'),
+            eq(schema.regularFrequencies.unit, 'year'),
           ),
         )
 
@@ -452,6 +452,11 @@ export class SchedulesRepositoryFacade {
     return loaded
   }
 
+  async all(criteria?: Criteria) {
+    const schedules = await this.schedules.all(criteria)
+    return this.load(schedules)
+  }
+
   /**
    * Adds a task's schedule to the collection
    *
@@ -464,8 +469,7 @@ export class SchedulesRepositoryFacade {
         const schedule = await $this.schedules.createOne({
           id: 'id' in payload ? payload.id : undefined,
           taskId: payload.taskId,
-          timestamp: payload.timing.upcoming,
-          anchorTimestamp: payload.timing.anchor,
+          anchoredAt: payload.timing.anchor,
         })
 
         const output: schedule.DefaultSchedule = schedule
@@ -476,8 +480,7 @@ export class SchedulesRepositoryFacade {
       const schedule = await $this.schedules.createOne({
         id: 'id' in payload ? payload.id : undefined,
         taskId: payload.taskId,
-        timestamp: payload.timing.upcoming,
-        anchorTimestamp: payload.timing.anchor,
+        anchoredAt: payload.timing.anchor,
         frequencyType: payload.frequency.type === 'custom' ? 'custom' : 'regular',
         until: payload.frequency.until,
       })
@@ -504,7 +507,7 @@ export class SchedulesRepositoryFacade {
 
       const regularFrequency = await $this.regularFrequencies.createOne({
         scheduleId: schedule.id,
-        type: payload.frequency.type,
+        unit: payload.frequency.type,
         every: payload.frequency.exprs.every,
       })
 
@@ -518,7 +521,7 @@ export class SchedulesRepositoryFacade {
             frequencyType,
             frequency: {
               ...regularFrequency,
-              type: payload.frequency.type,
+              unit: payload.frequency.type,
             },
           }
         }
@@ -535,7 +538,7 @@ export class SchedulesRepositoryFacade {
             frequencyType,
             frequency: {
               ...regularFrequency,
-              type: payload.frequency.type,
+              unit: payload.frequency.type,
               exprs: regularFrequencyWeeklyExprs,
             },
           }
@@ -559,7 +562,7 @@ export class SchedulesRepositoryFacade {
               frequencyType,
               frequency: {
                 ...regularFrequency,
-                type: payload.frequency.type,
+                unit: payload.frequency.type,
                 exprs: {
                   ...regFreqMonthlyExprs,
                   type: subexpr.type,
@@ -582,7 +585,7 @@ export class SchedulesRepositoryFacade {
             frequencyType,
             frequency: {
               ...regularFrequency,
-              type: payload.frequency.type,
+              unit: payload.frequency.type,
               exprs: {
                 ...regFreqMonthlyExprs,
                 type: subexpr.type,
@@ -607,7 +610,7 @@ export class SchedulesRepositoryFacade {
             frequencyType,
             frequency: {
               ...regularFrequency,
-              type: payload.frequency.type,
+              unit: payload.frequency.type,
               exprs: getRegFreqYearlyExprs(regFreqYearlyExprs),
             },
           }
@@ -761,16 +764,15 @@ export namespace schedule {
 
   export interface BaseSchedule extends Base {
     taskId: string
-    timestamp: Date
-    anchorTimestamp: Date
+    anchoredAt: Date
     until: Date | null
   }
 }
 
 export namespace schedule {
   export type Expression<U extends FrequencyUnit, T = null> = T extends null
-    ? { type: U; every: number }
-    : { type: U; every: number; exprs: T }
+    ? { unit: U; every: number }
+    : { unit: U; every: number; exprs: T }
 
   export type SubExpression<T extends 'onthe' | 'ondays', S> = { type: T; subexpr: S }
 }
@@ -818,7 +820,7 @@ export namespace schedule {
   export interface CustomFrequency extends BaseFrequency {
     expression: string
     // TODO: rename "type" to "unit"
-    type: FrequencyUnit | null
+    unit: FrequencyUnit | null
   }
 
   export type RegularFrequency = BaseFrequency &
