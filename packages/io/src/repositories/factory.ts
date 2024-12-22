@@ -137,6 +137,20 @@ export function RepositoryAbstractFactory<
 
     /**
      * Get the criteria builder specific to the repository
+     *
+     * A shorthand and convenience method for {@link getCriteriaBuilder}
+     *
+     * @returns The criteria builder for the repository
+     */
+    gcb() {
+      // should always generate on the fly to return a new instance, as `CriteriaBuilder`
+      // is mutable and multiple queries on the same repo running in parallel may corrupt state.
+      // @ts-expect-error
+      return getCriteriaBuilder<schema.Schema, T>(options.table)
+    }
+
+    /**
+     * Get the criteria builder specific to the repository
      * @returns The criteria builder for the repository
      */
     getCriteriaBuilder() {
@@ -202,7 +216,7 @@ export function RepositoryAbstractFactory<
     exists(criteria: Criteria) {
       const result = this._db.get<{ exists: 1 | 0 }>(
         sql`
-          SELECT EXISTS (SELECT 1 FROM ${options.table} WHERE ${criteria.unwrap()}) AS "exists"
+          SELECT EXISTS (SELECT 1 FROM ${options.table} WHERE ${criteria.filters()}) AS "exists"
         `,
       )
       return result.exists === 0 ? false : result.exists === 1 ? true : never(result.exists)
@@ -238,10 +252,17 @@ export function RepositoryAbstractFactory<
      */
     async all(criteria?: Criteria) {
       const filters = withUnredacted(options.table, [])
-      const entity = await this._db
+      const props = criteria?.properties()
+      const query = this._db
         .select()
         .from(options.table)
-        .where(and(criteria?.unwrap(), ...filters))
+        .where(and(criteria?.filters(), ...filters))
+        .orderBy(...(props?.orderings || []))
+
+      if (props?.skip) query.offset(props?.skip ?? 0)
+      if (props?.limit) query.limit(props?.limit ?? 0)
+
+      const entity = await query.execute()
 
       return entity
     }

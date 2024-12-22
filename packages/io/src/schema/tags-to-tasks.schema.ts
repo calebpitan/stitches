@@ -12,19 +12,18 @@ export const tagsToTasks = sqliteTable(
       .references(() => tags.id, { onDelete: 'cascade' }),
     taskId: text()
       .notNull()
-      .references(() => tasks.id, { onDelete: 'cascade' })
+      .references(() => tasks.id, { onDelete: 'cascade' }),
   },
   (table) => {
     return {
-      pk: primaryKey({ columns: [table.tagId, table.taskId] })
+      pk: primaryKey({ columns: [table.tagId, table.taskId] }),
     }
-  }
+  },
 )
 
-export const tasksRelations = relations(tasks, ({ many }) => {
-  return { tagsToTasks: many(tagsToTasks) }
-})
-
-export const tagsRelations = relations(tags, ({ many }) => {
-  return { tagsToTasks: many(tagsToTasks) }
+export const tagsToTasksRelations = relations(tagsToTasks, ({ one }) => {
+  return {
+    tag: one(tags, { fields: [tagsToTasks.tagId], references: [tags.id] }),
+    task: one(tasks, { fields: [tagsToTasks.taskId], references: [tasks.id] }),
+  }
 })

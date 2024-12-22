@@ -6,7 +6,9 @@ import {
   SQL,
   SQLWrapper,
   and,
+  asc,
   between,
+  desc,
   eq,
   gt,
   gte,
@@ -75,8 +77,12 @@ type RHS<T, O extends Op> = ({ [P in UnaryOp]: undefined } & { [P in BinaryOp]: 
   [P in TernaryOp]: [T, T]
 } & { [P in N_AryOp]: T[] })[O]
 
+////
+type Extras = { limit: number | undefined; skip: number | undefined; orderings: SQL[] }
+
 export interface Criteria {
-  unwrap(): SQL | undefined
+  properties(): Extras
+  filters(): SQL | undefined
 }
 
 export interface CriteriaBuilder<S extends schema.Schema, T extends Table<TCols<S, TKeys<S>>>>
@@ -89,14 +95,24 @@ export function getCriteriaBuilder<S extends schema.Schema, T extends Table<TCol
 }
 
 class _Criteria implements Criteria {
-  constructor(private readonly criteria: SQL | undefined) {}
-  unwrap(): SQL | undefined {
+  constructor(
+    private readonly criteria: SQL | undefined,
+    private readonly extras: Extras,
+  ) {}
+
+  properties(): Extras {
+    return { ...this.extras, orderings: [...this.extras.orderings] }
+  }
+
+  filters(): SQL | undefined {
     return this.criteria
   }
 }
 
 class _CriteriaBuilder<S extends schema.Schema, T extends Table<TCols<S, TKeys<S>>>> {
   private readonly criteria: SQL[]
+  private readonly extras: Extras
+
   private readonly AND: SQLWrapper[]
   private readonly OR: SQLWrapper[]
   private readonly NOT: SQLWrapper[]
@@ -107,6 +123,7 @@ class _CriteriaBuilder<S extends schema.Schema, T extends Table<TCols<S, TKeys<S
 
   constructor(private readonly table: T) {
     this.criteria = []
+    this.extras = { limit: undefined, skip: undefined, orderings: [] }
 
     this.AND = []
     this.OR = []
@@ -121,6 +138,8 @@ class _CriteriaBuilder<S extends schema.Schema, T extends Table<TCols<S, TKeys<S
     this.criteria.length = this.logicals.length = 0
     this.AND.length = this.OR.length = this.NOT.length = 0
     this.sp.AND.length = this.sp.OR.length = this.sp.NOT.length = 0
+
+    this.extras.limit = this.extras.skip = this.extras.orderings.length = 0
   }
 
   private evaluate<
@@ -230,6 +249,20 @@ class _CriteriaBuilder<S extends schema.Schema, T extends Table<TCols<S, TKeys<S
     return this
   }
 
+  sort<F extends Fields<S, KeyForT<T, S>>>(f: F, order: 1 | -1) {
+    this.extras.orderings.push(order === 1 ? asc(this.table[f]) : desc(this.table[f]))
+    return this
+  }
+
+  skip(count: number) {
+    this.extras.skip = count
+  }
+
+  take(limit: number) {
+    this.extras.limit = limit
+    return this
+  }
+
   build(): Criteria {
     const logicCount = this.logicals.length
     if (logicCount > 0) {
@@ -239,12 +272,12 @@ class _CriteriaBuilder<S extends schema.Schema, T extends Table<TCols<S, TKeys<S
     }
 
     if (this.criteria.length > 1) {
-      const criteria = new _Criteria(and(...this.criteria))
+      const criteria = new _Criteria(and(...this.criteria), this.extras)
       this.cleanup()
       return criteria
     }
 
-    const criteria = new _Criteria(this.criteria.at(0))
+    const criteria = new _Criteria(this.criteria.at(0), this.extras)
     this.cleanup()
     return criteria
   }

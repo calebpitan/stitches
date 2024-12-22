@@ -82,16 +82,7 @@ export const schedules = sqliteTable(
      * This is the original timestamp the task was scheduled for before
      * any future repeating schedule
      */
-    anchorTimestamp: integer({ mode: 'timestamp_ms' }).notNull(),
-
-    /**
-     * This is the most recently known elapsed or future timestamp which is different from
-     * the original timestamp the schedule is anchored to.
-     *
-     * Initial value is same for `anchorTimestamp` until future repeating schedules are
-     * computed
-     */
-    timestamp: integer({ mode: 'timestamp_ms' }).notNull(),
+    anchoredAt: integer({ mode: 'timestamp_ms' }).notNull(),
 
     /**
      * The frequency type of this schedule which is a string enum of
@@ -143,7 +134,7 @@ export const customFrequencies = sqliteTable(
      * The base unit of expression which is a string enum of
      * `hour|day|week|month|year`
      */
-    type: text({ enum: ['hour', 'day', 'week', 'month', 'year'] }),
+    unit: text({ enum: ['hour', 'day', 'week', 'month', 'year'] }),
 
     /**
      * The cron expression for expressing the repeat schedule frequency
@@ -175,7 +166,7 @@ export const regularFrequencies = sqliteTable(
      * The base unit of expression which is a string enum of
      * `hour|day|week|month|year`
      */
-    type: text({ enum: ['hour', 'day', 'week', 'month', 'year'] }).notNull(),
+    unit: text({ enum: ['hour', 'day', 'week', 'month', 'year'] }).notNull(),
 
     /**
      * The repetition frequency expression
