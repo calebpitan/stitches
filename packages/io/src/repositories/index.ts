@@ -1,5 +1,7 @@
 export * from './associations'
+export * from './completions'
 export * from './criteria.builder'
 export * from './schedules'
 export * from './tags'
 export * from './tasks'
+export * from './timeseries'

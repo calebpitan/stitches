@@ -3,9 +3,11 @@ import initSqlJs from 'sql.js'
 
 import * as schema from './schema'
 import { migrate } from './migrator'
-import { SchedulesRepository, SchedulesRepositoryFacade } from './repositories'
+import { CompletionsRepository } from './repositories/completions'
+import { SchedulesRepository, SchedulesRepositoryFacade } from './repositories/schedules'
 import { TagsRepository } from './repositories/tags'
 import { TasksRepository } from './repositories/tasks'
+import { TimeSeriesRepository } from './repositories/timeseries'
 
 export { sql, max } from 'drizzle-orm'
 
@@ -24,10 +26,12 @@ export type StitchesIOConfig = {
 }
 
 export interface StitchesIORepos {
-  tasks: TasksRepository
-  tags: TagsRepository
   schedules: SchedulesRepository
   schedulesFacade: SchedulesRepositoryFacade
+  completions: CompletionsRepository
+  tasks: TasksRepository
+  tags: TagsRepository
+  timeseries: TimeSeriesRepository
 }
 
 export interface StitchesIOPort {
@@ -105,10 +109,12 @@ export async function open(
   })
 
   const repo: StitchesIORepos = {
-    tasks: new TasksRepository(mapper),
-    tags: new TagsRepository(mapper),
+    completions: new CompletionsRepository(mapper),
     schedules: new SchedulesRepository(mapper),
     schedulesFacade: new SchedulesRepositoryFacade(mapper),
+    tasks: new TasksRepository(mapper),
+    tags: new TagsRepository(mapper),
+    timeseries: new TimeSeriesRepository(mapper),
   }
 
   const port: StitchesIOPort = {
