@@ -89,5 +89,23 @@
       "ALTER TABLE `schedules` DROP COLUMN `past_due`;",
       "ALTER TABLE `time_series` DROP COLUMN `past_due`;"
     ]
+  },
+  {
+    "idx": 7,
+    "when": 1734873842271,
+    "tag": "0007_shallow_vector",
+    "hash": "a70dbd1ff1fc6ea928423fffd43a7ad0abc73ef26a34d4bc8014ea3b69bfe6bb",
+    "sql": [
+      "ALTER TABLE `schedules` ADD `timezone` text DEFAULT 'Africa/Lagos' NOT NULL;"
+    ]
+  },
+  {
+    "idx": 8,
+    "when": 1734878951703,
+    "tag": "0008_noisy_butterfly",
+    "hash": "9afc655223e38c43f3cc6e42be05f2d31186ce4097e5b7fade92698a0f0eb07e",
+    "sql": [
+      "ALTER TABLE `schedules` ADD `naive_anchored_at` text DEFAULT '' NOT NULL;"
+    ]
   }
 ]

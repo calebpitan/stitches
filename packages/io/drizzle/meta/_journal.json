@@ -50,6 +50,20 @@
       "when": 1734872012535,
       "tag": "0006_bitter_goblin_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1734873842271,
+      "tag": "0007_shallow_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1734878951703,
+      "tag": "0008_noisy_butterfly",
+      "breakpoints": true
     }
   ]
 }

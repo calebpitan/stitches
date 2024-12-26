@@ -1,0 +1,1 @@
+ALTER TABLE `schedules` ADD `naive_anchored_at` text DEFAULT '' NOT NULL;

@@ -1,0 +1,1 @@
+ALTER TABLE `schedules` ADD `timezone` text DEFAULT 'Africa/Lagos' NOT NULL;
