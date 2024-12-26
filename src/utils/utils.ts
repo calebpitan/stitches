@@ -1,3 +1,6 @@
+import { getPlatformTimezone } from '@stitches/common'
+
+import { DateTime } from 'luxon'
 import { monotonicFactory } from 'ulidx'
 
 interface AsyncSleep extends Promise<number> {
@@ -5,10 +8,6 @@ interface AsyncSleep extends Promise<number> {
 }
 
 export const ulid = monotonicFactory()
-
-export function evaluate<R>(fn: () => R): R {
-  return fn()
-}
 
 export function withResolvers<T = unknown>() {
   let [resolve, reject] = [] as unknown as Parameters<ConstructorParameters<typeof Promise<T>>[0]>
@@ -18,6 +17,29 @@ export function withResolvers<T = unknown>() {
   })
 
   return { promise, resolve, reject }
+}
+
+export namespace datetime {
+  export type DateTime = import('luxon').DateTime
+}
+
+type DateLike = Date | number
+export function datetime(date: DateLike): DateTime<true> | DateTime<false>
+export function datetime(date: DateLike, tzone: string): DateTime<true> | DateTime<false>
+export function datetime(): DateTime<true>
+export function datetime(ts?: DateLike, tzone?: string) {
+  if (!ts) return DateTime.now()
+
+  if (typeof ts === 'number') {
+    return DateTime.fromMillis(ts, { zone: tzone })
+  } else {
+    return DateTime.fromJSDate(ts, { zone: tzone })
+  }
+}
+
+export function jsDateToNaiveString(date: Date, tzone: string = getPlatformTimezone()) {
+  const dt = datetime(date, tzone)
+  return dt.toISO({ includeOffset: false }) || dt.toFormat("yyyy-MM-dd'T'HH:mm:ss.SSS")
 }
 
 export function sleep(ms: number): AsyncSleep {
