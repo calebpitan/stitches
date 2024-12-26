@@ -29,7 +29,7 @@ const freqTypeMap = {
 
 <template>
   <div class="s-mgmt-schedule-summary">
-    <div v-if="schedule !== null && schedule.timing" class="s-mgmt-schedule-timestamp">
+    <div v-if="schedule !== null" class="s-mgmt-schedule-timestamp">
       <span>
         <!-- TODO: change to timeseries dueAt date -->
         {{ schedule.timing.anchor.toLocaleDateString(locale, { dateStyle: 'long' }) }}

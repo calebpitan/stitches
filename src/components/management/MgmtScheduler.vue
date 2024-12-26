@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, useId, watch, watchEffect } from 'vue'
 
-import { FREQUENCY_OPTIONS_GROUP } from '@stitches/common'
+import { FREQUENCY_OPTIONS_GROUP, getPlatformTimezone } from '@stitches/common'
 import type { BaseTaskSchedule, Frequency, TaskSchedule } from '@stitches/common'
 import { evaluate } from '@stitches/common'
 import { SVG } from '@svgdotjs/svg.js'
@@ -10,6 +10,7 @@ import type { SelectChangeEvent } from 'primevue/select'
 
 import { useLocale } from '@/composables/useLocale'
 import { usePrimaryColor } from '@/composables/usePrimaryColor'
+import { jsDateToNaiveString } from '@/utils'
 
 import IconClearAll from '../icons/IconClearAll.vue'
 import CronScheduler from '../repeatables/CronScheduler.vue'
@@ -72,7 +73,7 @@ const threadline = ref<HTMLDivElement | null>(null)
 const locale = useLocale()
 const primaryColor = usePrimaryColor()
 
-const isExpanded = ref(true)
+const isExpanded = ref(false)
 
 // The originally selected date time as timestamp for period the task is initially due
 const anchorTime = ref<Date | null>(props.schedule?.timing.anchor ?? null)
@@ -308,7 +309,12 @@ watch(
       id: props.schedule?.id,
       taskId: props.taskId,
       frequency: freq,
-      timing: { ...props.schedule?.timing!, anchor: anchor },
+      timing: {
+        ...props.schedule?.timing!,
+        anchor: anchor,
+        naive: jsDateToNaiveString(anchor),
+        tzone: getPlatformTimezone(),
+      },
     })
   },
   { deep: true },
