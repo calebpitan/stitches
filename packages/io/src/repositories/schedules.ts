@@ -470,6 +470,8 @@ export class SchedulesRepositoryFacade {
           id: 'id' in payload ? payload.id : undefined,
           taskId: payload.taskId,
           anchoredAt: payload.timing.anchor,
+          naiveAnchoredAt: payload.timing.naive,
+          timezone: payload.timing.tzone,
         })
 
         const output: schedule.DefaultSchedule = schedule
@@ -481,6 +483,8 @@ export class SchedulesRepositoryFacade {
         id: 'id' in payload ? payload.id : undefined,
         taskId: payload.taskId,
         anchoredAt: payload.timing.anchor,
+        naiveAnchoredAt: payload.timing.naive,
+        timezone: payload.timing.tzone,
         frequencyType: payload.frequency.type === 'custom' ? 'custom' : 'regular',
         until: payload.frequency.until,
       })
@@ -765,6 +769,8 @@ export namespace schedule {
   export interface BaseSchedule extends Base {
     taskId: string
     anchoredAt: Date
+    naiveAnchoredAt: string
+    timezone: string
     until: Date | null
   }
 }

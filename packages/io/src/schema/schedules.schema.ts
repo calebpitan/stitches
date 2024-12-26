@@ -85,6 +85,23 @@ export const schedules = sqliteTable(
     anchoredAt: integer({ mode: 'timestamp_ms' }).notNull(),
 
     /**
+     * The "naive" anchor time without timezone info
+     */
+    // The default is an empty string since it cannot be null and migration has to succeed
+    // Could be sql`SELECT strftime('%FT%H:%M:%f', 'anchored_at' / 1000, 'unixepoch');`, but
+    // `anchored_at` is in UTC. Meanwhile, we expect this to be a naive datetime string of
+    // client's local time
+    naiveAnchoredAt: text().notNull().default(''),
+
+    /**
+     * The timezone string of the schedule timing
+     *
+     * @example 'Africa/Lagos', 'America/Los_Angeles'
+     */
+    // The default is since it cannot be null and migration has to succeed
+    timezone: text().notNull().default('Africa/Lagos'),
+
+    /**
      * The frequency type of this schedule which is a string enum of
      * `custom|regular`
      */
