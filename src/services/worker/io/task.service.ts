@@ -5,7 +5,7 @@ import { Op } from '@stitches/io'
 import type { Association, schedule, tag } from '@stitches/io'
 
 import type { BaseTaskListItem, TaskListItem, TaskTag } from '@/interfaces/task'
-import { getUpcomingSchedules } from '@/utils'
+import { datetime, getUpcomingSchedules } from '@/utils'
 
 import { AbstractService } from './abstract.service'
 import { synchronized } from './decorator'
@@ -143,7 +143,7 @@ export class TaskService extends AbstractService {
       }
 
       const taskSchedule = ObjectAdapter.toTaskSchedule(schedule)
-      const upcomingDatetime = getUpcomingSchedules.resolve(taskSchedule) || new Date()
+      const upcomingDatetime = getUpcomingSchedules(taskSchedule) || datetime(schedule.anchoredAt)
 
       const criteria = this.io.repo.timeseries
         .gcb()
@@ -155,7 +155,10 @@ export class TaskService extends AbstractService {
         .allUncompleted(criteria)
         .then(([uncompleted]) => {
           if (uncompleted === undefined) {
-            return this.io.repo.timeseries.createOne({ dueAt: upcomingDatetime, taskId: id })
+            return this.io.repo.timeseries.createOne({
+              dueAt: upcomingDatetime.toJSDate(),
+              taskId: id,
+            })
           }
           return uncompleted
         })

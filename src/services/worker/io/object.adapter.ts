@@ -21,6 +21,8 @@ export abstract class ObjectAdapter {
       taskId: schedule.taskId,
       timing: {
         anchor: schedule.anchoredAt,
+        naive: schedule.naiveAnchoredAt,
+        tzone: schedule.timezone
       },
       frequency: { type: 'never' },
     }
