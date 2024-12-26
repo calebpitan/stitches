@@ -1,10 +1,15 @@
 /// <reference lib="webworker" />
 import 'reflect-metadata'
 
+import { type Constructor, isFn } from '@stitches/common'
 import { type StitchesIOConfig, type StitchesIOPort, open } from '@stitches/io'
 
 import { type ProxyMarked, expose, proxyMarker } from 'comlink'
 
+import { collections, idbWriter, initIndexedDB } from '@/services/indexedb'
+
+import type { AbstractService } from './abstract.service'
+import { synchronized } from './decorator'
 import { ScheduleService } from './schedule.service'
 import { TagService } from './tag.service'
 import { TaskService } from './task.service'
@@ -13,11 +18,80 @@ declare let self: SharedWorkerGlobalScope
 declare type Connection = { io: StitchesIOPort; clients: Set<MessagePort> }
 export declare type Sentinel = () => StitchesIOPort
 
-const pool: Map<string, Connection> = new Map()
-
 interface Services
   extends Readonly<{ task: TaskService; schedule: ScheduleService; tag: TagService }>,
     ProxyMarked {}
+
+const pool: Map<string, Connection> = new Map()
+
+function withSyncTrap<S extends Constructor<AbstractService>>(
+  cls: S,
+  args: ConstructorParameters<S>,
+  name: () => string,
+) {
+  const obj: InstanceType<S> = Reflect.construct(cls, args)
+  const visited = new Set<Record<string, any>>()
+  let prevObj: Record<string, any> = obj
+  let prototype: Record<string, any> | null = null
+
+  const getValue = (value: (...args: any[]) => any) => ({
+    value: new Proxy(value, {
+      apply(target, thisArg, argArray) {
+        const collection = collections.get('local')
+        const connectionsStore = { store: collection.stores[0] }
+        // Do some locking to acquire exclusive write access with the assumption that
+        // all read-write in the application goes through the service layer and the developer
+        // is responsible enough to annotate services that write to the database with `@writer()`
+        // decorator.
+        const result = Reflect.apply(target, thisArg, argArray)
+
+        return initIndexedDB(-1, 'local', collection.stores)
+          .then((idb) => idbWriter(idb, connectionsStore))
+          .then((writer) => writer.write(name(), obj.io.export()))
+          .then(() => result)
+      },
+    }),
+  })
+
+  while (
+    (prototype = Reflect.getPrototypeOf(prevObj)) &&
+    !Object.is(Object.prototype, prototype) &&
+    !visited.has(prototype)
+  ) {
+    visited.add(prototype)
+
+    const newPrototype = Object.create(Reflect.getPrototypeOf(prototype))
+
+    Object.getOwnPropertyNames(prototype).forEach((member) => {
+      const descriptor = Reflect.getOwnPropertyDescriptor(prototype!, member)
+
+      if (!descriptor) return
+      if (member === 'constructor')
+        return Reflect.defineProperty(newPrototype, member, { ...descriptor })
+
+      const metadata: synchronized.Metadata | undefined = Reflect.getMetadata(
+        synchronized.metakey,
+        prototype!,
+        member,
+      )
+
+      // console.log(member, descriptor)
+      if (metadata === undefined || metadata.synchronize === false) {
+        Reflect.defineProperty(newPrototype, member, { ...descriptor })
+      } else {
+        Reflect.defineProperty(newPrototype, member, {
+          ...descriptor,
+          ...(!isFn(descriptor.value) ? undefined : getValue(descriptor.value)),
+        })
+      }
+    })
+
+    Reflect.setPrototypeOf(prevObj, newPrototype)
+    prevObj = newPrototype
+  }
+
+  return obj
+}
 
 class _IOController {
   private name!: string
@@ -26,12 +100,12 @@ class _IOController {
 
   constructor(private readonly port: MessagePort) {
     const sentinel: Sentinel = () => this.io
-
+    const getName = () => this.name
     this.services = Object.assign<{}, Services>(Object.create(null), {
       [proxyMarker]: true,
-      schedule: new ScheduleService(sentinel),
-      task: new TaskService(sentinel),
-      tag: new TagService(sentinel),
+      schedule: withSyncTrap(ScheduleService, [sentinel], getName),
+      task: withSyncTrap(TaskService, [sentinel], getName),
+      tag: withSyncTrap(TagService, [sentinel], getName),
     })
   }
 
