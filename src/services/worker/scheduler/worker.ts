@@ -2,9 +2,7 @@
 import * as sch from '@stitches/scheduler'
 import type { WeekdayVariable } from '@stitches/common'
 import type { TaskSchedule } from '@stitches/common'
-import { never } from '@stitches/common'
-
-import { ordToU8 } from '@/utils'
+import { never, ordinalToUint8 } from '@stitches/common'
 
 import type { MasterMessageEventData, WorkerMessageEventData } from './types'
 
@@ -79,7 +77,7 @@ function create_st_schedule(data: TaskSchedule) {
       } else {
         expr = sch.StMonthlyExpression.with_ordinal_weekday(
           data.frequency.exprs.every,
-          sch.st_ordinals_from_value(ordToU8(data.frequency.exprs.subexpr.ordinal)),
+          sch.st_ordinals_from_value(ordinalToUint8(data.frequency.exprs.subexpr.ordinal)),
           sch.st_const_weekday_from_value(data.frequency.exprs.subexpr.weekday),
         )
       }
@@ -96,14 +94,14 @@ function create_st_schedule(data: TaskSchedule) {
         expr = sch.StYearlyExpression.with_months_ordinal_const_weekday(
           data.frequency.exprs.every,
           months,
-          sch.st_ordinals_from_value(ordToU8(data.frequency.exprs.subexpr.on.ordinal)),
+          sch.st_ordinals_from_value(ordinalToUint8(data.frequency.exprs.subexpr.on.ordinal)),
           sch.st_const_weekday_from_value(data.frequency.exprs.subexpr.on.weekday),
         )
       } else if (data.frequency.exprs.subexpr.on && data.frequency.exprs.subexpr.on.variable) {
         expr = sch.StYearlyExpression.with_months_ordinal_var_weekday(
           data.frequency.exprs.every,
           months,
-          sch.st_ordinals_from_value(ordToU8(data.frequency.exprs.subexpr.on.ordinal)),
+          sch.st_ordinals_from_value(ordinalToUint8(data.frequency.exprs.subexpr.on.ordinal)),
           st_var_weekday_map.get(data.frequency.exprs.subexpr.on.variable),
         )
       } else {
