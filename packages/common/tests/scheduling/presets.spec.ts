@@ -14,7 +14,7 @@ describe('scheduling/presets', () => {
     const date = ImutDate.from('2023-10-23T10:32:40.005Z')
 
     it('should bring forward the anchortime to the next schedule date', () => {
-      const forwarded = nextYearlySchedule.bringForward(date, 400)
+      const forwarded = nextYearlySchedule.bringForward(ImutDate.from(Date.now()), date, 400)
       expect(forwarded).toStrictEqual(ImutDate.from('2423-12-31T10:32:40.005Z'))
     })
 
@@ -499,8 +499,19 @@ describe('scheduling/presets', () => {
   describe('#nextMonthlySchedule', () => {
     const date = ImutDate.from('2023-10-23T10:32:40.005Z')
 
+    it.only('should generate', () => {
+      const schedule1 = nextMonthlySchedule(date, 8, [1, 15, 31])
+      const fn = (a: ImutDate[]) => {
+        const b = Math.min(...a.filter((v) => v.getTime() > Date.now()).map((v) => v.getTime()))
+        return ImutDate.from(b)
+      }
+      const schedule2 = nextMonthlySchedule(date, 8, [1, 15, 31], { curtime: fn(schedule1) })
+      const schedule3 = nextMonthlySchedule(date, 8, [1, 15, 31], { curtime: fn(schedule2) })
+      console.log(schedule2, schedule3)
+    })
+
     it('should bring forward the anchortime to the next schedule date', () => {
-      const forwarded = nextMonthlySchedule.bringForward(date, 60)
+      const forwarded = nextMonthlySchedule.bringForward(ImutDate.from(Date.now()), date, 60)
       expect(forwarded).toStrictEqual(ImutDate.from('2028-10-31T10:32:40.005Z'))
     })
 
@@ -864,7 +875,7 @@ describe('scheduling/presets', () => {
     const anchor = ImutDate.from('2024-12-06T15:09:00.005Z')
 
     it('should bring forward the anchor time to the next schedule date', () => {
-      const result = nextWeeklySchedule.bringForward(anchor, 12)
+      const result = nextWeeklySchedule.bringForward(ImutDate.from(Date.now()), anchor, 12)
       expect(result).toStrictEqual(ImutDate.from('2025-02-28T15:09:00.005Z'))
     })
 

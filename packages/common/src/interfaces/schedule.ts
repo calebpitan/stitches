@@ -6,7 +6,8 @@ export type FrequencyAggregateTypeMap = {
   regular: RegularFrequency
   never: { type: 'never' }
 }
-export type Frequency<F extends FrequencyAggregateType = FrequencyAggregateType> = FrequencyAggregateTypeMap[F]
+export type Frequency<F extends FrequencyAggregateType = FrequencyAggregateType> =
+  FrequencyAggregateTypeMap[F]
 
 export interface BaseRegularExpr {
   every: number
@@ -88,8 +89,14 @@ export interface CustomFrequency extends BaseFrequency {
 
 export interface Timing {
   anchor: Date
-  upcoming: Date
-  due: Date | null
+  /**
+   * The "naive" anchor time without a timezone
+   */
+  naive: string
+  /**
+   * The timezone string of the originating anchor time
+   */
+  tzone: string
 }
 
 export interface BaseTaskSchedule<F extends FrequencyAggregateType = FrequencyAggregateType> {

@@ -188,6 +188,14 @@ export function getFloatingPoint(val: number) {
   return Math.sign(val) === -1 ? val - Math.ceil(val) : val - Math.floor(val)
 }
 
+/**
+ * Get the timezone string of the host platform
+ * @returns The timezone of the host platform
+ */
+export function getPlatformTimezone() {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone
+}
+
 export class BitMask {
   private constructor(
     private readonly bits: number,
