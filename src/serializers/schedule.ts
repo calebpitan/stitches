@@ -161,8 +161,8 @@ export class CustomFrequencySerializer implements CustomFrequency {
 @Expose()
 export class TimingSerializer implements Timing {
   @Type(() => Date) anchor: Date
-  @Type(() => Date) upcoming: Date
-  @Type(() => Date) due: Date | null
+  @Type(() => String) naive: string
+  @Type(() => String) tzone: string
 }
 
 // ***************************************************************
