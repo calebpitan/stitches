@@ -1,9 +1,16 @@
+use core::cmp::Ordering;
+use core::convert::TryInto;
+use core::convert::{Into, TryFrom};
 use core::fmt;
-use std::cmp::Ordering;
 
 use wasm_bindgen::prelude::*;
 
+use crate::core::errors::ConversionError;
+use crate::core::time::Timestamp;
 use crate::traits::Repeating;
+use crate::utils::{filter_unique, map_unique};
+
+use super::time::INDEXED_MONTH_DAYS;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StFrequency {
@@ -23,7 +30,7 @@ pub enum StFrequencyType {
 }
 
 #[wasm_bindgen]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum StOrdinals {
     First,
     Second,
@@ -99,13 +106,13 @@ pub enum StMonthlySubExpression {
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StHourlyExpression {
-    pub every: u8,
+    pub every: u32,
 }
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StDailyExpression {
-    pub every: u8,
+    pub every: u32,
 }
 
 #[wasm_bindgen]
@@ -117,28 +124,28 @@ pub struct StWeeklySubExpression {
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StWeeklyExpression {
-    pub every: u8,
+    pub every: u32,
     pub(crate) subexpr: StWeeklySubExpression,
 }
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StMonthlyOnDaysSubExpression {
-    days: Vec<u8>,
+    pub(crate) days: Vec<u32>,
 }
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StMonthlyOnTheSubExpression {
-    ordinal: StOrdinals,
-    weekday: StConstWeekday,
+    pub ordinal: StOrdinals,
+    pub weekday: StConstWeekday,
 }
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StMonthlyExpression {
-    pub every: u8,
-    subexpr: StMonthlySubExpression,
+    pub every: u32,
+    pub(crate) subexpr: StMonthlySubExpression,
 }
 
 #[wasm_bindgen]
@@ -150,29 +157,29 @@ pub struct StYearlyInSubExpression {
 #[wasm_bindgen]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StYearlyOnTheSubExpression {
-    ordinal: StOrdinals,
-    weekday: StWeekday,
+    pub(crate) ordinal: StOrdinals,
+    pub(crate) weekday: StWeekday,
 }
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StYearlySubExpression {
-    r#in: StYearlyInSubExpression,
-    on: Option<StYearlyOnTheSubExpression>,
+    pub(crate) months: Vec<StMonth>,
+    pub(crate) on: Option<StYearlyOnTheSubExpression>,
 }
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StYearlyExpression {
-    pub every: u8,
-    subexpr: StYearlySubExpression,
+    pub every: u32,
+    pub(crate) subexpr: StYearlySubExpression,
 }
 
 #[wasm_bindgen]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StRegularFrequency {
     pub ftype: StFrequencyType,
-    pub until: Option<u64>,
+    pub(crate) until: Option<Timestamp>,
     pub(crate) expr: StFrequencyExpression,
 }
 
@@ -180,44 +187,24 @@ pub struct StRegularFrequency {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StCustomFrequency {
     pub ftype: StFrequencyType,
-    pub until: Option<u64>,
-    /// The timezone offset in milliseconds to use for parsing the cron
-    pub tz_offset: i32,
-    cron_expressions: Vec<String>,
+    pub(crate) until: Option<Timestamp>,
+    pub(crate) cron_expressions: Vec<String>,
 }
 
 impl StOrdinals {
-    /// Gets the value, from 0-4 and 255, of the given enum variant
-    #[rustfmt::skip]
-    pub fn to_value(variant: &Self) -> u8 {
-        match variant {
-            Self::First     => 0x00,
-            Self::Second    => 0x01,
-            Self::Third     => 0x02,
-            Self::Fourth    => 0x03,
-            Self::Fifth     => 0x04,
-            Self::Last      => 0xFF,
-        }
+    /// Gets the value, from 0-5, of the given enum variant
+    pub fn to_value(&self) -> u32 {
+        (*self).into()
     }
 
-    /// Gets the enum variant from a value between 0-4 and 255
+    /// Gets the enum variant from a value between 0-5
     ///
     /// # Panics
     ///
-    /// When the supplied value is out of bounds, that is, greater than 4 and less than 255
-    pub fn from_value(value: &u8) -> Self {
-        match value {
-            0x00 => Self::First,
-            0x01 => Self::Second,
-            0x02 => Self::Third,
-            0x03 => Self::Fourth,
-            0x04 => Self::Fifth,
-            0xFF => Self::Last,
-            _ => panic!(
-                "Unknown value '{}': allowed values are 0x00...0x04 and 0xFF",
-                value
-            ),
-        }
+    /// When the value is out of bounds, that is, greater than 5
+    pub fn from_value(value: &u32) -> Self {
+        let msg = format!("Unknown value '{}'. Allowed values are 0-5", value);
+        (*value).try_into().expect(msg.as_str())
     }
 }
 
@@ -250,27 +237,55 @@ impl PartialOrd for StOrdinals {
     }
 }
 
-impl StConstWeekday {
-    /// Gets the value, from 0-6, for the given enum variant
-    pub fn to_value(variant: &Self) -> u8 {
-        match &variant {
-            Self::Sun => 0,
-            Self::Mon => 1,
-            Self::Tue => 2,
-            Self::Wed => 3,
-            Self::Thu => 4,
-            Self::Fri => 5,
-            Self::Sat => 6,
+impl TryFrom<u32> for StOrdinals {
+    type Error = ConversionError<u32>;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(Self::First),
+            1 => Ok(Self::Second),
+            2 => Ok(Self::Third),
+            3 => Ok(Self::Fourth),
+            4 => Ok(Self::Fifth),
+            5 => Ok(Self::Last),
+            _ => Err(ConversionError::RangeError(value, 0, 5)),
         }
     }
+}
 
-    /// Gets the enum variant from a value between 0-6
-    ///
-    /// # Panics
-    ///
-    /// When the supplied value is out of bounds, that is, greater than 6
-    pub fn from_value(value: &u8) -> Self {
+impl From<StOrdinals> for u32 {
+    fn from(value: StOrdinals) -> u32 {
         match value {
+            StOrdinals::First => 0,
+            StOrdinals::Second => 1,
+            StOrdinals::Third => 2,
+            StOrdinals::Fourth => 3,
+            StOrdinals::Fifth => 4,
+            StOrdinals::Last => 5,
+        }
+    }
+}
+
+// impl TryFrom<u32> for StConstWeekday {
+//     type Error = ConversionError<u32>;
+
+//     fn try_from(value: u32) -> Result<Self, Self::Error> {
+//         match value {
+//             0 => Ok(StConstWeekday::Sun),
+//             1 => Ok(StConstWeekday::Mon),
+//             2 => Ok(StConstWeekday::Tue),
+//             3 => Ok(StConstWeekday::Wed),
+//             4 => Ok(StConstWeekday::Thu),
+//             5 => Ok(StConstWeekday::Fri),
+//             6 => Ok(StConstWeekday::Sat),
+//             _ => Err(ConversionError::RangeError(value, 0, 6)),
+//         }
+//     }
+// }
+
+impl From<u32> for StConstWeekday {
+    fn from(value: u32) -> Self {
+        match value % 7 {
             0 => StConstWeekday::Sun,
             1 => StConstWeekday::Mon,
             2 => StConstWeekday::Tue,
@@ -278,15 +293,43 @@ impl StConstWeekday {
             4 => StConstWeekday::Thu,
             5 => StConstWeekday::Fri,
             6 => StConstWeekday::Sat,
-            _ => panic!(
-                "Weekday '{}' out of bounds: allowed values are 0...6",
-                value
-            ),
+            _ => StConstWeekday::Sun,
+            // will never happen for as long as `value % 7`
         }
     }
+}
 
-    pub fn to_chrono_weekday(weekday: &Self) -> chrono::Weekday {
-        match weekday {
+impl From<StConstWeekday> for u32 {
+    fn from(value: StConstWeekday) -> Self {
+        match value {
+            StConstWeekday::Sun => 0,
+            StConstWeekday::Mon => 1,
+            StConstWeekday::Tue => 2,
+            StConstWeekday::Wed => 3,
+            StConstWeekday::Thu => 4,
+            StConstWeekday::Fri => 5,
+            StConstWeekday::Sat => 6,
+        }
+    }
+}
+
+impl From<chrono::Weekday> for StConstWeekday {
+    fn from(value: chrono::Weekday) -> Self {
+        match value {
+            chrono::Weekday::Sun => StConstWeekday::Sun,
+            chrono::Weekday::Mon => StConstWeekday::Mon,
+            chrono::Weekday::Tue => StConstWeekday::Tue,
+            chrono::Weekday::Wed => StConstWeekday::Wed,
+            chrono::Weekday::Thu => StConstWeekday::Thu,
+            chrono::Weekday::Fri => StConstWeekday::Fri,
+            chrono::Weekday::Sat => StConstWeekday::Sat,
+        }
+    }
+}
+
+impl From<StConstWeekday> for chrono::Weekday {
+    fn from(value: StConstWeekday) -> chrono::Weekday {
+        match value {
             StConstWeekday::Sun => chrono::Weekday::Sun,
             StConstWeekday::Mon => chrono::Weekday::Mon,
             StConstWeekday::Tue => chrono::Weekday::Tue,
@@ -296,17 +339,15 @@ impl StConstWeekday {
             StConstWeekday::Sat => chrono::Weekday::Sat,
         }
     }
+}
 
-    pub fn from_chrono_weekday(chrono_weekday: &chrono::Weekday) -> Self {
-        match chrono_weekday {
-            chrono::Weekday::Sun => StConstWeekday::Sun,
-            chrono::Weekday::Mon => StConstWeekday::Mon,
-            chrono::Weekday::Tue => StConstWeekday::Tue,
-            chrono::Weekday::Wed => StConstWeekday::Wed,
-            chrono::Weekday::Thu => StConstWeekday::Thu,
-            chrono::Weekday::Fri => StConstWeekday::Fri,
-            chrono::Weekday::Sat => StConstWeekday::Sat,
-        }
+impl StConstWeekday {
+    pub fn to_chrono_weekday(&self) -> chrono::Weekday {
+        (*self).into()
+    }
+
+    pub fn from_chrono_weekday(weekday: &chrono::Weekday) -> Self {
+        (*weekday).into()
     }
 }
 
@@ -326,8 +367,8 @@ impl fmt::Display for StConstWeekday {
 
 impl Ord for StConstWeekday {
     fn cmp(&self, other: &Self) -> Ordering {
-        let self_value = Self::to_value(self);
-        let other_value = Self::to_value(other);
+        let self_value: u32 = (*self).into();
+        let other_value: u32 = (*other).into();
 
         self_value.cmp(&other_value)
     }
@@ -340,68 +381,67 @@ impl PartialOrd for StConstWeekday {
 }
 
 impl StMonth {
-    /// Gets the value, from 0-11, for the given enum variant
-    pub fn to_value(variant: &Self) -> u8 {
-        match variant {
-            Self::Jan => 0,
-            Self::Feb => 1,
-            Self::Mar => 2,
-            Self::Apr => 3,
-            Self::May => 4,
-            Self::Jun => 5,
-            Self::Jul => 6,
-            Self::Aug => 7,
-            Self::Sep => 8,
-            Self::Oct => 9,
-            Self::Nov => 10,
-            Self::Dec => 11,
-        }
+    /// Gets the value, from 0-11, for the given month
+    pub fn to_value(&self) -> u32 {
+        (*self).into()
     }
 
-    /// Gets the enum variant from a value between 0-11
+    /// Gets the month from a value between 0-11
     ///
-    /// # Panics
+    /// # NOTE  
     ///
-    /// When the supplied value is out of bounds, that is, greater than 11
-    pub fn from_value(value: &u8) -> Self {
+    /// Out-of-bounds values are cycled between 0-11 with modular arithmetic
+    pub fn from_value(value: u32) -> Self {
+        value.into()
+    }
+
+    pub fn last_day_of_month(&self) -> u32 {
+        INDEXED_MONTH_DAYS[u32::from(*self) as usize]
+    }
+
+    pub fn last_day_of_leap_month(&self) -> u32 {
+        match self {
+            Self::Feb => self.last_day_of_month() + 1,
+            _ => self.last_day_of_month(),
+        }
+    }
+}
+
+impl From<u32> for StMonth {
+    fn from(value: u32) -> Self {
+        match value % 12 {
+            0 => StMonth::Jan,
+            1 => StMonth::Jan,
+            2 => StMonth::Jan,
+            3 => StMonth::Jan,
+            4 => StMonth::Jan,
+            5 => StMonth::Jan,
+            6 => StMonth::Jan,
+            7 => StMonth::Jan,
+            8 => StMonth::Jan,
+            9 => StMonth::Jan,
+            10 => StMonth::Jan,
+            11 => StMonth::Jan,
+            _ => panic!("This should never happen"),
+        }
+    }
+}
+
+impl From<StMonth> for u32 {
+    fn from(value: StMonth) -> Self {
         match value {
-            0 => Self::Jan,
-            1 => Self::Feb,
-            2 => Self::Mar,
-            3 => Self::Apr,
-            4 => Self::May,
-            5 => Self::Jun,
-            6 => Self::Jul,
-            7 => Self::Aug,
-            8 => Self::Sep,
-            9 => Self::Oct,
-            10 => Self::Nov,
-            11 => Self::Dec,
-            _ => panic!("Month '{}' out of bounds: allowed values are 0...11", value),
-        }
-    }
-
-    pub fn number_of_days(&self) -> u8 {
-        match self {
-            Self::Jan => 31,
-            Self::Feb => 28,
-            Self::Mar => 31,
-            Self::Apr => 30,
-            Self::May => 31,
-            Self::Jun => 30,
-            Self::Jul => 31,
-            Self::Aug => 31,
-            Self::Sep => 30,
-            Self::Oct => 31,
-            Self::Nov => 30,
-            Self::Dec => 31,
-        }
-    }
-
-    pub fn number_of_leap_days(&self) -> u8 {
-        match self {
-            Self::Feb => 29,
-            _ => self.number_of_days(),
+            StMonth::Jan => 0,
+            StMonth::Feb => 1,
+            StMonth::Mar => 2,
+            StMonth::Apr => 3,
+            StMonth::May => 4,
+            StMonth::Jun => 5,
+            StMonth::Jul => 6,
+            StMonth::Aug => 7,
+            StMonth::Sep => 8,
+            StMonth::Oct => 9,
+            StMonth::Nov => 10,
+            StMonth::Dec => 11,
         }
     }
 }
@@ -441,21 +481,21 @@ impl PartialOrd for StMonth {
 }
 
 impl Repeating for StFrequencyExpression {
-    fn every(&self) -> u64 {
-        (match &self {
+    fn every(&self) -> u32 {
+        match &self {
             Self::Daily(v) => v.every,
             Self::Hourly(v) => v.every,
             Self::Monthly(v) => v.every,
             Self::Weekly(v) => v.every,
             Self::Yearly(v) => v.every,
-        }) as u64
+        }
     }
 }
 
 #[wasm_bindgen]
 impl StHourlyExpression {
     #[wasm_bindgen(constructor)]
-    pub fn new(every: u8) -> Self {
+    pub fn new(every: u32) -> Self {
         StHourlyExpression { every }
     }
 }
@@ -463,7 +503,7 @@ impl StHourlyExpression {
 #[wasm_bindgen]
 impl StDailyExpression {
     #[wasm_bindgen(constructor)]
-    pub fn new(every: u8) -> Self {
+    pub fn new(every: u32) -> Self {
         StDailyExpression { every }
     }
 }
@@ -472,22 +512,19 @@ impl StDailyExpression {
 impl StWeeklySubExpression {
     #[wasm_bindgen(constructor)]
     /// Initializes a sub expression for a weekly frequency strategy
-    pub fn new(weekdays: Vec<u8>) -> Self {
-        assert!(
-            weekdays.len() <= 7,
-            "Size of `weekdays` can't be more than 7"
-        );
-
-        let weekdays = weekdays
-            .iter()
+    pub fn new(weekdays: Vec<u32>) -> Self {
+        let weekdays = map_unique(&weekdays, |w| w % 7)
+            .into_iter()
             .take(7)
-            .map(|w| StConstWeekday::from_value(w))
-            .collect::<Vec<StConstWeekday>>();
+            .map(|w| w.try_into().unwrap())
+            .collect::<Vec<_>>();
 
         StWeeklySubExpression { weekdays }
     }
+}
 
-    pub(crate) fn get_weekdays(&self) -> &Vec<StConstWeekday> {
+impl StWeeklySubExpression {
+    pub fn get_weekdays(&self) -> &Vec<StConstWeekday> {
         &self.weekdays
     }
 }
@@ -496,20 +533,22 @@ impl StWeeklySubExpression {
 impl StWeeklyExpression {
     #[wasm_bindgen(constructor)]
     /// Initializes an expression for a weekly frequency strategy
-    pub fn new(every: u8, subexpr: StWeeklySubExpression) -> Self {
+    pub fn new(every: u32, subexpr: StWeeklySubExpression) -> Self {
         StWeeklyExpression { every, subexpr }
     }
 
     /// Initializes an expression for a weekly frequency strategy
-    pub fn with_weekdays(every: u8, weekdays: Vec<u8>) -> Self {
+    pub fn with_weekdays(every: u32, weekdays: Vec<u32>) -> Self {
         StWeeklyExpression {
             every,
             subexpr: StWeeklySubExpression::new(weekdays),
         }
     }
+}
 
+impl StWeeklyExpression {
     #[inline]
-    pub(crate) fn get_subexpr(&self) -> &StWeeklySubExpression {
+    pub fn get_subexpr(&self) -> &StWeeklySubExpression {
         &self.subexpr
     }
 }
@@ -520,12 +559,14 @@ impl StMonthlyOnDaysSubExpression {
     /// Initializes a sub expression for a monthly,
     /// "every \[month\] on \[days\]" relationship, frequency strategy.
     ///
-    /// # Panics
+    /// # NOTE
     ///
-    /// If the size of days exceeds the maximum, `31`, different, possible days in a month
-    pub fn new(days: Vec<u8>) -> Self {
-        assert!(days.len() <= 31, "Size of `days` cannot be more than 31");
-        StMonthlyOnDaysSubExpression { days }
+    /// Duplicate days are removed. Also, if the size of days exceeds the maximum, `31`,
+    /// different, possible days in a month the rest are truncated and deduped.
+    pub fn new(days: Vec<u32>) -> Self {
+        StMonthlyOnDaysSubExpression {
+            days: filter_unique(&days, |d| d > &0 && d < &32),
+        }
     }
 }
 
@@ -544,7 +585,7 @@ impl StMonthlyOnTheSubExpression {
 impl StMonthlyExpression {
     /// Initializes an expression for a monthly,
     /// "every \[month\] on \[days\]" relationship, frequency strategy.
-    pub fn with_ondays_expr(every: u8, subexpr: StMonthlyOnDaysSubExpression) -> Self {
+    pub fn with_ondays_expr(every: u32, subexpr: StMonthlyOnDaysSubExpression) -> Self {
         StMonthlyExpression {
             every,
             subexpr: StMonthlySubExpression::OnDays(subexpr),
@@ -554,7 +595,7 @@ impl StMonthlyExpression {
     /// Initializes an expression for a monthly,
     /// "every \[month\] on the \[ordinal (e.g first)\] \[weekday (e.g Sun)\]"
     /// relationship, frequency strategy.
-    pub fn with_onthe_expr(every: u8, subexpr: StMonthlyOnTheSubExpression) -> Self {
+    pub fn with_onthe_expr(every: u32, subexpr: StMonthlyOnTheSubExpression) -> Self {
         StMonthlyExpression {
             every,
             subexpr: StMonthlySubExpression::OnThe(subexpr),
@@ -562,7 +603,7 @@ impl StMonthlyExpression {
     }
 
     /// Initializes an `StMonthlyExpression` equivalent to [with_ondays_expr][StMonthlyExpression::with_ondays_expr]
-    pub fn with_days(every: u8, days: Vec<u8>) -> Self {
+    pub fn with_days(every: u32, days: Vec<u32>) -> Self {
         StMonthlyExpression {
             every,
             subexpr: StMonthlySubExpression::OnDays(StMonthlyOnDaysSubExpression::new(days)),
@@ -570,7 +611,7 @@ impl StMonthlyExpression {
     }
 
     /// Initializes an `StMonthlyExpression` equivalent to [with_onthe_expr][StMonthlyExpression::with_onthe_expr]
-    pub fn with_ordinal_weekday(every: u8, ordinal: StOrdinals, weekday: StConstWeekday) -> Self {
+    pub fn with_ordinal_weekday(every: u32, ordinal: StOrdinals, weekday: StConstWeekday) -> Self {
         StMonthlyExpression {
             every,
             subexpr: StMonthlySubExpression::OnThe(StMonthlyOnTheSubExpression::new(
@@ -601,13 +642,8 @@ impl StYearlyInSubExpression {
     #[wasm_bindgen(constructor)]
     /// Initializes a sub expression for a yearly,
     /// "in \[...months\] relationship, frequency strategy.
-    pub fn new(months: Vec<u8>) -> Self {
-        assert!(months.len() <= 12, "Size of `months` can't be more than 12");
-        let months = months
-            .iter()
-            .take(12)
-            .map(|m| StMonth::from_value(m))
-            .collect::<Vec<StMonth>>();
+    pub fn new(months: Vec<u32>) -> Self {
+        let months = map_unique(&months, |m| (*m).into());
 
         StYearlyInSubExpression { months }
     }
@@ -665,14 +701,17 @@ impl StYearlySubExpression {
     /// Initializes an expression for a yearly,
     /// "`in` \[months (e.g Jan)\] `on` \[ordinal (e.g first)\] \[weekday (e.g Sun)\]"
     /// relationship, frequency strategy.
-    pub fn new(_in: StYearlyInSubExpression, on: Option<StYearlyOnTheSubExpression>) -> Self {
-        StYearlySubExpression { r#in: _in, on }
+    pub fn new(months: Vec<u32>, on: Option<StYearlyOnTheSubExpression>) -> Self {
+        StYearlySubExpression {
+            months: StYearlyInSubExpression::new(months).months,
+            on,
+        }
     }
 
     /// Initializes an expression for a yearly, "`in` \[months (e.g Jan)\]" relationship, frequency strategy.
-    pub fn with_months(months: Vec<u8>) -> Self {
+    pub fn with_months(months: Vec<u32>) -> Self {
         StYearlySubExpression {
-            r#in: StYearlyInSubExpression::new(months),
+            months: StYearlyInSubExpression::new(months).months,
             on: None,
         }
     }
@@ -680,12 +719,12 @@ impl StYearlySubExpression {
     /// Initializes an `StYearlySubExpression` with a constant weekday (Sun-Sat) equivalent to
     /// [new][StMonthlyExpression::new] when the `on` argument is not `None`
     pub fn with_months_ordinal_const_weekday(
-        months: Vec<u8>,
+        months: Vec<u32>,
         ordinal: StOrdinals,
         weekday: StConstWeekday,
     ) -> Self {
         StYearlySubExpression {
-            r#in: StYearlyInSubExpression::new(months),
+            months: StYearlyInSubExpression::new(months).months,
             on: Some(StYearlyOnTheSubExpression::new(ordinal, weekday)),
         }
     }
@@ -693,12 +732,12 @@ impl StYearlySubExpression {
     /// Initializes an `StYearlySubExpression` with a variable weekday (Day, Weekday, Weekend)
     /// equivalent to [new][StMonthlyExpression::new] when the `on` argument is not `None`
     pub fn with_months_ordinal_var_weekday(
-        months: Vec<u8>,
+        months: Vec<u32>,
         ordinal: StOrdinals,
         weekday: StVarWeekday,
     ) -> Self {
         StYearlySubExpression {
-            r#in: StYearlyInSubExpression::new(months),
+            months: StYearlyInSubExpression::new(months).months,
             on: Some(StYearlyOnTheSubExpression::with_var_weekday(
                 ordinal, weekday,
             )),
@@ -706,8 +745,8 @@ impl StYearlySubExpression {
     }
 
     #[inline]
-    pub fn get_in_expr(&self) -> StYearlyInSubExpression {
-        self.r#in.to_owned()
+    pub fn get_in_expr(&self) -> Vec<StMonth> {
+        self.months.to_owned()
     }
 
     #[inline]
@@ -719,11 +758,11 @@ impl StYearlySubExpression {
 #[wasm_bindgen]
 impl StYearlyExpression {
     #[wasm_bindgen(constructor)]
-    pub fn new(every: u8, subexpr: StYearlySubExpression) -> Self {
+    pub fn new(every: u32, subexpr: StYearlySubExpression) -> Self {
         StYearlyExpression { every, subexpr }
     }
 
-    pub fn with_months(every: u8, months: Vec<u8>) -> Self {
+    pub fn with_months(every: u32, months: Vec<u32>) -> Self {
         StYearlyExpression {
             every,
             subexpr: StYearlySubExpression::with_months(months),
@@ -731,8 +770,8 @@ impl StYearlyExpression {
     }
 
     pub fn with_months_ordinal_const_weekday(
-        every: u8,
-        months: Vec<u8>,
+        every: u32,
+        months: Vec<u32>,
         ordinal: StOrdinals,
         weekday: StConstWeekday,
     ) -> Self {
@@ -745,8 +784,8 @@ impl StYearlyExpression {
     }
 
     pub fn with_months_ordinal_var_weekday(
-        every: u8,
-        months: Vec<u8>,
+        every: u32,
+        months: Vec<u32>,
         ordinal: StOrdinals,
         weekday: StVarWeekday,
     ) -> Self {
@@ -765,7 +804,7 @@ impl StRegularFrequency {
     pub fn new(ftype: StFrequencyType, expr: StHourlyExpression, until: Option<u64>) -> Self {
         StRegularFrequency {
             ftype,
-            until,
+            until: until.map(|ms| Timestamp::Millis(ms as i64)),
             expr: StFrequencyExpression::Hourly(expr),
         }
     }
@@ -777,7 +816,7 @@ impl StRegularFrequency {
     ) -> Self {
         StRegularFrequency {
             ftype,
-            until,
+            until: until.map(|ms| Timestamp::Millis(ms as i64)),
             expr: StFrequencyExpression::Daily(expr),
         }
     }
@@ -789,7 +828,7 @@ impl StRegularFrequency {
     ) -> Self {
         StRegularFrequency {
             ftype,
-            until,
+            until: until.map(|ms| Timestamp::Millis(ms as i64)),
             expr: StFrequencyExpression::Weekly(expr),
         }
     }
@@ -801,7 +840,7 @@ impl StRegularFrequency {
     ) -> Self {
         StRegularFrequency {
             ftype,
-            until,
+            until: until.map(|ms| Timestamp::Millis(ms as i64)),
             expr: StFrequencyExpression::Monthly(expr),
         }
     }
@@ -813,7 +852,7 @@ impl StRegularFrequency {
     ) -> Self {
         StRegularFrequency {
             ftype,
-            until,
+            until: until.map(|ms| Timestamp::Millis(ms as i64)),
             expr: StFrequencyExpression::Yearly(expr),
         }
     }
@@ -862,15 +901,10 @@ impl StRegularFrequency {
 #[wasm_bindgen]
 impl StCustomFrequency {
     #[wasm_bindgen(constructor)]
-    pub fn new(tz_offset: i32, cron_expressions: Vec<String>, until: Option<u64>) -> Self {
-        assert!(
-            cron_expressions.len() <= 3,
-            "Only a maximum of three cron expressions are allowed for a custom frequency"
-        );
+    pub fn new(cron_expressions: Vec<String>, until: Option<u64>) -> Self {
         StCustomFrequency {
             ftype: StFrequencyType::Custom,
-            until,
-            tz_offset,
+            until: until.map(|ms| Timestamp::Millis(ms as i64)),
             cron_expressions,
         }
     }
