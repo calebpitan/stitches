@@ -10,6 +10,7 @@ use core::{
     frequency::{StConstWeekday, StOrdinals},
     scheduler::{StScheduler, StSchedulerRunner},
 };
+use std::convert::TryInto;
 
 #[wasm_bindgen]
 extern "C" {
@@ -23,7 +24,7 @@ extern "C" {
 #[macro_export]
 macro_rules! console_log {
     ($($t:tt)*) => {
-        let time = crate::core::time::utc_timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
+        let time = crate::core::time::timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
         $crate::log(&format!("[Scheduler] - {}  INFO  {}", time, &format!($($t)*)));
     };
 }
@@ -31,7 +32,7 @@ macro_rules! console_log {
 #[macro_export]
 macro_rules! console_error {
     ($($t:tt)*) => {
-        let time = crate::core::time::utc_timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
+        let time = crate::core::time::timestamp().to_datetime().format("%Y-%m-%dT%H:%M:%S%.3f%z");
         $crate::error(&format!("[Scheduler] - {}  ERROR  {}", time, &format!($($t)*)));
     };
 }
@@ -54,8 +55,8 @@ pub fn get_scheduler_runner() -> StSchedulerRunner {
 ///
 /// When the supplied value is out of bounds, that is, greater than 6
 #[wasm_bindgen]
-pub fn st_const_weekday_from_value(value: u8) -> StConstWeekday {
-    StConstWeekday::from_value(&value)
+pub fn st_const_weekday_from_value(value: u32) -> StConstWeekday {
+    value.try_into().unwrap()
 }
 
 /// Gets the enum variant from a value between 0-4 and 255
@@ -66,6 +67,6 @@ pub fn st_const_weekday_from_value(value: u8) -> StConstWeekday {
 ///
 /// When the supplied value is out of bounds, that is, greater than 4 and less than 255
 #[wasm_bindgen]
-pub fn st_ordinals_from_value(value: u8) -> StOrdinals {
+pub fn st_ordinals_from_value(value: u32) -> StOrdinals {
     StOrdinals::from_value(&value)
 }
