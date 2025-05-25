@@ -5,10 +5,11 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 
 use crate::core::schedule::StSchedule;
-use crate::core::time::utc_timestamp;
+use crate::core::time::timestamp;
 use crate::core::time::Timestamp;
 use crate::queue::priority_queue::PQComparator;
 use crate::queue::priority_queue::PriorityQueue;
+use crate::traits::*;
 use crate::{console_error, console_log};
 
 enum Poll<P, R> {
@@ -57,7 +58,7 @@ impl StScheduler {
         self.subscriber = Some(receiver)
     }
 
-    pub fn add_schedule(&mut self, schedule: StSchedule) {
+    pub fn add_schedule(&mut self, schedule: StSchedule) -> bool {
         let queued_msg = format!("Schedule with ID '{}' queued!", schedule.get_id_as_str());
 
         if schedule.is_passed() {
@@ -67,17 +68,24 @@ impl StScheduler {
             let upcoming_schedule = schedule.get_upcoming_schedule();
 
             match upcoming_schedule {
-                Some(s) => {
+                Ok(s) => {
                     self.pq.enqueue(s);
                     console_log!("{}", queued_msg);
+                    true
                 }
-                None => {
-                    console_log!("No upcoming schedules for Schedule with ID '{id}'");
+                Err(err) => {
+                    console_error!("Failed to compute upcoming schedules: {}", err);
+                    console_error!(
+                        "Error occured while computing for schedule with ID '{}'",
+                        id
+                    );
+                    false
                 }
             }
         } else {
             self.pq.enqueue(schedule);
             console_log!("{}", queued_msg);
+            true
         }
     }
 
@@ -87,10 +95,8 @@ impl StScheduler {
     }
 
     fn update_schedule(&mut self, schedule: StSchedule) -> bool {
-        self.remove_schedule(schedule.get_id()).map_or(false, |s| {
-            self.add_schedule(s);
-            true
-        })
+        self.remove_schedule(schedule.get_id())
+            .map_or(false, |_| self.add_schedule(schedule))
     }
 
     fn suspend(&mut self) {
@@ -119,9 +125,9 @@ impl StScheduler {
 
         let peeked = self.pq.peek().unwrap();
         let peeked_id = peeked.get_id();
-        let timestamp = Timestamp::Millis(peeked.get_timestamp());
-        let current_timestamp = utc_timestamp();
-        let difference = timestamp - current_timestamp;
+        let anchor_ts = Timestamp::Millis(peeked.get_anchor_millis());
+        let current_ts = timestamp();
+        let difference = anchor_ts - current_ts;
 
         if difference > Timestamp::Millis(0) {
             console_log!("Next schedule in {:.3}s", difference.as_sec_f64());
@@ -151,7 +157,7 @@ impl StSchedulerRunner {
     async fn idle(until: Option<Timestamp>) {
         let sleep_ts = until.unwrap_or_else(|| Timestamp::Millis(1000));
         console_log!("Idling for {}", sleep_ts);
-        task::sleep(sleep_ts.to_std_duration()).await
+        task::sleep(sleep_ts.to_core_duration()).await
     }
 
     #[inline]
