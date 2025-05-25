@@ -1,18 +1,32 @@
-use std::cmp::Ordering;
-use std::ops::{Add, AddAssign, Div, Sub, SubAssign};
-use std::time::{SystemTime, UNIX_EPOCH};
+use core::cmp::Ordering;
+use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
 
 use chrono::prelude::*;
-use cron_parser::{parse, ParseError};
 
+pub const INDEXED_MONTH_DAYS: &[u32; 12] = &[31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 pub const HOUR_MILLIS: u64 = 3_600_000;
 pub const DAY_MILLIS: u64 = HOUR_MILLIS * 24;
 pub const WEEK_MILLIS: u64 = DAY_MILLIS * 7;
 
+pub trait Ts
+where
+    Self: Datelike,
+{
+    fn to_timestamp(&self) -> Timestamp;
+}
+
+impl<T> Ts for DateTime<T>
+where
+    T: TimeZone,
+{
+    fn to_timestamp(&self) -> Timestamp {
+        Timestamp::Millis(self.timestamp_millis())
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum Timestamp {
     Millis(i64),
-    #[allow(dead_code)]
     Second(i64),
 }
 
@@ -42,13 +56,13 @@ impl Timestamp {
     pub fn as_sec_f64(&self) -> f64 {
         match &self {
             Timestamp::Second(seconds) => *seconds as f64,
-            Timestamp::Millis(milliseconds) => (*milliseconds as f64).div(1_000_f64),
+            Timestamp::Millis(milliseconds) => *milliseconds as f64 / 1_000.0,
         }
     }
 
-    /// Converts `Timestamp` to a `std::time::Duration` in milliseconds
-    pub fn to_std_duration(&self) -> std::time::Duration {
-        std::time::Duration::from_millis(self.as_ms().abs() as u64)
+    /// Converts `Timestamp` to a `core::time::Duration` in milliseconds
+    pub fn to_core_duration(&self) -> core::time::Duration {
+        core::time::Duration::from_millis(self.as_ms().abs() as u64)
     }
 
     /// Converts `Timestamp` to a `chrono::DateTime<UTC>` with millisecond precision
@@ -61,13 +75,42 @@ impl Timestamp {
     }
 
     /// Generates a `Timestamp` from a `chrono::DateTime<Utc>`
-    pub fn from_datetime(&self, dt: DateTime<Utc>) -> Timestamp {
+    pub fn from_datetime(dt: DateTime<Utc>) -> Timestamp {
         Timestamp::Millis(dt.timestamp_millis())
+    }
+
+    /// Converts `x.y` hours to a timestamp in milliseconds
+    pub fn from_hours(hours: f64) -> Self {
+        Timestamp::Millis((HOUR_MILLIS as f64 * hours) as i64)
+    }
+
+    /// Converts `x.y` days to a timestamp in milliseconds
+    pub fn from_days(days: f64) -> Self {
+        Timestamp::Millis((DAY_MILLIS as f64 * days) as i64)
+    }
+
+    /// Converts `x.y` weeks to a timestamp in milliseconds
+    pub fn from_weeks(weeks: f64) -> Self {
+        Timestamp::Millis((WEEK_MILLIS as f64 * weeks) as i64)
     }
 }
 
-impl std::fmt::Display for Timestamp {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl Timestamp {
+    pub fn round_div(&self, rhs: Self) -> Timestamp {
+        Timestamp::Millis((self.as_ms_f64() / rhs.as_ms_f64()).round() as i64)
+    }
+
+    pub fn ceil_div(&self, rhs: Self) -> Timestamp {
+        Timestamp::Millis((self.as_ms_f64() / rhs.as_ms_f64()).ceil() as i64)
+    }
+
+    pub fn floor_div(&self, rhs: Self) -> Timestamp {
+        Timestamp::Millis((self.as_ms_f64() / rhs.as_ms_f64()).floor() as i64)
+    }
+}
+
+impl core::fmt::Display for Timestamp {
+    fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
         match self {
             Timestamp::Millis(ms) => write!(f, "{}ms", ms.to_string().as_str()),
             Timestamp::Second(sec) => write!(f, "{}s", sec.to_string().as_str()),
@@ -87,7 +130,31 @@ impl Sub for Timestamp {
     type Output = Timestamp;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        Timestamp::Millis(self.as_ms().saturating_sub(rhs.as_ms()))
+        Timestamp::Millis(self.as_ms().sub(rhs.as_ms()))
+    }
+}
+
+impl Mul for Timestamp {
+    type Output = Timestamp;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        Timestamp::Millis(self.as_ms().mul(rhs.as_ms()))
+    }
+}
+
+impl Div for Timestamp {
+    type Output = Timestamp;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        Timestamp::Millis(self.as_ms().div(rhs.as_ms()))
+    }
+}
+
+impl Rem for Timestamp {
+    type Output = Timestamp;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        Timestamp::Millis(self.as_ms().rem(rhs.as_ms()))
     }
 }
 
@@ -100,6 +167,24 @@ impl AddAssign for Timestamp {
 impl SubAssign for Timestamp {
     fn sub_assign(&mut self, rhs: Self) {
         *self = self.sub(rhs);
+    }
+}
+
+impl MulAssign for Timestamp {
+    fn mul_assign(&mut self, rhs: Self) {
+        *self = self.mul(rhs);
+    }
+}
+
+impl DivAssign for Timestamp {
+    fn div_assign(&mut self, rhs: Self) {
+        *self = self.div(rhs);
+    }
+}
+
+impl RemAssign for Timestamp {
+    fn rem_assign(&mut self, rhs: Self) {
+        *self = self.rem(rhs)
     }
 }
 
@@ -123,63 +208,9 @@ impl Ord for Timestamp {
     }
 }
 
-pub fn _utc_now() -> u128 {
-    let start = SystemTime::now();
-    let epoch = start
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-
-    epoch.as_millis()
-}
-
-pub fn utc_timestamp() -> Timestamp {
-    Timestamp::Millis(Utc::now().timestamp_millis())
-}
-
-/// Parse a cron expression into a UTC DateTime
-///
-/// # Arguments
-///
-/// * `expression` - The cron expression to parse into a UTC DateTime.
-/// * `tz_offset` - The timezone offset in milliseconds to use to interpret the cron expression.
-/// * `start_timestamp` - A timestamp used to specify the minimum datetime the datetime generated from the cron
-///     expression must start from.
-///
-/// # Note
-///
-/// The `tz_offset` which is a signed integer is needed because:
-///
-/// 1. A cron expression like `0 18 * * *` is interpreted in the timezone of `start_time`, which is assumed to be UTC
-///     (milliseconds).
-/// 2. That means `18` is taken as UTC `1800` hours, ignoring the timezone of the client that
-///     scheduled it, which, ordinarily, they would believe is in their own timezone.
-/// 3. The timezone offset (`tz_offset`) of the client is now being factored in to ensure consistency.
-/// 4. Say, the client's timezone is `+0100`, then `tz_offset` will be `3_600_000` which is one hour in
-///     milliseconds.
-/// 5. Without `tz_offset`, `18` would be `1800` hours UTC, and the generated time would be `1800 + 0100`,
-///     making `1900` hours for the client rather than `1800` hours.
-pub fn parse_cron_expr(
-    expression: &str,
-    tz_offset: i32,
-    start_timestamp: Option<&Timestamp>,
-) -> Result<DateTime<Utc>, ParseError> {
-    let start_time = {
-        let offset = FixedOffset::east_opt(tz_offset.div(1_000))
-            .unwrap_or_else(|| FixedOffset::east_opt(0).unwrap());
-
-        let start_time_utc = start_timestamp
-            .map(|a| a.to_datetime())
-            .unwrap_or_else(|| Utc::now());
-
-        offset.from_utc_datetime(&start_time_utc.naive_utc())
-    };
-
-    let result = parse(expression, &start_time);
-
-    match result {
-        Ok(value) => Result::Ok(value.to_utc()),
-        Err(error) => Result::Err(error),
-    }
+#[inline(always)]
+pub fn timestamp() -> Timestamp {
+    Utc::now().to_timestamp()
 }
 
 // pub fn parse_cron_expr2(
@@ -213,7 +244,8 @@ pub fn parse_cron_expr(
 
 #[cfg(test)]
 mod test {
-    use chrono::DateTime;
+    use chrono::{prelude::*, Months};
+    use chrono_tz::Tz;
     use wasm_bindgen_test::*;
 
     use super::*;
@@ -221,26 +253,41 @@ mod test {
     wasm_bindgen_test_configure!(run_in_browser);
 
     #[test]
-    #[wasm_bindgen_test]
-    pub fn test_parse_cron_expr() {
-        let offset = 3_600_000; // +01:00 offset from UTC
-        let start_date_rfc3339 = "2024-11-10T11:03:00.000+01:00";
-        let expressions = &["*/2 * * * *", "*/3 * * * *", "*/8 * * * *", "16 10 */5 * *"];
-        let expectations = &[
-            "2024-11-10T10:04:00+00:00",
-            "2024-11-10T10:06:00+00:00",
-            "2024-11-10T10:08:00+00:00",
-            "2024-11-11T09:16:00+00:00",
-        ];
+    pub fn test_tz() {
+        let now = Local::now();
+        let ts = now.to_timestamp();
+        let ts2 = now.to_utc().to_timestamp();
+        println!("TS -> {} | TS2 -> {} | DT -> {}", ts, ts2, ts.to_datetime())
+    }
 
-        let start_date = DateTime::parse_from_rfc3339(start_date_rfc3339).unwrap();
-        let timestamp = Timestamp::Millis(start_date.timestamp_millis());
+    #[test]
+    pub fn test_validate_dt() {
+        let anchor_dt =
+            DateTime::parse_from_str("2024-12-21T10:45:39.057+0100", "%Y-%m-%dT%H:%M:%S%.3f%z")
+                .unwrap()
+                .to_utc();
+        let ndt = NaiveDate::from_ymd_opt(2025, 1, 31)
+            .unwrap()
+            .and_time(anchor_dt.time());
+        let dt = DateTime::<Utc>::from_naive_utc_and_offset(ndt, anchor_dt.offset().clone());
 
-        // println!("Start date: {}", start_date);
-        for i in 0..expressions.len() {
-            let result = parse_cron_expr(expressions[i], offset, Some(&timestamp));
-            // println!("{i}. {}", result.as_ref().unwrap().to_rfc3339());
-            assert_eq!(&result.unwrap().to_rfc3339(), expectations[i]);
-        }
+        println!("{}", anchor_dt);
+        println!("{}", ndt);
+        println!("{}", dt);
+        println!("{}", dt.checked_add_months(Months::new(1)).unwrap());
+
+        // let v1: Option<Vec<u32>> = Some(vec![]);
+        let v2: Option<Vec<u32>> = Some(vec![1, 2, 3]);
+        // let v3: Option<Vec<u32>> = None;
+
+        let r: Option<&Vec<u32>> = v2.as_ref().map(|w| (!w.is_empty()).then_some(w)).flatten();
+
+        println!("{:?}", r.unwrap().into_iter().max());
+
+        let tz: Tz = "America/New_York".parse().unwrap();
+        let dt = Local::now().with_timezone(&tz);
+
+        println!("TZ -> {}", tz);
+        println!("DT -> {}", dt);
     }
 }
