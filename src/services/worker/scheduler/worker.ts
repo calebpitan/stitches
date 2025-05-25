@@ -2,7 +2,7 @@
 import * as sch from '@stitches/scheduler'
 import type { WeekdayVariable } from '@stitches/common'
 import type { TaskSchedule } from '@stitches/common'
-import { never, ordinalToUint8 } from '@stitches/common'
+import { never, ordinalToU32 } from '@stitches/common'
 
 import type { MasterMessageEventData, WorkerMessageEventData } from './types'
 
@@ -27,7 +27,6 @@ const st_var_weekday_map = {
 function create_st_schedule(data: TaskSchedule) {
   if (!data.timing) throw new Error('`timing` is required to create schedule')
 
-  const timing = BigInt(data.timing.anchor.getTime())
   const until =
     data.frequency.type !== 'never' && data.frequency.until
       ? BigInt(data.frequency.until.getTime())
@@ -35,73 +34,72 @@ function create_st_schedule(data: TaskSchedule) {
 
   switch (data.frequency.type) {
     case 'never': {
-      return new sch.StSchedule(data.id, timing)
+      return new sch.StSchedule(data.id, data.timing.naive, data.timing.tzone)
     }
 
     case 'custom': {
-      const tzOffset = -1 * 60 * 1_000 * data.timing.anchor.getTimezoneOffset()
       const exprs = data.frequency.crons.map((c) => c.expression)
-      const freq = new sch.StCustomFrequency(tzOffset, exprs, until)
+      const freq = new sch.StCustomFrequency(exprs, until)
 
-      return sch.StSchedule.with_custom(data.id, timing, freq)
+      return sch.StSchedule.with_custom(data.id, data.timing.naive, data.timing.tzone, freq)
     }
 
     case 'hour': {
       const expr = new sch.StHourlyExpression(data.frequency.exprs.every)
       const freq = new sch.StRegularFrequency(sch.StFrequencyType.Hour, expr, until)
 
-      return sch.StSchedule.with_regular(data.id, timing, freq)
+      return sch.StSchedule.with_regular(data.id, data.timing.naive, data.timing.tzone, freq)
     }
 
     case 'day': {
       const expr = new sch.StDailyExpression(data.frequency.exprs.every)
       const freq = sch.StRegularFrequency.with_daily_expr(sch.StFrequencyType.Day, expr, until)
 
-      return sch.StSchedule.with_regular(data.id, timing, freq)
+      return sch.StSchedule.with_regular(data.id, data.timing.naive, data.timing.tzone, freq)
     }
 
     case 'week': {
-      const weekdays = new Uint8Array(data.frequency.exprs.subexpr.weekdays)
+      const weekdays = new Uint32Array(data.frequency.exprs.subexpr.weekdays)
       const expr = sch.StWeeklyExpression.with_weekdays(data.frequency.exprs.every, weekdays)
       const freq = sch.StRegularFrequency.with_weekly_expr(sch.StFrequencyType.Week, expr, until)
 
-      return sch.StSchedule.with_regular(data.id, timing, freq)
+      return sch.StSchedule.with_regular(data.id, data.timing.naive, data.timing.tzone, freq)
     }
 
     case 'month': {
       let expr: sch.StMonthlyExpression
 
       if (data.frequency.exprs.subexpr.type === 'ondays') {
-        const days = new Uint8Array(data.frequency.exprs.subexpr.days)
+        const days = new Uint32Array(data.frequency.exprs.subexpr.days)
         expr = sch.StMonthlyExpression.with_days(data.frequency.exprs.every, days)
       } else {
         expr = sch.StMonthlyExpression.with_ordinal_weekday(
           data.frequency.exprs.every,
-          sch.st_ordinals_from_value(ordinalToUint8(data.frequency.exprs.subexpr.ordinal)),
+          sch.st_ordinals_from_value(ordinalToU32(data.frequency.exprs.subexpr.ordinal)),
           sch.st_const_weekday_from_value(data.frequency.exprs.subexpr.weekday),
         )
       }
 
       const freq = sch.StRegularFrequency.with_monthly_expr(sch.StFrequencyType.Month, expr, until)
-      return sch.StSchedule.with_regular(data.id, timing, freq)
+      return sch.StSchedule.with_regular(data.id, data.timing.naive, data.timing.tzone, freq)
     }
 
     case 'year': {
       let expr: sch.StYearlyExpression
-      const months = new Uint8Array(data.frequency.exprs.subexpr.in.months)
+      const months = new Uint32Array(data.frequency.exprs.subexpr.in.months)
 
       if (data.frequency.exprs.subexpr.on && data.frequency.exprs.subexpr.on.weekday) {
         expr = sch.StYearlyExpression.with_months_ordinal_const_weekday(
           data.frequency.exprs.every,
           months,
-          sch.st_ordinals_from_value(ordinalToUint8(data.frequency.exprs.subexpr.on.ordinal)),
+          sch.st_ordinals_from_value(ordinalToU32(data.frequency.exprs.subexpr.on.ordinal)),
           sch.st_const_weekday_from_value(data.frequency.exprs.subexpr.on.weekday),
         )
       } else if (data.frequency.exprs.subexpr.on && data.frequency.exprs.subexpr.on.variable) {
         expr = sch.StYearlyExpression.with_months_ordinal_var_weekday(
           data.frequency.exprs.every,
           months,
-          sch.st_ordinals_from_value(ordinalToUint8(data.frequency.exprs.subexpr.on.ordinal)),
+          sch.st_ordinals_from_value(ordinalToU32(data.frequency.exprs.subexpr.on.ordinal)),
           st_var_weekday_map.get(data.frequency.exprs.subexpr.on.variable),
         )
       } else {
@@ -110,7 +108,7 @@ function create_st_schedule(data: TaskSchedule) {
 
       const freq = sch.StRegularFrequency.with_yearly_expr(sch.StFrequencyType.Year, expr, until)
 
-      return sch.StSchedule.with_regular(data.id, timing, freq)
+      return sch.StSchedule.with_regular(data.id, data.timing.naive, data.timing.tzone, freq)
     }
 
     default:

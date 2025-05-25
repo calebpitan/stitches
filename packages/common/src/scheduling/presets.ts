@@ -136,20 +136,20 @@ export const ORDINAL_OPTIONS_GROUP: readonly OrdinalsGroup[] = Object.freeze([
   },
 ])
 
-export function ordinalToUint8(ordinal: Ordinals) {
+export function ordinalToU32(ordinal: Ordinals) {
   switch (ordinal) {
     case 'first':
-      return 0x00
+      return 0
     case 'second':
-      return 0x01
+      return 1
     case 'third':
-      return 0x02
+      return 2
     case 'fourth':
-      return 0x03
+      return 3
     case 'fifth':
-      return 0x04
+      return 4
     case 'last':
-      return 0xff
+      return 5
     default:
       never(ordinal)
   }
@@ -560,6 +560,9 @@ export function nextMonthlySchedule(
 
         while (_dayOfMonth > _maxDayOfMonth && retries++ < 100) {
           // make sure to restore _forwarded to the _maxDayOfMonth for desired results
+          // imagine if curtime and _forwarded happen to fall in same month: except _forwarded
+          // is ahead of or equal to curtime, hence restoring to _maxDayOfMonth, the same
+          // _forwarded will be returned
           _forwarded = nextMonthlySchedule
             .bringForward(_opts.curtime, _forwarded.setDate(_maxDayOfMonth), every)
             .setDate(1)
@@ -618,7 +621,8 @@ nextMonthlySchedule.bringForward = (
     year: anchorYear,
   })
 
-  if (anchortime > curtime) {
+  // Note if failing revert the comparison to `>` from `>=`
+  if (anchortime >= curtime) {
     const t = anchorMonth + every
     const y = anchorYear + Math.floor(t / MOY)
     const m = t % MOY
@@ -923,7 +927,7 @@ export function getMonthsRemaining(
   const MAX_MONTH = 12
   const end = { month: curtime.getMonth(), year: curtime.getFullYear() }
 
-  if (end.year < start.year) {
+  if (end.year < start.year || (end.year === start.year && end.month < start.month)) {
     // The inital schedule is still ahead of now
     return undefined
   }

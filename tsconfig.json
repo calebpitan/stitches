@@ -18,6 +18,11 @@
     }
   ],
   "compilerOptions": {
-    "module": "NodeNext"
+    "module": "NodeNext",
+    "paths": {
+      "@stitches/common": ["./packages/common/src"],
+      "@stitches/io": ["./packages/io/src/*"],
+      "@stitches/scheduler": ["./packages/scheduler/src"]
+    }
   }
 }
