@@ -81,7 +81,7 @@ function handleUnStack() {
   padding: var(--s-base-padding);
   background-color: var(--s-surface-ground);
   border-radius: var(--radius) 0 0 var(--radius);
-  margin-inline: var(--s-base-padding) calc(-1 * var(--s-base-padding));
+  /* margin-inline: var(--s-base-padding) calc(-1 * var(--s-base-padding)); */
 
   &.stacked {
     & .s-subtasklist {

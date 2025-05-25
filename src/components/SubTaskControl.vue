@@ -13,7 +13,7 @@ const items = [
   { name: 'Yetunde', completed: true }
 ]
 
-const stacked = ref(true)
+const stacked = ref(false)
 </script>
 
 <template>
@@ -44,6 +44,7 @@ const stacked = ref(true)
   display: flex;
   flex-direction: column;
   padding: var(--s-base-padding);
+  padding-inline-end: 0;
 }
 
 .s-subtask-control-header {
